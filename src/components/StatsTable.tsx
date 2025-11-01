@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Player } from "@/data/players";
 import { Input } from "@/components/ui/input";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -14,12 +15,68 @@ interface StatsTableProps {
   players: Player[];
 }
 
+type SortField = "name" | "games" | "points" | "assists" | "rebounds" | "steals" | "blocks";
+type SortDirection = "asc" | "desc" | null;
+
 const StatsTable = ({ players }: StatsTableProps) => {
   const [search, setSearch] = useState("");
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
-  const filteredPlayers = players.filter((player) =>
-    player.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else if (sortDirection === "desc") {
+        setSortField(null);
+        setSortDirection(null);
+      } else {
+        setSortDirection("asc");
+      }
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown size={16} className="opacity-40" />;
+    }
+    if (sortDirection === "asc") {
+      return <ArrowUp size={16} className="text-primary" />;
+    }
+    return <ArrowDown size={16} className="text-primary" />;
+  };
+
+  const sortedPlayers = [...players]
+    .filter((player) =>
+      player.name.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (!sortField || !sortDirection) return 0;
+
+      let aValue: number | string;
+      let bValue: number | string;
+
+      if (sortField === "name") {
+        aValue = a.name;
+        bValue = b.name;
+      } else {
+        aValue = a.stats[sortField];
+        bValue = b.stats[sortField];
+      }
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sortDirection === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortDirection === "asc"
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
+    });
 
   return (
     <div className="space-y-4">
@@ -33,21 +90,77 @@ const StatsTable = ({ players }: StatsTableProps) => {
         <Table>
           <TableHeader>
             <TableRow className="bg-secondary hover:bg-secondary">
-              <TableHead className="text-primary font-bold">Name</TableHead>
-              <TableHead className="text-primary font-bold">Spiele</TableHead>
-              <TableHead className="text-primary font-bold">Punkte</TableHead>
-              <TableHead className="text-primary font-bold">Assists</TableHead>
-              <TableHead className="text-primary font-bold">Rebounds</TableHead>
-              <TableHead className="text-primary font-bold">Steals</TableHead>
-              <TableHead className="text-primary font-bold">Blocks</TableHead>
+              <TableHead 
+                className="text-primary font-bold cursor-pointer select-none"
+                onClick={() => handleSort("name")}
+              >
+                <div className="flex items-center gap-2">
+                  Name
+                  {getSortIcon("name")}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="text-primary font-bold cursor-pointer select-none"
+                onClick={() => handleSort("games")}
+              >
+                <div className="flex items-center gap-2">
+                  Spiele
+                  {getSortIcon("games")}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="text-primary font-bold cursor-pointer select-none"
+                onClick={() => handleSort("points")}
+              >
+                <div className="flex items-center gap-2">
+                  Punkte
+                  {getSortIcon("points")}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="text-primary font-bold cursor-pointer select-none"
+                onClick={() => handleSort("assists")}
+              >
+                <div className="flex items-center gap-2">
+                  Assists
+                  {getSortIcon("assists")}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="text-primary font-bold cursor-pointer select-none"
+                onClick={() => handleSort("rebounds")}
+              >
+                <div className="flex items-center gap-2">
+                  Rebounds
+                  {getSortIcon("rebounds")}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="text-primary font-bold cursor-pointer select-none"
+                onClick={() => handleSort("steals")}
+              >
+                <div className="flex items-center gap-2">
+                  Steals
+                  {getSortIcon("steals")}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="text-primary font-bold cursor-pointer select-none"
+                onClick={() => handleSort("blocks")}
+              >
+                <div className="flex items-center gap-2">
+                  Blocks
+                  {getSortIcon("blocks")}
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPlayers.map((player) => (
+            {sortedPlayers.map((player) => (
               <TableRow key={player.id} className="hover:bg-accent/50">
                 <TableCell className="font-medium text-foreground">{player.name}</TableCell>
                 <TableCell>{player.stats.games}</TableCell>
-                <TableCell>{player.stats.points}</TableCell>
+                <TableCell className="font-semibold">{player.stats.points}</TableCell>
                 <TableCell>{player.stats.assists}</TableCell>
                 <TableCell>{player.stats.rebounds}</TableCell>
                 <TableCell>{player.stats.steals}</TableCell>
