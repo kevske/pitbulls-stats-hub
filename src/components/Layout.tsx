@@ -8,9 +8,9 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-background relative">
       {/* Decorative X marks top-left */}
-      <div className="fixed top-4 left-4 z-0 flex flex-col gap-3">
+      <div className="fixed top-32 left-4 z-0 flex flex-col gap-3">
         {[...Array(4)].map((_, i) => (
-          <div key={`top-${i}`} className="text-primary text-4xl font-bold opacity-60">×</div>
+          <div key={`top-${i}`} className="text-primary text-4xl font-bold opacity-20">×</div>
         ))}
       </div>
 
