@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Player } from "@/data/players";
+import { games } from "@/data/games";
+import { calculateAverages } from "@/utils/statsCalculations";
 import { Input } from "@/components/ui/input";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 interface StatsTableProps {
   players: Player[];
@@ -49,7 +51,12 @@ const StatsTable = ({ players }: StatsTableProps) => {
     return <ArrowDown size={16} className="text-primary" />;
   };
 
-  const sortedPlayers = [...players]
+  const playersWithStats = players.map((player) => ({
+    ...player,
+    calculatedStats: calculateAverages(games, player.id),
+  }));
+
+  const sortedPlayers = [...playersWithStats]
     .filter((player) =>
       player.name.toLowerCase().includes(search.toLowerCase())
     )
@@ -62,20 +69,19 @@ const StatsTable = ({ players }: StatsTableProps) => {
       if (sortField === "name") {
         aValue = a.name;
         bValue = b.name;
+      } else if (sortField === "games") {
+        aValue = a.calculatedStats.games;
+        bValue = b.calculatedStats.games;
       } else {
-        aValue = a.stats[sortField];
-        bValue = b.stats[sortField];
+        aValue = a.calculatedStats[sortField];
+        bValue = b.calculatedStats[sortField];
       }
 
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortDirection === "asc"
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
+      if (sortDirection === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
       }
-
-      return sortDirection === "asc"
-        ? (aValue as number) - (bValue as number)
-        : (bValue as number) - (aValue as number);
     });
 
   return (
@@ -100,55 +106,55 @@ const StatsTable = ({ players }: StatsTableProps) => {
                 </div>
               </TableHead>
               <TableHead 
-                className="text-primary font-bold cursor-pointer select-none"
+                className="text-primary font-bold cursor-pointer select-none text-center"
                 onClick={() => handleSort("games")}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   Spiele
                   {getSortIcon("games")}
                 </div>
               </TableHead>
               <TableHead 
-                className="text-primary font-bold cursor-pointer select-none"
+                className="text-primary font-bold cursor-pointer select-none text-center"
                 onClick={() => handleSort("points")}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   Punkte
                   {getSortIcon("points")}
                 </div>
               </TableHead>
               <TableHead 
-                className="text-primary font-bold cursor-pointer select-none"
+                className="text-primary font-bold cursor-pointer select-none text-center"
                 onClick={() => handleSort("assists")}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   Assists
                   {getSortIcon("assists")}
                 </div>
               </TableHead>
               <TableHead 
-                className="text-primary font-bold cursor-pointer select-none"
+                className="text-primary font-bold cursor-pointer select-none text-center"
                 onClick={() => handleSort("rebounds")}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   Rebounds
                   {getSortIcon("rebounds")}
                 </div>
               </TableHead>
               <TableHead 
-                className="text-primary font-bold cursor-pointer select-none"
+                className="text-primary font-bold cursor-pointer select-none text-center"
                 onClick={() => handleSort("steals")}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   Steals
                   {getSortIcon("steals")}
                 </div>
               </TableHead>
               <TableHead 
-                className="text-primary font-bold cursor-pointer select-none"
+                className="text-primary font-bold cursor-pointer select-none text-center"
                 onClick={() => handleSort("blocks")}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   Blocks
                   {getSortIcon("blocks")}
                 </div>
@@ -159,12 +165,12 @@ const StatsTable = ({ players }: StatsTableProps) => {
             {sortedPlayers.map((player) => (
               <TableRow key={player.id} className="hover:bg-accent/50">
                 <TableCell className="font-medium text-foreground">{player.name}</TableCell>
-                <TableCell>{player.stats.games}</TableCell>
-                <TableCell className="font-semibold">{player.stats.points}</TableCell>
-                <TableCell>{player.stats.assists}</TableCell>
-                <TableCell>{player.stats.rebounds}</TableCell>
-                <TableCell>{player.stats.steals}</TableCell>
-                <TableCell>{player.stats.blocks}</TableCell>
+                <TableCell className="text-center">{player.calculatedStats.games}</TableCell>
+                <TableCell className="text-center font-semibold">{player.calculatedStats.points}</TableCell>
+                <TableCell className="text-center">{player.calculatedStats.assists}</TableCell>
+                <TableCell className="text-center">{player.calculatedStats.rebounds}</TableCell>
+                <TableCell className="text-center">{player.calculatedStats.steals}</TableCell>
+                <TableCell className="text-center">{player.calculatedStats.blocks}</TableCell>
               </TableRow>
             ))}
           </TableBody>

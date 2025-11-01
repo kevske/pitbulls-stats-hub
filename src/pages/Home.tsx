@@ -17,7 +17,7 @@ const Home = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 gap-6">
           <Button
             variant="outline"
             className="h-32 text-lg border-primary hover:bg-accent"
@@ -48,6 +48,17 @@ const Home = () => {
             <div className="text-center">
               <div className="text-3xl mb-2">🎥</div>
               <div className="font-bold">Videos</div>
+            </div>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="h-32 text-lg border-primary hover:bg-accent"
+            onClick={() => navigate("/upload-game")}
+          >
+            <div className="text-center">
+              <div className="text-3xl mb-2">➕</div>
+              <div className="font-bold">Spiel hochladen</div>
             </div>
           </Button>
         </div>

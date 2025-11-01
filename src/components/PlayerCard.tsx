@@ -3,6 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Star, TrendingUp } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { games } from "@/data/games";
+import { calculateTotals, calculateAverages } from "@/utils/statsCalculations";
 
 interface PlayerCardProps {
   player: Player;
@@ -10,6 +13,11 @@ interface PlayerCardProps {
 
 const PlayerCard = ({ player }: PlayerCardProps) => {
   const navigate = useNavigate();
+
+  const totals = calculateTotals(games, player.id);
+  const averages = calculateAverages(games, player.id);
+  const homeAverages = calculateAverages(games, player.id, "home");
+  const awayAverages = calculateAverages(games, player.id, "away");
 
   const renderStars = (rating: number) => {
     return [...Array(5)].map((_, i) => (
@@ -20,6 +28,31 @@ const PlayerCard = ({ player }: PlayerCardProps) => {
       />
     ));
   };
+
+  const renderStats = (stats: any) => (
+    <div className="grid grid-cols-5 gap-3 text-center">
+      <div>
+        <p className="text-xl font-bold text-primary">{stats.points}</p>
+        <p className="text-xs text-muted-foreground">PTS</p>
+      </div>
+      <div>
+        <p className="text-xl font-bold text-primary">{stats.assists}</p>
+        <p className="text-xs text-muted-foreground">AST</p>
+      </div>
+      <div>
+        <p className="text-xl font-bold text-primary">{stats.rebounds}</p>
+        <p className="text-xs text-muted-foreground">REB</p>
+      </div>
+      <div>
+        <p className="text-xl font-bold text-primary">{stats.steals}</p>
+        <p className="text-xs text-muted-foreground">STL</p>
+      </div>
+      <div>
+        <p className="text-xl font-bold text-primary">{stats.blocks}</p>
+        <p className="text-xs text-muted-foreground">BLK</p>
+      </div>
+    </div>
+  );
 
   return (
     <Card 
@@ -94,8 +127,46 @@ const PlayerCard = ({ player }: PlayerCardProps) => {
               {player.bio}
             </p>
 
+            {/* Stats with Tabs */}
+            <Tabs defaultValue="totals" className="w-full">
+              <TabsList className="grid w-full grid-cols-4 mb-3">
+                <TabsTrigger value="totals" className="text-xs">Gesamt</TabsTrigger>
+                <TabsTrigger value="average" className="text-xs">Ø</TabsTrigger>
+                <TabsTrigger value="home" className="text-xs">Heim</TabsTrigger>
+                <TabsTrigger value="away" className="text-xs">Auswärts</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="totals" className="mt-0">
+                {renderStats(totals)}
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  {totals.games} Spiele
+                </p>
+              </TabsContent>
+              
+              <TabsContent value="average" className="mt-0">
+                {renderStats(averages)}
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Ø pro Spiel ({averages.games} Spiele)
+                </p>
+              </TabsContent>
+              
+              <TabsContent value="home" className="mt-0">
+                {renderStats(homeAverages)}
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Heim-Ø ({homeAverages.games} Spiele)
+                </p>
+              </TabsContent>
+              
+              <TabsContent value="away" className="mt-0">
+                {renderStats(awayAverages)}
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Auswärts-Ø ({awayAverages.games} Spiele)
+                </p>
+              </TabsContent>
+            </Tabs>
+
             {/* Skills */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mt-4">
               {player.skills.map((skill, index) => (
                 <div
                   key={index}
