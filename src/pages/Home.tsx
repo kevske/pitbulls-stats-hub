@@ -1,6 +1,7 @@
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
 import { games } from "@/data/games";
 import { players } from "@/data/players";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,13 +18,16 @@ const Home = () => {
   const opponentPoints = lastGame.result === "win" ? teamPoints - 10 : teamPoints + 8; // Mock opponent score
   
   // Get top 3 performers from the last game (sorted by points)
-  const topPerformers = [...lastGame.playerStats]
-    .sort((a, b) => b.points - a.points)
-    .slice(0, 3)
-    .map(stat => ({
-      ...stat,
-      player: players.find(p => p.id === stat.playerId)!
-    }));
+  const topPerformers = useMemo(() => 
+    [...lastGame.playerStats]
+      .sort((a, b) => b.points - a.points)
+      .slice(0, 3)
+      .map(stat => ({
+        ...stat,
+        player: players.find(p => p.id === stat.playerId)!
+      })),
+    [lastGame.playerStats]
+  );
 
   return (
     <Layout>

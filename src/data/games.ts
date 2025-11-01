@@ -13,7 +13,7 @@ export interface Game {
   date: string; // ISO format
   opponent: string;
   location: "home" | "away";
-  result?: "win" | "loss";
+  result: "win" | "loss";
   playerStats: GamePlayerStats[];
 }
 
