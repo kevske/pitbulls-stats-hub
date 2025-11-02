@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { players } from "@/data/players";
+import { players, Player } from "@/data/players";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import PasswordProtection from "@/components/PasswordProtection";
