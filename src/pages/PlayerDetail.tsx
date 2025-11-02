@@ -14,6 +14,14 @@ const PlayerDetail = () => {
   const player = players.find((p) => p.id === id);
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [formData, setFormData] = useState<Player | null>(null);
+
+  // Initialize form data when player is loaded or changes
+  useEffect(() => {
+    if (player) {
+      setFormData({ ...player });
+    }
+  }, [player]);
 
   if (!player) {
     return (
@@ -57,47 +65,145 @@ const PlayerDetail = () => {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium mb-2">Name</label>
-                  <Input defaultValue={player.name} />
+                  <Input 
+                    value={formData?.name || ''} 
+                    onChange={(e) => setFormData(prev => prev ? { ...prev, name: e.target.value } : null)}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Biografie</label>
-                  <Textarea defaultValue={player.bio} rows={4} />
+                  <Textarea 
+                    value={formData?.bio || ''} 
+                    onChange={(e) => setFormData(prev => prev ? { ...prev, bio: e.target.value } : null)}
+                    rows={4} 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Profilbild URL</label>
-                  <Input defaultValue={player.image} />
+                  <Input 
+                    value={formData?.image || ''} 
+                    onChange={(e) => setFormData(prev => prev ? { ...prev, image: e.target.value } : null)}
+                  />
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">Spiele</label>
-                    <Input type="number" defaultValue={player.stats.games} />
+                    <Input 
+                      type="number" 
+                      value={formData?.stats.games || 0}
+                      onChange={(e) => setFormData(prev => {
+                        if (!prev) return null;
+                        return {
+                          ...prev,
+                          stats: {
+                            ...prev.stats,
+                            games: parseInt(e.target.value) || 0
+                          }
+                        };
+                      })}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Punkte</label>
-                    <Input type="number" defaultValue={player.stats.points} />
+                    <Input 
+                      type="number" 
+                      value={formData?.stats.points || 0}
+                      onChange={(e) => setFormData(prev => {
+                        if (!prev) return null;
+                        return {
+                          ...prev,
+                          stats: {
+                            ...prev.stats,
+                            points: parseInt(e.target.value) || 0
+                          }
+                        };
+                      })}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Assists</label>
-                    <Input type="number" defaultValue={player.stats.assists} />
+                    <Input 
+                      type="number" 
+                      value={formData?.stats.assists || 0}
+                      onChange={(e) => setFormData(prev => {
+                        if (!prev) return null;
+                        return {
+                          ...prev,
+                          stats: {
+                            ...prev.stats,
+                            assists: parseInt(e.target.value) || 0
+                          }
+                        };
+                      })}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Rebounds</label>
-                    <Input type="number" defaultValue={player.stats.rebounds} />
+                    <Input 
+                      type="number" 
+                      value={formData?.stats.rebounds || 0}
+                      onChange={(e) => setFormData(prev => {
+                        if (!prev) return null;
+                        return {
+                          ...prev,
+                          stats: {
+                            ...prev.stats,
+                            rebounds: parseInt(e.target.value) || 0
+                          }
+                        };
+                      })}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Steals</label>
-                    <Input type="number" defaultValue={player.stats.steals} />
+                    <Input 
+                      type="number" 
+                      value={formData?.stats.steals || 0}
+                      onChange={(e) => setFormData(prev => {
+                        if (!prev) return null;
+                        return {
+                          ...prev,
+                          stats: {
+                            ...prev.stats,
+                            steals: parseInt(e.target.value) || 0
+                          }
+                        };
+                      })}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Blocks</label>
-                    <Input type="number" defaultValue={player.stats.blocks} />
+                    <Input 
+                      type="number" 
+                      value={formData?.stats.blocks || 0}
+                      onChange={(e) => setFormData(prev => {
+                        if (!prev) return null;
+                        return {
+                          ...prev,
+                          stats: {
+                            ...prev.stats,
+                            blocks: parseInt(e.target.value) || 0
+                          }
+                        };
+                      })}
+                    />
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <Button
                     onClick={() => {
-                      toast.success("Änderungen gespeichert (Demo-Modus)");
-                      setIsEditing(false);
+                      if (!formData || !player) return;
+                      
+                      // Find the player index
+                      const playerIndex = players.findIndex(p => p.id === player.id);
+                      if (playerIndex !== -1) {
+                        // Update the player data
+                        players[playerIndex] = { ...formData };
+                        toast.success("Änderungen gespeichert");
+                        setIsEditing(false);
+                      } else {
+                        toast.error("Spieler nicht gefunden");
+                      }
                     }}
                   >
                     Speichern
