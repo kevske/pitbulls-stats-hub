@@ -96,23 +96,28 @@ const Home = () => {
                   <div className="text-center">
                     <div className="text-4xl font-bold">Pitbulls</div>
                     <div className="text-5xl font-black text-primary">
-                      {lastGame.finalScore?.split('-')[0]?.trim() || '0'}
+                      {lastGame.finalScore?.toString().split('-')[0]?.trim() || '0'}
                     </div>
                   </div>
                   <div className="text-2xl font-bold">vs</div>
                   <div className="text-center">
-                    <div className="text-4xl font-bold">{lastGame.awayTeam}</div>
+                    <div className="text-4xl font-bold">{lastGame.awayTeam || 'Gegner'}</div>
                     <div className="text-5xl font-black">
-                      {lastGame.finalScore?.split('-')[1]?.trim() || '0'}
+                      {lastGame.finalScore?.toString().split('-')[1]?.trim() || '0'}
                     </div>
                   </div>
                 </div>
-                <div className="text-xl font-bold">
-                  {lastGame.finalScore && 
-                    (parseInt(lastGame.finalScore.split('-')[0].trim()) > parseInt(lastGame.finalScore.split('-')[1].trim()) 
-                      ? '🏆 Sieg' 
-                      : '😞 Niederlage')}
-                </div>
+                {lastGame.finalScore && lastGame.finalScore.includes('-') ? (
+                  <div className="text-xl font-bold">
+                    {parseInt(lastGame.finalScore.split('-')[0]?.trim() || '0') > parseInt(lastGame.finalScore.split('-')[1]?.trim() || '0')
+                      ? '🏆 Sieg'
+                      : '😞 Niederlage'}
+                  </div>
+                ) : (
+                  <div className="text-xl font-bold text-yellow-600">
+                    ⏳ Spiel steht noch aus
+                  </div>
+                )}
                 <Button 
                   variant="outline" 
                   onClick={() => navigate(`/games/${lastGame.gameNumber}`)}
