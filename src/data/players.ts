@@ -1,6 +1,7 @@
 export interface Player {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   team: string;
   bio: string;
   image: string;
@@ -19,12 +20,16 @@ export interface Player {
     steals: number;
     blocks: number;
   };
+  
+  // For backward compatibility
+  name?: string;
 }
 
 export const players: Player[] = [
   {
     id: "1",
-    name: "Max Müller",
+    firstName: "Max",
+    lastName: "Müller",
     team: "Pitbulls Neuenstadt",
     bio: "Erfahrener Point Guard mit hervorragender Spielübersicht und Führungsqualitäten auf dem Court.",
     image: "/placeholder.svg",
@@ -42,11 +47,13 @@ export const players: Player[] = [
       rebounds: 89,
       steals: 45,
       blocks: 12
-    }
+    },
+    name: "Max Müller" // For backward compatibility
   },
   {
     id: "2",
-    name: "Jonas Schmidt",
+    firstName: "Jonas",
+    lastName: "Schmidt",
     team: "Pitbulls Neuenstadt",
     bio: "Athletischer Shooting Guard mit präzisem Distanzwurf und starker Verteidigung.",
     image: "/placeholder.svg",
@@ -64,11 +71,13 @@ export const players: Player[] = [
       rebounds: 112,
       steals: 56,
       blocks: 8
-    }
+    },
+    name: "Jonas Schmidt" // For backward compatibility
   },
   {
     id: "3",
-    name: "Leon Weber",
+    firstName: "Leon",
+    lastName: "Weber",
     team: "Pitbulls Neuenstadt",
     bio: "Vielseitiger Small Forward mit großer Reichweite und exzellenter Athletik.",
     image: "/placeholder.svg",
@@ -86,11 +95,13 @@ export const players: Player[] = [
       rebounds: 145,
       steals: 38,
       blocks: 22
-    }
+    },
+    name: "Leon Weber" // For backward compatibility
   },
   {
     id: "4",
-    name: "Paul Fischer",
+    firstName: "Paul",
+    lastName: "Fischer",
     team: "Pitbulls Neuenstadt",
     bio: "Dominanter Power Forward mit starker Präsenz unter dem Korb.",
     image: "/placeholder.svg",
@@ -108,11 +119,13 @@ export const players: Player[] = [
       rebounds: 198,
       steals: 22,
       blocks: 45
-    }
+    },
+    name: "Paul Fischer" // For backward compatibility
   },
   {
     id: "5",
-    name: "Tim Becker",
+    firstName: "Tim",
+    lastName: "Becker",
     team: "Pitbulls Neuenstadt",
     bio: "Großer Center mit hervorragender Verteidigung und Rebounding.",
     image: "/placeholder.svg",
@@ -130,11 +143,13 @@ export const players: Player[] = [
       rebounds: 223,
       steals: 18,
       blocks: 67
-    }
+    },
+    name: "Tim Becker" // For backward compatibility
   },
   {
     id: "6",
-    name: "Felix Hoffmann",
+    firstName: "Felix",
+    lastName: "Hoffmann",
     team: "Pitbulls Neuenstadt",
     bio: "Schneller Guard mit explosivem ersten Schritt und guter Court Vision.",
     image: "/placeholder.svg",
@@ -152,6 +167,30 @@ export const players: Player[] = [
       rebounds: 56,
       steals: 41,
       blocks: 5
-    }
+    },
+    name: "Felix Hoffmann" // For backward compatibility
+  },
+  {
+    id: "7",
+    firstName: "Lukas",
+    lastName: "Wagner",
+    team: "Pitbulls Neuenstadt",
+    bio: "Junges Talent mit großem Potenzial und guter Wurftechnik.",
+    image: "/placeholder.svg",
+    height: "6'5\"",
+    weight: 195,
+    age: 20,
+    rating: 3.9,
+    status: "Bench",
+    skills: ["Shooter", "Team Player", "Hard Worker"],
+    stats: {
+      games: 15,
+      points: 89,
+      assists: 23,
+      rebounds: 34,
+      steals: 12,
+      blocks: 3
+    },
+    name: "Lukas Wagner" // For backward compatibility
   }
 ];

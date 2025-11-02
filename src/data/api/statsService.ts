@@ -5,16 +5,62 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hour cache
 const CSV_URLS = {
   games: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Games',
   playerStats: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Spieler',
-  playerTotals: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Totals'
+  playerTotals: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Totals',
+  playerBios: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Bio'
 };
 
+interface PlayerBio {
+  firstName: string;
+  lastName: string;
+  jerseyNumber: number;
+  position: string;
+  age: number;
+  height: string;
+  bio: string;
+}
+
+async function fetchPlayerBios(): Promise<Map<string, PlayerBio>> {
+  const bios = await fetchCSV<any>(CSV_URLS.playerBios, (rows) => 
+    rows.map(row => ({
+      firstName: (row.Vorname || '').trim(),
+      lastName: (row.Nachname || '').trim(),
+      jerseyNumber: parseInt(row['Trikot-Nummer']) || 0,
+      position: (row.Position || '').trim(),
+      age: parseInt(row.Alter) || 0,
+      height: (row['Größe'] || '').trim(),
+      bio: (row.Bio || '').trim()
+    }))
+  );
+  
+  const bioMap = new Map<string, PlayerBio>();
+  bios.forEach(bio => {
+    if (bio.firstName || bio.lastName) {
+      const key = `${bio.firstName.toLowerCase()} ${bio.lastName.toLowerCase()}`.trim();
+      bioMap.set(key, bio);
+    }
+  });
+  return bioMap;
+}
+
 export async function fetchAllData() {
-  const [games, playerStats, playerTotals] = await Promise.all([
+  const [games, playerStats, playerTotals, bioMap] = await Promise.all([
     fetchCSV<GameStats>(CSV_URLS.games, transformGameData),
     fetchCSV<PlayerGameLog>(CSV_URLS.playerStats, transformPlayerGameLog),
-    fetchCSV<PlayerStats>(CSV_URLS.playerTotals, transformPlayerTotals)
+    fetchCSV<any>(CSV_URLS.playerTotals, (rows) => transformPlayerTotals(rows, new Map())), // Initial transform without bios
+    fetchPlayerBios()
   ]);
-  return { games, playerStats, playerTotals };
+  
+  // Transform player totals again with bio data
+  const playerTotalsWithBios = await fetchCSV<PlayerStats>(
+    CSV_URLS.playerTotals, 
+    (rows) => transformPlayerTotals(rows, bioMap)
+  );
+  
+  return { 
+    games, 
+    playerStats, 
+    playerTotals: playerTotalsWithBios 
+  };
 }
 
 async function fetchCSV<T>(url: string, transform: (data: any) => T[]): Promise<T[]> {
@@ -53,7 +99,7 @@ async function fetchCSV<T>(url: string, transform: (data: any) => T[]): Promise<
 }
 
 // Transformers
-function transformPlayerTotals(rows: any[]): PlayerStats[] {
+function transformPlayerTotals(rows: any[], bioMap: Map<string, PlayerBio>): PlayerStats[] {
   return rows.map(row => {
     const firstName = (row.Vorname || '').trim();
     const lastName = (row.Nachname || '').trim();
@@ -62,6 +108,10 @@ function transformPlayerTotals(rows: any[]): PlayerStats[] {
     
     // Skip if no first name
     if (!firstName) return null;
+    
+    // Find bio data if available
+    const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
+    const bioData = bioMap.get(bioKey);
     
     // Base player data
     const player: PlayerStats = {
@@ -75,23 +125,15 @@ function transformPlayerTotals(rows: any[]): PlayerStats[] {
       freeThrowPercentage: row['FW-Quote'] || '0%',
       foulsPerGame: parseFloat((row['Fouls pS'] || '0').replace(',', '.')),
       imageUrl: `/pitbulls-stats-hub/players/${playerId}.jpg`,
-      // Default values for additional fields
-      jerseyNumber: 0,
-      position: '',
-      age: 0,
-      bio: ''
+      // Use bio data if available, otherwise use defaults
+      jerseyNumber: bioData?.jerseyNumber || 0,
+      position: bioData?.position || '',
+      age: bioData?.age || 0,
+      bio: bioData?.bio || ''
     };
 
-    // Add Kevin Rassner's specific info
-    if (fullName.toLowerCase() === 'kevin rassner') {
-      player.jerseyNumber = 19;
-      player.position = 'Forward';
-      player.age = 37;
-      player.bio = 'Der Spieler für die, die sich nicht entscheiden wollen: Veteran moves oder lieber Explosivität? Guard, Forward oder Center? Offense oder Defense? Dummes Gelaber oder Lebensweisheit?';
-    }
-
     return player;
-  });
+  }).filter(Boolean) as PlayerStats[]; // Filter out any null entries
 }
 
 function transformPlayerGameLog(rows: any[]): PlayerGameLog[] {
