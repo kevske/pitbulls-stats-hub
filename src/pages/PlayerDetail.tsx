@@ -6,9 +6,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
+// Generate player ID consistently with statsService.ts
+const generatePlayerId = (firstName: string): string => {
+  return firstName.toLowerCase().replace(/\s+/g, '-');
+};
+
 const PlayerDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { player, gameLogs } = usePlayerStats(id);
+  
+  // Log for debugging
+  console.log('Player ID from URL:', id);
+  console.log('Player data:', player);
   const navigate = useNavigate();
 
   if (!player) {

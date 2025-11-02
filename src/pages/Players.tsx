@@ -4,6 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStats } from '@/contexts/StatsContext';
 import Layout from '@/components/Layout';
 
+// Generate player ID consistently with statsService.ts
+const generatePlayerId = (firstName: string): string => {
+  return firstName.toLowerCase().replace(/\s+/g, '-');
+};
+
 const Players: React.FC = () => {
   const { players, loading, error } = useStats();
   const navigate = useNavigate();
@@ -38,9 +43,9 @@ const Players: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {players.map((player) => (
             <Card 
-              key={player.id} 
+              key={generatePlayerId(player.firstName)} 
               className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => navigate(`/players/${player.id}`)}
+              onClick={() => navigate(`/players/${generatePlayerId(player.firstName)}`)}
             >
               <CardHeader className="flex flex-row items-center space-x-4 p-4">
                 <img
