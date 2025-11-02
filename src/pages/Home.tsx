@@ -17,24 +17,30 @@ const Home = () => {
   }, [games]);
   
   // Parse the final score into home and away scores
-  const [homeScore, awayScore] = useMemo(() => {
-    if (!lastGame?.finalScore) return ['0', '0'];
-    const [home, away] = lastGame.finalScore.split('-').map(s => s.trim());
-    return [home || '0', away || '0'];
-  }, [lastGame]);
-  
-  // Get team names from the game data
-  const { homeTeam, awayTeam } = useMemo(() => {
-    if (!lastGame) return { homeTeam: 'Pitbulls', awayTeam: 'Gegner' };
-    return {
-      homeTeam: lastGame.homeTeam || 'Heimmannschaft',
-      awayTeam: lastGame.awayTeam || 'Gastmannschaft'
+  const { homeScore, awayScore, homeTeam, awayTeam } = useMemo(() => {
+    if (!lastGame) return { 
+      homeScore: '0', 
+      awayScore: '0',
+      homeTeam: 'Pitbulls', 
+      awayTeam: 'Gegner' 
     };
+    
+    // Get the team names
+    const homeTeam = lastGame.homeTeam || 'Heimmannschaft';
+    const awayTeam = lastGame.awayTeam || 'Gastmannschaft';
+    
+    // Handle the score format (it might be like '81:75' or '81-75')
+    let homeScore = '0';
+    let awayScore = '0';
+    
+    if (lastGame.finalScore) {
+      const scoreParts = lastGame.finalScore.split(/[-:]/).map(s => s.trim());
+      homeScore = scoreParts[0] || '0';
+      awayScore = scoreParts[1] || '0';
+    }
+    
+    return { homeScore, awayScore, homeTeam, awayTeam };
   }, [lastGame]);
-  
-  // Scores are already in home/away order from the split
-  const homeScoreDisplay = homeScore;
-  const awayScoreDisplay = awayScore;
   
   // Get top 3 performers from all games (sorted by points per game)
   const topPerformers = useMemo(() => {
@@ -146,20 +152,20 @@ const Home = () => {
                   <div className="text-center">
                     <div className="text-2xl font-bold">{homeTeam}</div>
                     <div className="text-5xl font-black text-primary">
-                      {homeScoreDisplay}
+                      {homeScore}
                     </div>
                   </div>
                   <div className="text-2xl font-bold">vs</div>
                   <div className="text-center">
                     <div className="text-2xl font-bold">{awayTeam}</div>
                     <div className="text-5xl font-black">
-                      {awayScoreDisplay}
+                      {awayScore}
                     </div>
                   </div>
                 </div>
-                {lastGame.finalScore && lastGame.finalScore.includes('-') ? (
+                {lastGame.finalScore && (lastGame.finalScore.includes('-') || lastGame.finalScore.includes(':')) ? (
                   <div className="text-xl font-bold">
-                    {Number(homeScoreDisplay) > Number(awayScoreDisplay) ? '🏆 Sieg' : '😞 Niederlage'}
+                    {Number(homeScore) > Number(awayScore) ? '🏆 Sieg' : '😞 Niederlage'}
                     <div className="text-sm font-normal text-gray-500 mt-1">
                       {lastGame.finalScore}
                     </div>
