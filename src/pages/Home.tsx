@@ -145,30 +145,30 @@ const Home = () => {
           <div className="grid md:grid-cols-3 gap-4">
             {topPerformers.map((performer, index) => (
               <Card 
-                key={performer.playerId}
+                key={performer.id}
                 className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer"
-                onClick={() => navigate(`/player/${performer.playerId}`)}
+                onClick={() => navigate(`/players/${performer.id}`)}
               >
                 <CardContent className="pt-6">
                   <div className="text-center space-y-3">
                     <div className="text-3xl font-bold text-primary">#{index + 1}</div>
-                    <div className="text-lg font-semibold">{performer.player.name}</div>
+                    <div className="text-lg font-semibold">{performer.firstName} {performer.lastName}</div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <div className="text-muted-foreground">Punkte</div>
-                        <div className="text-xl font-bold text-primary">{performer.points}</div>
+                        <div className="text-muted-foreground">Punkte/Spiel</div>
+                        <div className="text-xl font-bold text-primary">{performer.pointsPerGame.toFixed(1)}</div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground">Assists</div>
-                        <div className="text-xl font-bold">{performer.assists}</div>
+                        <div className="text-muted-foreground">Gesamtpunkte</div>
+                        <div className="text-xl font-bold">{performer.totalPoints}</div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground">Rebounds</div>
-                        <div className="text-xl font-bold">{performer.rebounds}</div>
+                        <div className="text-muted-foreground">3-Punkte/Spiel</div>
+                        <div className="text-xl font-bold">{performer.threePointersPerGame.toFixed(1)}</div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground">Steals</div>
-                        <div className="text-xl font-bold">{performer.steals}</div>
+                        <div className="text-muted-foreground">FW-Quote</div>
+                        <div className="text-xl font-bold">{performer.freeThrowPercentage}</div>
                       </div>
                     </div>
                   </div>

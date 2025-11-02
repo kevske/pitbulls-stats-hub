@@ -10,6 +10,8 @@ import Home from "./pages/Home";
 import Stats from "./pages/Stats";
 import Players from "./pages/Players";
 import PlayerDetail from "./pages/PlayerDetail";
+import Games from "./pages/Games";
+import GameDetail from "./pages/GameDetail";
 import Videos from "./pages/Videos";
 import UploadGame from "./pages/UploadGame";
 import NotFound from "./pages/NotFound";
@@ -36,7 +38,9 @@ const App = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/stats" element={<Stats />} />
                 <Route path="/players" element={<Players />} />
-                <Route path="/player/:id" element={<PlayerDetail />} />
+                <Route path="/players/:id" element={<PlayerDetail />} />
+                <Route path="/games" element={<Games />} />
+                <Route path="/games/:id" element={<GameDetail />} />
                 <Route path="/videos" element={<Videos />} />
                 <Route path="/upload-game" element={<UploadGame />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
