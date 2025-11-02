@@ -65,7 +65,7 @@ const PlayerCard = ({ player }: PlayerCardProps) => {
           <div className="md:w-48 h-48 md:h-auto flex-shrink-0 relative bg-secondary">
             <img
               src={player.image}
-              alt={player.name}
+              alt={`${player.firstName} ${player.lastName}`}
               className="w-full h-full object-cover"
             />
             <div className="absolute bottom-3 left-3 bg-primary/90 text-primary-foreground rounded-full p-1.5">
@@ -78,7 +78,9 @@ const PlayerCard = ({ player }: PlayerCardProps) => {
             {/* Header with Name and Status */}
             <div className="flex justify-between items-start mb-3">
               <div>
-                <h3 className="text-2xl font-bold text-foreground mb-1">{player.name}</h3>
+                <h3 className="text-2xl font-bold text-foreground mb-1">
+                  {player.firstName} {player.lastName}
+                </h3>
                 <p className="text-sm text-muted-foreground">{player.team}</p>
               </div>
               <Badge 

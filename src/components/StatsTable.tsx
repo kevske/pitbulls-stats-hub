@@ -57,9 +57,12 @@ const StatsTable = ({ players }: StatsTableProps) => {
   }));
 
   const sortedPlayers = [...playersWithStats]
-    .filter((player) =>
-      player.name.toLowerCase().includes(search.toLowerCase())
-    )
+    .filter((player) => {
+      const fullName = `${player.firstName} ${player.lastName}`.toLowerCase();
+      return fullName.includes(search.toLowerCase()) || 
+             player.firstName.toLowerCase().includes(search.toLowerCase()) ||
+             player.lastName.toLowerCase().includes(search.toLowerCase());
+    })
     .sort((a, b) => {
       if (!sortField || !sortDirection) return 0;
 
@@ -67,8 +70,8 @@ const StatsTable = ({ players }: StatsTableProps) => {
       let bValue: number | string;
 
       if (sortField === "name") {
-        aValue = a.name;
-        bValue = b.name;
+        aValue = `${a.firstName} ${a.lastName}`.toLowerCase();
+        bValue = `${b.firstName} ${b.lastName}`.toLowerCase();
       } else if (sortField === "games") {
         aValue = a.calculatedStats.games;
         bValue = b.calculatedStats.games;
@@ -164,7 +167,12 @@ const StatsTable = ({ players }: StatsTableProps) => {
           <TableBody>
             {sortedPlayers.map((player) => (
               <TableRow key={player.id} className="hover:bg-accent/50">
-                <TableCell className="font-medium text-foreground">{player.name}</TableCell>
+                <TableCell className="font-medium text-foreground">
+                  <div className="flex flex-col">
+                    <span>{player.firstName} {player.lastName}</span>
+                    <span className="text-xs text-muted-foreground">{player.team}</span>
+                  </div>
+                </TableCell>
                 <TableCell className="text-center">{player.calculatedStats.games}</TableCell>
                 <TableCell className="text-center font-semibold">{player.calculatedStats.points}</TableCell>
                 <TableCell className="text-center">{player.calculatedStats.assists}</TableCell>
