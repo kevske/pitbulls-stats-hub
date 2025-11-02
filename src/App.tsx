@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { StatsProvider } from "@/contexts/StatsContext";
 import Home from "./pages/Home";
 import Stats from "./pages/Stats";
 import Players from "./pages/Players";
@@ -29,20 +30,22 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter basename="/pitbulls-stats-hub">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/stats" element={<Stats />} />
-              <Route path="/players" element={<Players />} />
-              <Route path="/player/:id" element={<PlayerDetail />} />
-              <Route path="/videos" element={<Videos />} />
-              <Route path="/upload-game" element={<UploadGame />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </BrowserRouter>
+          <StatsProvider>
+            <BrowserRouter basename="/pitbulls-stats-hub">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/stats" element={<Stats />} />
+                <Route path="/players" element={<Players />} />
+                <Route path="/player/:id" element={<PlayerDetail />} />
+                <Route path="/videos" element={<Videos />} />
+                <Route path="/upload-game" element={<UploadGame />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </BrowserRouter>
+            <Toaster />
+            <Sonner />
+          </StatsProvider>
         </TooltipProvider>
       </ErrorBoundary>
     </QueryClientProvider>
