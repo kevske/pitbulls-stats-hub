@@ -10,26 +10,57 @@ const Home = () => {
   const navigate = useNavigate();
   const { games, players, gameLogs, loading, error } = useStats();
 
-  // Get the last game
+  // Get the last game (game with highest gameNumber)
   const lastGame = useMemo(() => {
     if (!games.length) return null;
     return [...games].sort((a, b) => b.gameNumber - a.gameNumber)[0];
   }, [games]);
   
+  // Parse the final score into home and away scores
+  const [homeScore, awayScore] = useMemo(() => {
+    if (!lastGame?.finalScore) return [0, 0];
+    const [home, away] = lastGame.finalScore.split('-').map(Number);
+    return [isNaN(home) ? 0 : home, isNaN(away) ? 0 : away];
+  }, [lastGame]);
+  
   // Get top 3 performers from all games (sorted by points per game)
   const topPerformers = useMemo(() => {
     if (!players.length || !gameLogs.length) return [];
     
-    // Calculate points per game for each player
+    // Calculate stats for each player
     const playerStats = players.map(player => {
       const playerGames = gameLogs.filter(log => log.playerId === player.id);
       const totalPoints = playerGames.reduce((sum, game) => sum + game.points, 0);
       const gamesPlayed = playerGames.length;
       
+      // Calculate total minutes played
+      const totalMinutes = playerGames.reduce((sum, game) => {
+        // Convert MM:SS to minutes
+        if (!game.minutesPlayed) return sum;
+        const [minutes, seconds = 0] = game.minutesPlayed.split(':').map(Number);
+        return sum + minutes + (seconds > 0 ? 1 : 0); // Round up partial minutes
+      }, 0);
+      
+      const averageMinutes = gamesPlayed > 0 ? (totalMinutes / gamesPlayed).toFixed(1) : 0;
+      
+      // Calculate other stats
+      const totalThreePointers = playerGames.reduce((sum, game) => sum + (game.threePointers || 0), 0);
+      const threePointersPerGame = gamesPlayed > 0 ? totalThreePointers / gamesPlayed : 0;
+      
+      const totalFreeThrowsMade = playerGames.reduce((sum, game) => sum + (game.freeThrowsMade || 0), 0);
+      const totalFreeThrowAttempts = playerGames.reduce((sum, game) => sum + (game.freeThrowAttempts || 0), 0);
+      const freeThrowPercentage = totalFreeThrowAttempts > 0 
+        ? `${Math.round((totalFreeThrowsMade / totalFreeThrowAttempts) * 100)}%` 
+        : '0%';
+      
       return {
         ...player,
         pointsPerGame: gamesPlayed > 0 ? totalPoints / gamesPlayed : 0,
-        totalPoints
+        threePointersPerGame,
+        freeThrowPercentage,
+        averageMinutes,
+        totalPoints,
+        gamesPlayed
       };
     });
     
@@ -96,22 +127,23 @@ const Home = () => {
                   <div className="text-center">
                     <div className="text-4xl font-bold">Pitbulls</div>
                     <div className="text-5xl font-black text-primary">
-                      {lastGame.finalScore?.toString().split('-')[0]?.trim() || '0'}
+                      {homeScore}
                     </div>
                   </div>
                   <div className="text-2xl font-bold">vs</div>
                   <div className="text-center">
                     <div className="text-4xl font-bold">{lastGame.awayTeam || 'Gegner'}</div>
                     <div className="text-5xl font-black">
-                      {lastGame.finalScore?.toString().split('-')[1]?.trim() || '0'}
+                      {awayScore}
                     </div>
                   </div>
                 </div>
                 {lastGame.finalScore && lastGame.finalScore.includes('-') ? (
                   <div className="text-xl font-bold">
-                    {parseInt(lastGame.finalScore.split('-')[0]?.trim() || '0') > parseInt(lastGame.finalScore.split('-')[1]?.trim() || '0')
-                      ? '🏆 Sieg'
-                      : '😞 Niederlage'}
+                    {homeScore > awayScore ? '🏆 Sieg' : '😞 Niederlage'}
+                    <div className="text-sm font-normal text-gray-500 mt-1">
+                      {lastGame.finalScore}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-xl font-bold text-yellow-600">
@@ -152,23 +184,28 @@ const Home = () => {
                 <CardContent className="pt-6">
                   <div className="text-center space-y-3">
                     <div className="text-3xl font-bold text-primary">#{index + 1}</div>
-                    <div className="text-lg font-semibold">{performer.firstName} {performer.lastName}</div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <div className="text-muted-foreground">Punkte/Spiel</div>
-                        <div className="text-xl font-bold text-primary">{performer.pointsPerGame.toFixed(1)}</div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold">{performer.firstName} {performer.lastName}</div>
+                      <div className="text-sm text-muted-foreground">
+                        ⏱️ {performer.averageMinutes} Min/Spiel
                       </div>
-                      <div>
-                        <div className="text-muted-foreground">Gesamtpunkte</div>
-                        <div className="text-xl font-bold">{performer.totalPoints}</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm w-full">
+                      <div className="bg-gray-50 p-2 rounded">
+                        <div className="text-muted-foreground text-xs">Punkte/Spiel</div>
+                        <div className="text-lg font-bold text-primary">{performer.pointsPerGame.toFixed(1)}</div>
                       </div>
-                      <div>
-                        <div className="text-muted-foreground">3-Punkte/Spiel</div>
-                        <div className="text-xl font-bold">{performer.threePointersPerGame.toFixed(1)}</div>
+                      <div className="bg-gray-50 p-2 rounded">
+                        <div className="text-muted-foreground text-xs">Gesamtpunkte</div>
+                        <div className="text-lg font-bold">{performer.totalPoints}</div>
                       </div>
-                      <div>
-                        <div className="text-muted-foreground">FW-Quote</div>
-                        <div className="text-xl font-bold">{performer.freeThrowPercentage}</div>
+                      <div className="bg-gray-50 p-2 rounded">
+                        <div className="text-muted-foreground text-xs">3-Punkte/Spiel</div>
+                        <div className="text-lg font-bold">{performer.threePointersPerGame.toFixed(1)}</div>
+                      </div>
+                      <div className="bg-gray-50 p-2 rounded">
+                        <div className="text-muted-foreground text-xs">FW-Quote</div>
+                        <div className="text-lg font-bold">{performer.freeThrowPercentage}</div>
                       </div>
                     </div>
                   </div>
