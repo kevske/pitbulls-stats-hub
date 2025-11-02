@@ -9,6 +9,10 @@ export interface PlayerStats {
   freeThrowPercentage: string;
   foulsPerGame: number;
   imageUrl: string;
+  jerseyNumber?: number;
+  position?: string;
+  age?: number;
+  bio?: string;
 }
 
 export interface GameStats {

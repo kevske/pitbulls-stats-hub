@@ -2,32 +2,74 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
-import { games } from "@/data/games";
-import { players } from "@/data/players";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useStats } from "@/contexts/StatsContext";
 
 const Home = () => {
   const navigate = useNavigate();
+  const { games, players, gameLogs, loading, error } = useStats();
 
   // Get the last game
-  const lastGame = games[games.length - 1];
+  const lastGame = useMemo(() => {
+    if (!games.length) return null;
+    return [...games].sort((a, b) => b.gameNumber - a.gameNumber)[0];
+  }, [games]);
   
-  // Calculate team totals for the last game
-  const teamPoints = lastGame.playerStats.reduce((sum, ps) => sum + ps.points, 0);
-  const opponentPoints = lastGame.result === "win" ? teamPoints - 10 : teamPoints + 8; // Mock opponent score
+  // Get top 3 performers from all games (sorted by points per game)
+  const topPerformers = useMemo(() => {
+    if (!players.length || !gameLogs.length) return [];
+    
+    // Calculate points per game for each player
+    const playerStats = players.map(player => {
+      const playerGames = gameLogs.filter(log => log.playerId === player.id);
+      const totalPoints = playerGames.reduce((sum, game) => sum + game.points, 0);
+      const gamesPlayed = playerGames.length;
+      
+      return {
+        ...player,
+        pointsPerGame: gamesPlayed > 0 ? totalPoints / gamesPlayed : 0,
+        totalPoints
+      };
+    });
+    
+    // Sort by points per game and get top 3
+    return [...playerStats]
+      .sort((a, b) => b.pointsPerGame - a.pointsPerGame)
+      .slice(0, 3);
+  }, [players, gameLogs]);
   
-  // Get top 3 performers from the last game (sorted by points)
-  const topPerformers = useMemo(() => 
-    [...lastGame.playerStats]
-      .sort((a, b) => b.points - a.points)
-      .slice(0, 3)
-      .map(stat => ({
-        ...stat,
-        player: players.find(p => p.id === stat.playerId)!
-      })),
-    [lastGame.playerStats]
-  );
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container mx-auto p-4">
+          <div className="text-center py-8">Lade Daten...</div>
+        </div>
+      </Layout>
+    );
+  }
+  
+  if (error) {
+    return (
+      <Layout>
+        <div className="container mx-auto p-4">
+          <div className="text-red-500 text-center py-8">
+            Fehler beim Laden der Daten: {error}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+  
+  if (!lastGame) {
+    return (
+      <Layout>
+        <div className="container mx-auto p-4">
+          <div className="text-center py-8">Keine Spieldaten verfügbar.</div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -48,26 +90,35 @@ const Home = () => {
           <Card className="border-primary/20">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center gap-4">
-                <div className="flex items-center justify-center gap-8 w-full">
-                  <div className="text-center flex-1">
-                    <div className="text-lg font-semibold">Pitbulls Neuenstadt</div>
-                    <div className="text-4xl font-bold text-primary mt-2">{teamPoints}</div>
+                <div className="text-2xl font-bold">Spieltag {lastGame.gameNumber}</div>
+                <div className="text-lg">{lastGame.date}</div>
+                <div className="flex items-center justify-center gap-8 my-4">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold">Pitbulls</div>
+                    <div className="text-5xl font-black text-primary">
+                      {lastGame.finalScore?.split('-')[0]?.trim() || '0'}
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-muted-foreground">:</div>
-                  <div className="text-center flex-1">
-                    <div className="text-lg font-semibold">{lastGame.opponent}</div>
-                    <div className="text-4xl font-bold text-muted-foreground mt-2">{opponentPoints}</div>
+                  <div className="text-2xl font-bold">vs</div>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold">{lastGame.awayTeam}</div>
+                    <div className="text-5xl font-black">
+                      {lastGame.finalScore?.split('-')[1]?.trim() || '0'}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Badge variant={lastGame.result === "win" ? "default" : "secondary"}>
-                    {lastGame.result === "win" ? "Sieg" : "Niederlage"}
-                  </Badge>
-                  <span>•</span>
-                  <span>{lastGame.location === "home" ? "Heimspiel" : "Auswärtsspiel"}</span>
-                  <span>•</span>
-                  <span>{new Date(lastGame.date).toLocaleDateString("de-DE")}</span>
+                <div className="text-xl font-bold">
+                  {lastGame.finalScore && 
+                    (parseInt(lastGame.finalScore.split('-')[0].trim()) > parseInt(lastGame.finalScore.split('-')[1].trim()) 
+                      ? '🏆 Sieg' 
+                      : '😞 Niederlage')}
                 </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate(`/games/${lastGame.gameNumber}`)}
+                >
+                  Spielbericht ansehen
+                </Button>
               </div>
             </CardContent>
           </Card>
