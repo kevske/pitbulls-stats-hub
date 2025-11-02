@@ -14,9 +14,15 @@ const generatePlayerId = (firstName: string): string => {
 const PlayerDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { player, gameLogs } = usePlayerStats(id);
+  
+  // Debug log to check player data
+  React.useEffect(() => {
+    console.log('Player data:', player);
+    console.log('Game logs:', gameLogs);
+  }, [player, gameLogs]);
   const navigate = useNavigate();
 
-  if (!player) {
+  if (!player || !player.firstName) {
     return (
       <Layout>
         <div className="container mx-auto p-4">
