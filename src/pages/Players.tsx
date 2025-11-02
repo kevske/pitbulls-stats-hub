@@ -41,7 +41,9 @@ const Players: React.FC = () => {
         <h1 className="text-3xl font-bold mb-6">Spielerstatistiken</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {players.map((player) => (
+          {players
+            .filter(player => player.firstName && player.firstName.trim() !== 'Gesamtsumme')
+            .map((player) => (
             <Card 
               key={generatePlayerId(player.firstName)} 
               className="cursor-pointer hover:shadow-lg transition-shadow"
@@ -59,7 +61,7 @@ const Players: React.FC = () => {
                 />
                 <div>
                   <CardTitle className="text-xl">
-                    {player.firstName} {player.lastName}
+                    {player.firstName} {player.lastName || ''}
                   </CardTitle>
                   <p className="text-sm text-gray-500">
                     {player.gamesPlayed} Spiele

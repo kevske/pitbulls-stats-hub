@@ -180,7 +180,7 @@ const Home = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/stats")}
+              onClick={() => navigate("/games")}
               className="text-muted-foreground hover:text-primary"
             >
               Alle Spiele →
