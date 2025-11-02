@@ -1,15 +1,15 @@
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { players, Player } from "@/data/players";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
 import PasswordProtection from "@/components/PasswordProtection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-const PlayerDetail = () => {
+const PlayerDetail: React.FC = () => {
   const { id } = useParams();
   const player = players.find((p) => p.id === id);
   const [isEditing, setIsEditing] = useState(false);
@@ -18,8 +18,13 @@ const PlayerDetail = () => {
 
   // Initialize form data when player is loaded or changes
   useEffect(() => {
-    if (player) {
-      setFormData({ ...player });
+    try {
+      if (player) {
+        setFormData({ ...player });
+      }
+    } catch (error) {
+      console.error('Error initializing form data:', error);
+      toast.error('Fehler beim Laden der Spielerdaten');
     }
   }, [player]);
 
