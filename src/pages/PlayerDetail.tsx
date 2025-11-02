@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { players } from "@/data/players";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PasswordProtection from "@/components/PasswordProtection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
