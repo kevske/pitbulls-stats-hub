@@ -14,10 +14,6 @@ const generatePlayerId = (firstName: string): string => {
 const PlayerDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { player, gameLogs } = usePlayerStats(id);
-  
-  // Log for debugging
-  console.log('Player ID from URL:', id);
-  console.log('Player data:', player);
   const navigate = useNavigate();
 
   if (!player) {
