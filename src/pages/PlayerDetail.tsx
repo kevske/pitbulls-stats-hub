@@ -37,15 +37,6 @@ const PlayerDetail: React.FC = () => {
   };
 
   const totalPoints = calculateTotal('points');
-  const totalTwoPointers = calculateTotal('twoPointers');
-  const totalThreePointers = calculateTotal('threePointers');
-  const totalFreeThrowsMade = calculateTotal('freeThrowsMade');
-  const totalFreeThrowAttempts = calculateTotal('freeThrowAttempts');
-  const totalFouls = calculateTotal('fouls');
-
-  const freeThrowPercentage = totalFreeThrowAttempts > 0 
-    ? `${Math.round((totalFreeThrowsMade / totalFreeThrowAttempts) * 100)}%`
-    : '0%';
 
   return (
     <Layout>
@@ -134,38 +125,5 @@ const StatCard = ({ label, value }: { label: string; value: string }) => (
     <div className="text-2xl font-bold">{value}</div>
   </div>
 );
-
-export default PlayerDetail;
-                    </div>
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <div className="text-3xl font-bold text-primary">{player.stats.points}</div>
-                      <div className="text-sm text-muted-foreground">Punkte</div>
-                    </div>
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <div className="text-3xl font-bold text-primary">{player.stats.assists}</div>
-                      <div className="text-sm text-muted-foreground">Assists</div>
-                    </div>
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <div className="text-3xl font-bold text-primary">{player.stats.rebounds}</div>
-                      <div className="text-sm text-muted-foreground">Rebounds</div>
-                    </div>
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <div className="text-3xl font-bold text-primary">{player.stats.steals}</div>
-                      <div className="text-sm text-muted-foreground">Steals</div>
-                    </div>
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <div className="text-3xl font-bold text-primary">{player.stats.blocks}</div>
-                      <div className="text-sm text-muted-foreground">Blocks</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </Layout>
-  );
-};
 
 export default PlayerDetail;
