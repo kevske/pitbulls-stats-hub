@@ -50,10 +50,11 @@ const Players: React.FC = () => {
               <CardHeader className="flex flex-row items-center space-x-4 p-4">
                 <img
                   src={player.imageUrl}
-                  alt={player.firstName}
+                  alt={`${player.firstName} ${player.lastName}`}
                   className="w-16 h-16 rounded-full object-cover"
                   onError={(e) => {
-                    e.currentTarget.src = '/placeholder-player.png';
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/pitbulls-stats-hub/placeholder-player.png';
                   }}
                 />
                 <div>

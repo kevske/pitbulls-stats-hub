@@ -68,17 +68,38 @@ const PlayerDetail: React.FC = () => {
                   alt={`${player.firstName} ${player.lastName}`}
                   className="w-full h-auto rounded-lg shadow-md"
                   onError={(e) => {
-                    e.currentTarget.src = '/placeholder-player.png';
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/pitbulls-stats-hub/placeholder-player.png';
                   }}
                 />
               </div>
               <div className="w-full md:w-2/3">
-                <h1 className="text-3xl font-bold mb-2">
-                  {player.firstName} {player.lastName}
-                </h1>
+                <div className="flex flex-col md:flex-row md:items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold">
+                      {player.firstName} {player.lastName}
+                    </h1>
+                    {(player.jerseyNumber || player.position) && (
+                      <p className="text-gray-600">
+                        {player.jerseyNumber && `#${player.jerseyNumber}`} {player.position}
+                      </p>
+                    )}
+                  </div>
+                  {player.age && (
+                    <div className="mt-2 md:mt-0 text-gray-600">
+                      Alter: {player.age}
+                    </div>
+                  )}
+                </div>
+
+                {player.bio && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <p className="italic">"{player.bio}"</p>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
-                  <StatCard label="Spiele" value={player.gamesPlayed.toString()} />
+                  <StatCard label="Minuten/Spiel" value={player.minutesPerGame} />
                   <StatCard label="Punkte/Spiel" value={player.pointsPerGame.toFixed(1)} />
                   <StatCard label="3-Punkte/Spiel" value={player.threePointersPerGame.toFixed(1)} />
                   <StatCard label="Freiwurfquote" value={player.freeThrowPercentage} />

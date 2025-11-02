@@ -54,18 +54,41 @@ async function fetchCSV<T>(url: string, transform: (data: any) => T[]): Promise<
 
 // Transformers
 function transformPlayerTotals(rows: any[]): PlayerStats[] {
-  return rows.map(row => ({
-    id: generatePlayerId(row.Vorname),
-    firstName: row.Vorname,
-    lastName: row.Nachname || '',
-    gamesPlayed: parseInt(row.Spiele) || 0,
-    minutesPerGame: row['Minuten pS'] || '00:00',
-    pointsPerGame: parseFloat((row['Punkte pS'] || '0').replace(',', '.')),
-    threePointersPerGame: parseFloat((row['3er pS'] || '0').replace(',', '.')),
-    freeThrowPercentage: row['FW-Quote'] || '0%',
-    foulsPerGame: parseFloat((row['Fouls pS'] || '0').replace(',', '.')),
-    imageUrl: `/players/${generatePlayerId(row.Vorname)}.jpg`
-  }));
+  return rows.map(row => {
+    const firstName = row.Vorname;
+    const lastName = row.Nachname || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    const playerId = generatePlayerId(firstName);
+    
+    // Base player data
+    const player: PlayerStats = {
+      id: playerId,
+      firstName,
+      lastName,
+      gamesPlayed: parseInt(row.Spiele) || 0,
+      minutesPerGame: row['Minuten pS'] || '00:00',
+      pointsPerGame: parseFloat((row['Punkte pS'] || '0').replace(',', '.')),
+      threePointersPerGame: parseFloat((row['3er pS'] || '0').replace(',', '.')),
+      freeThrowPercentage: row['FW-Quote'] || '0%',
+      foulsPerGame: parseFloat((row['Fouls pS'] || '0').replace(',', '.')),
+      imageUrl: `/pitbulls-stats-hub/players/${playerId}.jpg`,
+      // Default values for additional fields
+      jerseyNumber: 0,
+      position: '',
+      age: 0,
+      bio: ''
+    };
+
+    // Add Kevin Rassner's specific info
+    if (fullName.toLowerCase() === 'kevin rassner') {
+      player.jerseyNumber = 19;
+      player.position = 'Forward';
+      player.age = 37;
+      player.bio = 'Der Spieler für die, die sich nicht entscheiden wollen: Veteran moves oder lieber Explosivität? Guard, Forward oder Center? Offense oder Defense? Dummes Gelaber oder Lebensweisheit?';
+    }
+
+    return player;
+  });
 }
 
 function transformPlayerGameLog(rows: any[]): PlayerGameLog[] {
