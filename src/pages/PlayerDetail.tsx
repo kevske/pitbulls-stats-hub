@@ -2,24 +2,33 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePlayerStats } from '@/hooks/usePlayerStats';
 import Layout from '@/components/Layout';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
-// Generate player ID consistently with statsService.ts
-const generatePlayerId = (firstName: string): string => {
-  return firstName.toLowerCase().replace(/\s+/g, '-');
-};
+interface GameLog {
+  gameNumber: number;
+  minutesPlayed: string;
+  points: number;
+  threePointers: number;
+  freeThrowsMade: number;
+  freeThrowAttempts: number;
+  fouls: number;
+  [key: string]: string | number | undefined;
+}
+
+interface Player {
+  firstName: string;
+  lastName: string;
+  jerseyNumber?: string;
+  position?: string;
+  age?: number;
+  bio?: string;
+  imageUrl?: string;
+}
 
 const PlayerDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { player, gameLogs } = usePlayerStats(id);
-  
-  // Debug log to check player data
-  React.useEffect(() => {
-    console.log('Player data:', player);
-    console.log('Game logs:', gameLogs);
-  }, [player, gameLogs]);
+  const { player, gameLogs } = usePlayerStats(id) as { player: Player | null; gameLogs: GameLog[] };
   const navigate = useNavigate();
 
   if (!player || !player.firstName) {
@@ -43,117 +52,164 @@ const PlayerDetail: React.FC = () => {
     );
   }
 
-  const calculateTotal = (stat: keyof typeof gameLogs[0]) => {
-    return gameLogs.reduce((sum, log) => sum + (log[stat] as number), 0);
+  const calculateTotal = (stat: string): number => {
+    return gameLogs.reduce((sum, log) => {
+      const value = log[stat];
+      return sum + (typeof value === 'number' ? value : 0);
+    }, 0);
   };
 
+  // Calculate stats
+  const totalGames = gameLogs.length;
   const totalPoints = calculateTotal('points');
+  const totalThreePointers = calculateTotal('threePointers');
+  const totalFreeThrowsMade = calculateTotal('freeThrowsMade');
+  const totalFreeThrowAttempts = calculateTotal('freeThrowAttempts');
+  const totalFouls = calculateTotal('fouls');
+
+  // Calculate per game averages
+  const ppg = totalGames > 0 ? (totalPoints / totalGames).toFixed(1) : '0.0';
+  const threePointersPerGame = totalGames > 0 ? (totalThreePointers / totalGames).toFixed(1) : '0.0';
+  const freeThrowPercentage = totalFreeThrowAttempts > 0 
+    ? `${Math.round((totalFreeThrowsMade / totalFreeThrowAttempts) * 100)}%` 
+    : '0%';
+  const fpg = totalGames > 0 ? (totalFouls / totalGames).toFixed(1) : '0.0';
+
+  // Calculate total minutes played
+  const totalMinutes = gameLogs.reduce((sum, game) => {
+    if (!game.minutesPlayed) return sum;
+    try {
+      const [hours = 0, minutes = 0] = game.minutesPlayed.split(':').map(Number);
+      return sum + (hours * 60) + minutes;
+    } catch (e) {
+      return sum;
+    }
+  }, 0);
+  
+  const averageMinutes = totalGames > 0 ? (totalMinutes / totalGames / 60).toFixed(1) : '0.0';
 
   return (
     <Layout>
-      <div className="container mx-auto p-4">
+      <div className="container mx-auto p-4 max-w-4xl">
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)}
-          className="mb-6"
+          className="mb-6 px-0"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Zurück zur Übersicht
         </Button>
 
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="w-full md:w-1/3">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          {/* Player Header */}
+          <div className="bg-primary/10 p-6">
+            <div className="flex flex-col md:flex-row items-center">
+              <div className="w-32 h-32 md:w-40 md:h-40 bg-white rounded-full overflow-hidden border-4 border-white shadow-lg mb-4 md:mb-0 md:mr-8">
                 <img
-                  src={player.imageUrl || '/placeholder-player.png'}
+                  src={player.imageUrl || '/pitbulls-stats-hub/placeholder-player.png'}
                   alt={`${player.firstName} ${player.lastName}`}
-                  className="w-full h-auto rounded-lg shadow-md"
+                  className="w-full h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = '/pitbulls-stats-hub/placeholder-player.png';
                   }}
                 />
               </div>
-              <div className="w-full md:w-2/3">
-                <div className="flex flex-col md:flex-row md:items-center justify-between">
-                  <div>
-                    <h1 className="text-3xl font-bold">
-                      {player.firstName} {player.lastName}
-                    </h1>
-                    {(player.jerseyNumber || player.position) && (
-                      <p className="text-gray-600">
-                        {player.jerseyNumber && `#${player.jerseyNumber}`} {player.position}
-                      </p>
-                    )}
-                  </div>
+              <div className="text-center md:text-left">
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {player.firstName} <span className="text-primary">{player.lastName}</span>
+                </h1>
+                <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-2">
+                  {player.jerseyNumber && (
+                    <span className="text-gray-600">
+                      <span className="font-medium">#</span>{player.jerseyNumber}
+                    </span>
+                  )}
+                  {player.position && (
+                    <span className="text-gray-600">
+                      <span className="font-medium">Position:</span> {player.position}
+                    </span>
+                  )}
                   {player.age && (
-                    <div className="mt-2 md:mt-0 text-gray-600">
-                      Alter: {player.age}
-                    </div>
+                    <span className="text-gray-600">
+                      <span className="font-medium">Alter:</span> {player.age}
+                    </span>
                   )}
                 </div>
-
-                {player.bio && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <p className="italic">"{player.bio}"</p>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
-                  <StatCard label="Minuten/Spiel" value={player.minutesPerGame} />
-                  <StatCard label="Punkte/Spiel" value={player.pointsPerGame.toFixed(1)} />
-                  <StatCard label="3-Punkte/Spiel" value={player.threePointersPerGame.toFixed(1)} />
-                  <StatCard label="Freiwurfquote" value={player.freeThrowPercentage} />
-                  <StatCard label="Fouls/Spiel" value={player.foulsPerGame.toFixed(1)} />
-                  <StatCard label="Gesamtpunkte" value={totalPoints.toString()} />
-                </div>
               </div>
             </div>
+          </div>
 
-            <div className="mt-8">
-              <h2 className="text-xl font-semibold mb-4">Spielstatistiken</h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="py-2 px-4 border text-left">Spieltag</th>
-                      <th className="py-2 px-4 border">Min</th>
-                      <th className="py-2 px-4 border">Punkte</th>
-                      <th className="py-2 px-4 border">2P</th>
-                      <th className="py-2 px-4 border">3P</th>
-                      <th className="py-2 px-4 border">FT</th>
-                      <th className="py-2 px-4 border">Fouls</th>
+          {/* Player Bio */}
+          {player.bio && (
+            <div className="p-6 border-b">
+              <p className="text-gray-700 italic">"{player.bio}"</p>
+            </div>
+          )}
+          
+          {/* Stats Grid */}
+          <div className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Saisonstatistiken</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard label="Minuten/Spiel" value={averageMinutes} />
+              <StatCard label="Punkte/Spiel" value={ppg} />
+              <StatCard label="3-Punkte/Spiel" value={threePointersPerGame} />
+              <StatCard label="Freiwurfquote" value={freeThrowPercentage} />
+              <StatCard label="Fouls/Spiel" value={fpg} />
+            </div>
+          </div>
+
+          {/* Game Log */}
+          <div className="p-6 border-t">
+            <h3 className="text-lg font-semibold mb-4">Spielverlauf</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spiel</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Minuten</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Punkte</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">3P</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">FW</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fouls</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {gameLogs.map((game, index) => (
+                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        Spiel {game.gameNumber}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {game.minutesPlayed || '00:00'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {game.points || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {game.threePointers || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {game.freeThrowsMade || 0}/{game.freeThrowAttempts || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {game.fouls || 0}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {gameLogs.map((game) => (
-                      <tr key={game.gameNumber} className="hover:bg-gray-50">
-                        <td className="py-2 px-4 border">{game.gameNumber}</td>
-                        <td className="py-2 px-4 border text-center">{game.minutesPlayed}</td>
-                        <td className="py-2 px-4 border text-center font-medium">{game.points}</td>
-                        <td className="py-2 px-4 border text-center">{game.twoPointers}</td>
-                        <td className="py-2 px-4 border text-center">{game.threePointers}</td>
-                        <td className="py-2 px-4 border text-center">
-                          {game.freeThrowsMade}/{game.freeThrowAttempts}
-                        </td>
-                        <td className="py-2 px-4 border text-center">{game.fouls}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </Layout>
   );
 };
 
 const StatCard = ({ label, value }: { label: string; value: string }) => (
-  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-    <div className="text-sm text-gray-500">{label}</div>
+  <div className="bg-gray-50 p-4 rounded-lg text-center">
+    <div className="text-sm text-gray-500 mb-1">{label}</div>
     <div className="text-2xl font-bold">{value}</div>
   </div>
 );
