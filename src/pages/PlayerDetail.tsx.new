@@ -136,36 +136,3 @@ const StatCard = ({ label, value }: { label: string; value: string }) => (
 );
 
 export default PlayerDetail;
-                    </div>
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <div className="text-3xl font-bold text-primary">{player.stats.points}</div>
-                      <div className="text-sm text-muted-foreground">Punkte</div>
-                    </div>
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <div className="text-3xl font-bold text-primary">{player.stats.assists}</div>
-                      <div className="text-sm text-muted-foreground">Assists</div>
-                    </div>
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <div className="text-3xl font-bold text-primary">{player.stats.rebounds}</div>
-                      <div className="text-sm text-muted-foreground">Rebounds</div>
-                    </div>
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <div className="text-3xl font-bold text-primary">{player.stats.steals}</div>
-                      <div className="text-sm text-muted-foreground">Steals</div>
-                    </div>
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <div className="text-3xl font-bold text-primary">{player.stats.blocks}</div>
-                      <div className="text-sm text-muted-foreground">Blocks</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </Layout>
-  );
-};
-
-export default PlayerDetail;
