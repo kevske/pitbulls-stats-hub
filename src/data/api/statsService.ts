@@ -55,10 +55,13 @@ async function fetchCSV<T>(url: string, transform: (data: any) => T[]): Promise<
 // Transformers
 function transformPlayerTotals(rows: any[]): PlayerStats[] {
   return rows.map(row => {
-    const firstName = row.Vorname;
-    const lastName = row.Nachname || '';
+    const firstName = (row.Vorname || '').trim();
+    const lastName = (row.Nachname || '').trim();
     const fullName = `${firstName} ${lastName}`.trim();
-    const playerId = generatePlayerId(firstName);
+    const playerId = generatePlayerId(firstName, lastName);
+    
+    // Skip if no first name
+    if (!firstName) return null;
     
     // Base player data
     const player: PlayerStats = {
@@ -93,7 +96,7 @@ function transformPlayerTotals(rows: any[]): PlayerStats[] {
 
 function transformPlayerGameLog(rows: any[]): PlayerGameLog[] {
   return rows.map(row => ({
-    playerId: generatePlayerId(row.Vorname),
+    playerId: generatePlayerId(row.Vorname, row.Nachname),
     gameNumber: parseInt(row.Spieltag) || 0,
     minutesPlayed: row.Minuten || '00:00',
     points: parseInt(row.Punkte) || 0,
@@ -121,6 +124,7 @@ function transformGameData(rows: any[]): GameStats[] {
     .sort((a, b) => a.gameNumber - b.gameNumber);
 }
 
-function generatePlayerId(firstName: string): string {
-  return firstName.toLowerCase().replace(/\s+/g, '-');
-}
+const generatePlayerId = (firstName: string, lastName: string = ''): string => {
+  const name = `${firstName} ${lastName}`.trim().toLowerCase();
+  return name.replace(/\s+/g, '-');
+};

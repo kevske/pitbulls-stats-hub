@@ -68,10 +68,10 @@ const Games: React.FC = () => {
                     {game.finalScore ? (
                       <>
                         <div className="text-3xl">
-                          {game.finalScore.split('-')[0]?.trim() || '0'} : {game.finalScore.split('-')[1]?.trim() || '0'}
+                          {game.finalScore.split('-')[0]?.split(':')[0]?.trim() || '0'} : {game.finalScore.split('-')[1]?.split(':')[0]?.trim() || '0'}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {game.finalScore}
+                          {game.finalScore.split(':').slice(0, 2).join(':')}
                         </div>
                       </>
                     ) : (

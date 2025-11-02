@@ -23,16 +23,27 @@ const Home = () => {
     return [home || '0', away || '0'];
   }, [lastGame]);
   
-  // Determine if Pitbulls are home or away
-  const isHomeGame = useMemo(() => {
-    if (!lastGame) return true;
-    return lastGame.homeTeam?.toLowerCase().includes('pitbulls') || 
-           lastGame.awayTeam?.toLowerCase().includes('pitbulls') === false;
+  // Determine if Pitbulls are home or away and get team names
+  const { isHomeGame, pitbullsName, opponentName } = useMemo(() => {
+    if (!lastGame) return { isHomeGame: true, pitbullsName: 'Pitbulls', opponentName: 'Gegner' };
+    
+    const isHome = lastGame.homeTeam?.toLowerCase().includes('pitbulls') || 
+                  lastGame.awayTeam?.toLowerCase().includes('pitbulls') === false;
+    
+    const pitbulls = isHome ? 'PKF Titans Stuttgart 2' : 'TSV Neuenstadt';
+    const opponent = isHome 
+      ? (lastGame.awayTeam || 'Gegner')
+      : (lastGame.homeTeam || 'Gegner');
+    
+    return {
+      isHomeGame: isHome,
+      pitbullsName: pitbulls,
+      opponentName: opponent
+    };
   }, [lastGame]);
   
   const pitbullsScore = isHomeGame ? homeScore : awayScore;
   const opponentScore = isHomeGame ? awayScore : homeScore;
-  const opponentName = isHomeGame ? (lastGame?.awayTeam || 'Gegner') : (lastGame?.homeTeam || 'Gegner');
   
   // Get top 3 performers from all games (sorted by points per game)
   const topPerformers = useMemo(() => {
@@ -142,14 +153,14 @@ const Home = () => {
                 <div className="text-lg">{lastGame.date}</div>
                 <div className="flex items-center justify-center gap-8 my-4">
                   <div className="text-center">
-                    <div className="text-4xl font-bold">Pitbulls</div>
+                    <div className="text-2xl font-bold">{pitbullsName}</div>
                     <div className="text-5xl font-black text-primary">
                       {pitbullsScore}
                     </div>
                   </div>
                   <div className="text-2xl font-bold">vs</div>
                   <div className="text-center">
-                    <div className="text-4xl font-bold">{opponentName}</div>
+                    <div className="text-2xl font-bold">{opponentName}</div>
                     <div className="text-5xl font-black">
                       {opponentScore}
                     </div>
