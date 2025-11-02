@@ -5,8 +5,9 @@ import { useStats } from '@/contexts/StatsContext';
 import Layout from '@/components/Layout';
 
 // Generate player ID consistently with statsService.ts
-const generatePlayerId = (firstName: string): string => {
-  return firstName.toLowerCase().replace(/\s+/g, '-');
+const generatePlayerId = (firstName: string, lastName: string = ''): string => {
+  const name = `${firstName} ${lastName}`.trim().toLowerCase();
+  return name.replace(/\s+/g, '-');
 };
 
 const Players: React.FC = () => {
@@ -45,9 +46,9 @@ const Players: React.FC = () => {
             .filter(player => player.firstName && player.firstName.trim() !== 'Gesamtsumme')
             .map((player) => (
             <Card 
-              key={generatePlayerId(player.firstName)} 
+              key={generatePlayerId(player.firstName, player.lastName)} 
               className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => navigate(`/players/${generatePlayerId(player.firstName)}`)}
+              onClick={() => navigate(`/players/${generatePlayerId(player.firstName, player.lastName)}`)}
             >
               <CardHeader className="flex flex-row items-center space-x-4 p-4">
                 <img
