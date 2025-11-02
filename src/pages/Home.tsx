@@ -18,10 +18,21 @@ const Home = () => {
   
   // Parse the final score into home and away scores
   const [homeScore, awayScore] = useMemo(() => {
-    if (!lastGame?.finalScore) return [0, 0];
-    const [home, away] = lastGame.finalScore.split('-').map(Number);
-    return [isNaN(home) ? 0 : home, isNaN(away) ? 0 : away];
+    if (!lastGame?.finalScore) return ['0', '0'];
+    const [home, away] = lastGame.finalScore.split('-').map(s => s.trim());
+    return [home || '0', away || '0'];
   }, [lastGame]);
+  
+  // Determine if Pitbulls are home or away
+  const isHomeGame = useMemo(() => {
+    if (!lastGame) return true;
+    return lastGame.homeTeam?.toLowerCase().includes('pitbulls') || 
+           lastGame.awayTeam?.toLowerCase().includes('pitbulls') === false;
+  }, [lastGame]);
+  
+  const pitbullsScore = isHomeGame ? homeScore : awayScore;
+  const opponentScore = isHomeGame ? awayScore : homeScore;
+  const opponentName = isHomeGame ? (lastGame?.awayTeam || 'Gegner') : (lastGame?.homeTeam || 'Gegner');
   
   // Get top 3 performers from all games (sorted by points per game)
   const topPerformers = useMemo(() => {
@@ -29,19 +40,25 @@ const Home = () => {
     
     // Calculate stats for each player
     const playerStats = players.map(player => {
+      // Skip non-player entries
+      if (player.firstName === 'Gesamtsumme' || !player.firstName) return null;
+      
       const playerGames = gameLogs.filter(log => log.playerId === player.id);
-      const totalPoints = playerGames.reduce((sum, game) => sum + game.points, 0);
+      const totalPoints = playerGames.reduce((sum, game) => sum + (game.points || 0), 0);
       const gamesPlayed = playerGames.length;
       
-      // Calculate total minutes played
+      // Calculate total minutes played (convert from HH:MM:SS to minutes)
       const totalMinutes = playerGames.reduce((sum, game) => {
-        // Convert MM:SS to minutes
         if (!game.minutesPlayed) return sum;
-        const [minutes, seconds = 0] = game.minutesPlayed.split(':').map(Number);
-        return sum + minutes + (seconds > 0 ? 1 : 0); // Round up partial minutes
+        try {
+          const [hours = 0, minutes = 0, seconds = 0] = game.minutesPlayed.split(':').map(Number);
+          return sum + (hours * 60) + minutes + (seconds > 0 ? 1 : 0);
+        } catch (e) {
+          return sum;
+        }
       }, 0);
       
-      const averageMinutes = gamesPlayed > 0 ? (totalMinutes / gamesPlayed).toFixed(1) : 0;
+      const averageMinutes = gamesPlayed > 0 ? (totalMinutes / gamesPlayed).toFixed(1) : '0.0';
       
       // Calculate other stats
       const totalThreePointers = playerGames.reduce((sum, game) => sum + (game.threePointers || 0), 0);
@@ -62,7 +79,7 @@ const Home = () => {
         totalPoints,
         gamesPlayed
       };
-    });
+    }).filter(Boolean); // Remove null entries
     
     // Sort by points per game and get top 3
     return [...playerStats]
@@ -127,20 +144,20 @@ const Home = () => {
                   <div className="text-center">
                     <div className="text-4xl font-bold">Pitbulls</div>
                     <div className="text-5xl font-black text-primary">
-                      {homeScore}
+                      {pitbullsScore}
                     </div>
                   </div>
                   <div className="text-2xl font-bold">vs</div>
                   <div className="text-center">
-                    <div className="text-4xl font-bold">{lastGame.awayTeam || 'Gegner'}</div>
+                    <div className="text-4xl font-bold">{opponentName}</div>
                     <div className="text-5xl font-black">
-                      {awayScore}
+                      {opponentScore}
                     </div>
                   </div>
                 </div>
                 {lastGame.finalScore && lastGame.finalScore.includes('-') ? (
                   <div className="text-xl font-bold">
-                    {homeScore > awayScore ? '🏆 Sieg' : '😞 Niederlage'}
+                    {Number(pitbullsScore) > Number(opponentScore) ? '🏆 Sieg' : '😞 Niederlage'}
                     <div className="text-sm font-normal text-gray-500 mt-1">
                       {lastGame.finalScore}
                     </div>
@@ -185,10 +202,14 @@ const Home = () => {
                   <div className="text-center space-y-3">
                     <div className="text-3xl font-bold text-primary">#{index + 1}</div>
                     <div className="text-center">
-                      <div className="text-lg font-semibold">{performer.firstName} {performer.lastName}</div>
-                      <div className="text-sm text-muted-foreground">
-                        ⏱️ {performer.averageMinutes} Min/Spiel
+                      <div className="text-lg font-semibold">
+                        {performer.firstName} {performer.lastName || ''}
                       </div>
+                      {performer.averageMinutes !== '0.0' && (
+                        <div className="text-sm text-muted-foreground">
+                          ⏱️ {performer.averageMinutes} Min/Spiel
+                        </div>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm w-full">
                       <div className="bg-gray-50 p-2 rounded">

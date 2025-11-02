@@ -61,14 +61,25 @@ const Games: React.FC = () => {
               <CardContent>
                 <div className="grid grid-cols-3 items-center">
                   <div className="text-right">
-                    <div className="font-medium">{game.homeTeam}</div>
+                    <div className="font-medium">{game.homeTeam || 'Pitbulls'}</div>
                     <div className="text-sm text-gray-500">Heim</div>
                   </div>
-                  <div className="text-2xl font-bold mx-4">
-                    {game.finalScore}
+                  <div className="text-2xl font-bold mx-4 text-center">
+                    {game.finalScore ? (
+                      <>
+                        <div className="text-3xl">
+                          {game.finalScore.split('-')[0]?.trim() || '0'} : {game.finalScore.split('-')[1]?.trim() || '0'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {game.finalScore}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-gray-400">vs</div>
+                    )}
                   </div>
                   <div>
-                    <div className="font-medium">{game.awayTeam}</div>
+                    <div className="font-medium">{game.awayTeam || 'Gegner'}</div>
                     <div className="text-sm text-gray-500">Gast</div>
                   </div>
                 </div>
