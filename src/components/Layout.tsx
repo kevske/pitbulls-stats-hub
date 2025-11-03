@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import Sidebar from "./Sidebar";
 
 interface LayoutProps {
   children: ReactNode;
@@ -7,33 +8,27 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Decorative X marks top-left */}
-      <div className="fixed top-40 left-8 z-0 flex flex-col gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={`top-${i}`} className="text-primary/30 text-5xl font-bold select-none">×</div>
-        ))}
-      </div>
-
-      {/* Decorative X marks bottom-right */}
-      <div className="fixed bottom-8 right-8 z-0 flex flex-col gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={`bottom-${i}`} className="text-primary/50 text-5xl font-bold select-none">×</div>
-        ))}
-      </div>
-
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
-        <div className="container mx-auto px-4 md:px-8 lg:px-20 py-6">
-          <h1 className="text-4xl md:text-5xl font-bold text-primary text-center md:text-left">
-            Pitbulls Neuenstadt
-          </h1>
+      <Sidebar />
+      
+      <div className="transition-all duration-300 md:pl-64">
+        {/* Decorative X marks top-right */}
+        <div className="fixed top-8 right-8 z-0 flex flex-col gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={`top-${i}`} className="text-primary/30 text-5xl font-bold select-none">×</div>
+          ))}
         </div>
-      </header>
 
-      {/* Main content */}
-      <main className="pt-28 pb-20 px-4">
-        {children}
-      </main>
+        {/* Decorative X marks bottom-right */}
+        <div className="fixed bottom-8 right-8 z-0 flex flex-col gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={`bottom-${i}`} className="text-primary/50 text-5xl font-bold select-none">×</div>
+          ))}
+        </div>
+
+        <main className="p-6 pt-20 md:pt-6">
+          {children}
+        </main>
+      </div>
 
       {/* Footer with Instagram link */}
       <footer className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t border-border py-3 z-30">
