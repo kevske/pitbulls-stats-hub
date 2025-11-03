@@ -6,12 +6,16 @@ import { Star, TrendingUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { games } from "@/data/games";
 import { calculateTotals, calculateAverages } from "@/utils/statsCalculations";
+import { PlayerGameLog } from "@/types/stats";
+import { PlayerTrendIndicator } from "./PlayerTrendIndicator";
 
 interface PlayerCardProps {
   player: Player;
+  gameLogs?: PlayerGameLog[];
+  currentGameNumber?: number;
 }
 
-const PlayerCard = ({ player }: PlayerCardProps) => {
+const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCardProps) => {
   const navigate = useNavigate();
 
   const totals = calculateTotals(games, player.id);
@@ -78,9 +82,19 @@ const PlayerCard = ({ player }: PlayerCardProps) => {
             {/* Header with Name and Status */}
             <div className="flex justify-between items-start mb-3">
               <div>
-                <h3 className="text-2xl font-bold text-foreground mb-1">
-                  {player.firstName} {player.lastName}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-2xl font-bold text-foreground">
+                    {player.firstName} {player.lastName}
+                  </h3>
+                  {currentGameNumber > 1 && gameLogs.length > 1 && (
+                    <PlayerTrendIndicator 
+                      playerId={player.id}
+                      currentGameNumber={currentGameNumber}
+                      allGameLogs={gameLogs}
+                      className="-mt-1"
+                    />
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">{player.team}</p>
               </div>
               <Badge 
