@@ -137,17 +137,24 @@ function transformPlayerTotals(rows: any[], bioMap: Map<string, PlayerBio>): Pla
 }
 
 function transformPlayerGameLog(rows: any[]): PlayerGameLog[] {
-  return rows.map(row => ({
-    playerId: generatePlayerId(row.Vorname, row.Nachname),
-    gameNumber: parseInt(row.Spieltag) || 0,
-    minutesPlayed: typeof row.Minuten === 'number' ? row.Minuten : parseFloat((row.Minuten || '0').replace(',', '.')),
-    points: parseInt(row.Punkte) || 0,
-    twoPointers: parseInt(row['2er']) || 0,
-    threePointers: parseInt(row['3er']) || 0,
-    freeThrowsMade: parseInt(row.FWTreffer) || 0,
-    freeThrowAttempts: parseInt(row.FWVersuche) || 0,
-    fouls: parseInt(row.Fouls) || 0
-  }));
+  return rows.map(row => {
+    // Log the row keys for debugging
+    if (Object.keys(row).length > 0 && !Object.prototype.hasOwnProperty.call(row, 'Punkte')) {
+      console.log('Available columns:', Object.keys(row));
+    }
+    
+    return {
+      playerId: generatePlayerId(row.Vorname, row.Nachname),
+      gameNumber: parseInt(row['Spiel-Nr.']) || 0,
+      minutesPlayed: typeof row.Minuten === 'number' ? row.Minuten : parseFloat((row.Minuten || '0').toString().replace(',', '.')),
+      points: parseInt(row.Punkte) || 0,
+      twoPointers: parseInt(row['2er']) || 0,
+      threePointers: parseInt(row['3er']) || 0,
+      freeThrowsMade: parseInt(row['FTM']) || 0,
+      freeThrowAttempts: parseInt(row['FTA']) || 0,
+      fouls: parseInt(row.Fouls) || 0
+    };
+  });
 }
 
 function transformGameData(rows: any[]): GameStats[] {
