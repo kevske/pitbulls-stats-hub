@@ -100,7 +100,7 @@ const Home = () => {
         pointsPerGame: gamesPlayed > 0 ? totalPoints / gamesPlayed : 0,
         threePointersPerGame,
         freeThrowPercentage,
-        averageMinutes: Number(averageMinutes).toFixed(1),
+        averageMinutes: averageMinutes,
         totalPoints,
         gamesPlayed
       };
@@ -224,7 +224,7 @@ const Home = () => {
                       </div>
                       {performer.averageMinutes > 0 && (
                         <div className="text-sm text-muted-foreground">
-                          ⏱️ {Number(performer.averageMinutes).toFixed(1)} Min/Spiel
+                          ⏱️ {performer.averageMinutes.toFixed(1)} Min/Spiel
                         </div>
                       )}
                     </div>
