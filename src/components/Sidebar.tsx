@@ -30,26 +30,21 @@ const Sidebar = () => {
     { to: '/upload-game', icon: Upload, label: 'Spiel hochladen' },
   ];
 
-  // Always show menu button on mobile, hide on desktop when sidebar is open
-  const showMenuButton = isMobile || !isOpen;
-
   return (
     <>
-      {/* Menu button - always visible on mobile, only when closed on desktop */}
+      {/* Menu button - always visible, toggles between burger and X */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed z-50 top-4 left-4 transition-opacity duration-300 ${
-          showMenuButton ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+        className="fixed z-50 top-4 left-4 p-2"
         aria-label={isOpen ? 'Menü schließen' : 'Menü öffnen'}
       >
         {isOpen ? (
-          <X className="w-8 h-8 text-primary/50 hover:text-primary/70 transition-colors" />
+          <X className="w-6 h-6 text-primary/50 hover:text-primary/70 transition-colors" />
         ) : (
           <div className="space-y-1.5">
-            <span className="block w-8 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
-            <span className="block w-8 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
-            <span className="block w-8 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
+            <span className="block w-6 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
+            <span className="block w-6 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
+            <span className="block w-6 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
           </div>
         )}
       </button>
