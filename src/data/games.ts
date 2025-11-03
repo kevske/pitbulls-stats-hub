@@ -1,11 +1,12 @@
 export interface GamePlayerStats {
   playerId: string;
   points: number;
-  assists: number;
-  rebounds: number;
-  steals: number;
-  blocks: number;
-  minutes?: number;
+  twoPointers: number;
+  threePointers: number;
+  freeThrowsMade: number;
+  freeThrowAttempts: number;
+  fouls: number;
+  minutesPlayed: string;
 }
 
 export interface Game {
@@ -25,12 +26,12 @@ export const games: Game[] = [
     location: "home",
     result: "win",
     playerStats: [
-      { playerId: "1", points: 24, assists: 5, rebounds: 8, steals: 3, blocks: 1, minutes: 32 },
-      { playerId: "2", points: 18, assists: 12, rebounds: 4, steals: 2, blocks: 0, minutes: 35 },
-      { playerId: "3", points: 15, assists: 3, rebounds: 11, steals: 1, blocks: 4, minutes: 30 },
-      { playerId: "4", points: 12, assists: 7, rebounds: 3, steals: 4, blocks: 0, minutes: 28 },
-      { playerId: "5", points: 8, assists: 2, rebounds: 6, steals: 2, blocks: 2, minutes: 25 },
-      { playerId: "6", points: 6, assists: 4, rebounds: 2, steals: 1, blocks: 0, minutes: 20 },
+      { playerId: "1", points: 24, twoPointers: 8, threePointers: 2, freeThrowsMade: 2, freeThrowAttempts: 4, fouls: 2, minutesPlayed: "32:00" },
+      { playerId: "2", points: 18, twoPointers: 5, threePointers: 2, freeThrowsMade: 2, freeThrowAttempts: 2, fouls: 1, minutesPlayed: "35:00" },
+      { playerId: "3", points: 15, twoPointers: 4, threePointers: 2, freeThrowsMade: 1, freeThrowAttempts: 2, fouls: 3, minutesPlayed: "30:00" },
+      { playerId: "4", points: 12, twoPointers: 4, threePointers: 1, freeThrowsMade: 1, freeThrowAttempts: 2, fouls: 2, minutesPlayed: "28:00" },
+      { playerId: "5", points: 8, twoPointers: 4, threePointers: 0, freeThrowsMade: 0, freeThrowAttempts: 0, fouls: 4, minutesPlayed: "25:00" },
+      { playerId: "6", points: 6, twoPointers: 3, threePointers: 0, freeThrowsMade: 0, freeThrowAttempts: 0, fouls: 1, minutesPlayed: "20:00" },
     ],
   },
   {
@@ -40,12 +41,12 @@ export const games: Game[] = [
     location: "away",
     result: "loss",
     playerStats: [
-      { playerId: "1", points: 19, assists: 4, rebounds: 7, steals: 2, blocks: 0, minutes: 30 },
-      { playerId: "2", points: 15, assists: 9, rebounds: 3, steals: 1, blocks: 1, minutes: 32 },
-      { playerId: "3", points: 13, assists: 2, rebounds: 9, steals: 0, blocks: 3, minutes: 28 },
-      { playerId: "4", points: 10, assists: 5, rebounds: 2, steals: 3, blocks: 0, minutes: 26 },
-      { playerId: "5", points: 7, assists: 1, rebounds: 5, steals: 1, blocks: 1, minutes: 22 },
-      { playerId: "6", points: 4, assists: 3, rebounds: 1, steals: 0, blocks: 0, minutes: 18 },
+      { playerId: "1", points: 19, twoPointers: 6, threePointers: 2, freeThrowsMade: 1, freeThrowAttempts: 2, fouls: 1, minutesPlayed: "30:00" },
+      { playerId: "2", points: 15, twoPointers: 4, threePointers: 1, freeThrowsMade: 4, freeThrowAttempts: 4, fouls: 2, minutesPlayed: "32:00" },
+      { playerId: "3", points: 13, twoPointers: 4, threePointers: 1, freeThrowsMade: 2, freeThrowAttempts: 2, fouls: 3, minutesPlayed: "28:00" },
+      { playerId: "4", points: 10, twoPointers: 4, threePointers: 0, freeThrowsMade: 2, freeThrowAttempts: 4, fouls: 2, minutesPlayed: "26:00" },
+      { playerId: "5", points: 7, twoPointers: 2, threePointers: 1, freeThrowsMade: 0, freeThrowAttempts: 0, fouls: 4, minutesPlayed: "22:00" },
+      { playerId: "6", points: 4, twoPointers: 2, threePointers: 0, freeThrowsMade: 0, freeThrowAttempts: 0, fouls: 1, minutesPlayed: "18:00" },
     ],
   },
   {
@@ -55,12 +56,12 @@ export const games: Game[] = [
     location: "home",
     result: "win",
     playerStats: [
-      { playerId: "1", points: 28, assists: 6, rebounds: 9, steals: 4, blocks: 2, minutes: 34 },
-      { playerId: "2", points: 20, assists: 11, rebounds: 5, steals: 2, blocks: 0, minutes: 36 },
-      { playerId: "3", points: 16, assists: 4, rebounds: 12, steals: 2, blocks: 5, minutes: 32 },
-      { playerId: "4", points: 14, assists: 8, rebounds: 4, steals: 5, blocks: 1, minutes: 30 },
-      { playerId: "5", points: 9, assists: 3, rebounds: 7, steals: 3, blocks: 3, minutes: 27 },
-      { playerId: "6", points: 7, assists: 5, rebounds: 3, steals: 2, blocks: 1, minutes: 22 },
+      { playerId: "1", points: 28, twoPointers: 9, threePointers: 2, freeThrowsMade: 4, freeThrowAttempts: 4, fouls: 1, minutesPlayed: "34:00" },
+      { playerId: "2", points: 20, twoPointers: 5, threePointers: 2, freeThrowsMade: 4, freeThrowAttempts: 4, fouls: 2, minutesPlayed: "36:00" },
+      { playerId: "3", points: 16, twoPointers: 5, threePointers: 1, freeThrowsMade: 3, freeThrowAttempts: 4, fouls: 3, minutesPlayed: "32:00" },
+      { playerId: "4", points: 14, twoPointers: 5, threePointers: 1, freeThrowsMade: 1, freeThrowAttempts: 2, fouls: 2, minutesPlayed: "30:00" },
+      { playerId: "5", points: 9, twoPointers: 3, threePointers: 1, freeThrowsMade: 0, freeThrowAttempts: 0, fouls: 4, minutesPlayed: "27:00" },
+      { playerId: "6", points: 7, twoPointers: 2, threePointers: 1, freeThrowsMade: 0, freeThrowAttempts: 0, fouls: 1, minutesPlayed: "22:00" },
     ],
   },
   {
@@ -70,12 +71,12 @@ export const games: Game[] = [
     location: "away",
     result: "win",
     playerStats: [
-      { playerId: "1", points: 22, assists: 5, rebounds: 8, steals: 3, blocks: 1, minutes: 31 },
-      { playerId: "2", points: 17, assists: 10, rebounds: 4, steals: 1, blocks: 0, minutes: 33 },
-      { playerId: "3", points: 14, assists: 3, rebounds: 10, steals: 1, blocks: 4, minutes: 29 },
-      { playerId: "4", points: 11, assists: 6, rebounds: 3, steals: 4, blocks: 0, minutes: 27 },
-      { playerId: "5", points: 8, assists: 2, rebounds: 6, steals: 2, blocks: 2, minutes: 24 },
-      { playerId: "6", points: 5, assists: 4, rebounds: 2, steals: 1, blocks: 0, minutes: 19 },
+      { playerId: "1", points: 22, twoPointers: 7, threePointers: 2, freeThrowsMade: 2, freeThrowAttempts: 2, fouls: 1, minutesPlayed: "31:00" },
+      { playerId: "2", points: 17, twoPointers: 4, threePointers: 2, freeThrowsMade: 3, freeThrowAttempts: 4, fouls: 2, minutesPlayed: "33:00" },
+      { playerId: "3", points: 14, twoPointers: 5, threePointers: 1, freeThrowsMade: 1, freeThrowAttempts: 2, fouls: 3, minutesPlayed: "29:00" },
+      { playerId: "4", points: 11, twoPointers: 4, threePointers: 1, freeThrowsMade: 0, freeThrowAttempts: 0, fouls: 2, minutesPlayed: "27:00" },
+      { playerId: "5", points: 8, twoPointers: 4, threePointers: 0, freeThrowsMade: 0, freeThrowAttempts: 0, fouls: 4, minutesPlayed: "24:00" },
+      { playerId: "6", points: 5, twoPointers: 2, threePointers: 0, freeThrowsMade: 1, freeThrowAttempts: 2, fouls: 1, minutesPlayed: "19:00" },
     ],
   },
 ];
