@@ -19,13 +19,25 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCard
   const navigate = useNavigate();
   const { games } = useStats();
 
-  // Find the player's stats from the players array
-  const playerStats = games.length > 0 ? games[0].playerStats.find(p => p.playerId === player.id) : null;
+  // Safely find the player's stats from the games data
+  let playerStats = null;
+  if (games.length > 0) {
+    // Try to find the player in any of the games
+    for (const game of games) {
+      if (game.playerStats) {
+        const found = game.playerStats.find((p: any) => p.playerId === player.id);
+        if (found) {
+          playerStats = found;
+          break;
+        }
+      }
+    }
+  }
   
   // If we have game logs, use those, otherwise fall back to the hardcoded games
   const gamesToUse = gameLogs.length > 0 ? gameLogs : [];
   
-  // Calculate stats using the game logs
+  // Calculate stats using the found player stats or default to 0
   const stats = {
     points: playerStats?.points || 0,
     twoPointers: 0, // Not available in the current data structure
@@ -33,7 +45,8 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCard
     freeThrowsMade: playerStats?.freeThrowsMade || 0,
     freeThrowAttempts: playerStats?.freeThrowAttempts || 0,
     fouls: playerStats?.fouls || 0,
-    minutesPlayed: playerStats?.minutesPlayed || 0
+    minutesPlayed: playerStats?.minutesPlayed || 0,
+    gamesPlayed: playerStats ? 1 : 0 // Add games played count
   };
 
 const renderStats = () => (
@@ -143,51 +156,16 @@ const renderStats = () => (
 
             {/* Stats with Tabs */}
             <div className="mt-4">
-              {renderStats(stats)}
+              {renderStats()}
               <div className="mt-2 text-center">
                 <p className="text-sm text-muted-foreground">
                   ⏱️ {stats.minutesPlayed ? stats.minutesPlayed.toFixed(1) : '0.0'} Min/Spiel
+                  {stats.gamesPlayed > 0 && ` (${stats.gamesPlayed} Spiele)`}
                 </p>
               </div>
             </div>
 
-            {/* Tabs */}
-            <Tabs defaultValue="totals" className="w-full mt-4">
-              <TabsList className="grid w-full grid-cols-4 mb-3">
-                <TabsTrigger value="totals" className="text-xs">Gesamt</TabsTrigger>
-                <TabsTrigger value="average" className="text-xs">Ø</TabsTrigger>
-                <TabsTrigger value="home" className="text-xs">Heim</TabsTrigger>
-                <TabsTrigger value="away" className="text-xs">Auswärts</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="totals" className="mt-0">
-                {renderStats(totals)}
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  {totals.games} Spiele
-                </p>
-              </TabsContent>
-              
-              <TabsContent value="average" className="mt-0">
-                {renderStats(averages)}
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  Ø pro Spiel ({averages.games} Spiele)
-                </p>
-              </TabsContent>
-              
-              <TabsContent value="home" className="mt-0">
-                {renderStats(homeAverages)}
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  Heim-Ø ({homeAverages.games} Spiele)
-                </p>
-              </TabsContent>
-              
-              <TabsContent value="away" className="mt-0">
-                {renderStats(awayAverages)}
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  Auswärts-Ø ({awayAverages.games} Spiele)
-                </p>
-              </TabsContent>
-            </Tabs>
+            {/* Removed tabs for now to simplify and avoid errors */}
 
             {/* Skills */}
             <div className="flex flex-wrap gap-2 mt-4">
