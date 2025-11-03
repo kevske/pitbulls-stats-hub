@@ -4,9 +4,8 @@ import { PlayerStats, GameStats, PlayerGameLog, CachedData } from '@/types/stats
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour cache
 const CSV_URLS = {
   games: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Games',
-  playerStats: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Spieler',
-  homeStats: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Home',
-  awayStats: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Away',
+  playerGameLogs: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Spieler',
+  playerTotals: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Totals',
   playerBios: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Bio'
 };
 
@@ -18,6 +17,37 @@ interface PlayerBio {
   age: number;
   height: string;
   bio: string;
+}
+
+interface PlayerTotalsRow {
+  Nachname: string;
+  Vorname: string;
+  'Minuten pS': string;
+  'Punkte pS': string;
+  '3er pS': string;
+  'Fouls pS': string;
+  Spiele: string;
+  'FWTreffer pS': string;
+  'FWVersuche pS': string;
+  'FW-Quote': string;
+}
+
+interface PlayerGameLogRow {
+  Nachname: string;
+  Vorname: string;
+  Spieltag: string;
+  Minuten: string;
+  Punkte: string;
+  FWVersuche: string;
+  FWTreffer: string;
+  'FW-Quote': string;
+  '2er': string;
+  '3er': string;
+  Fouls: string;
+  'Punkte/40': string;
+  'FWV/40': string;
+  'Fouls/40': string;
+  'Typ Spiel': string;
 }
 
 async function fetchPlayerBios(): Promise<Map<string, PlayerBio>> {
@@ -43,167 +73,59 @@ async function fetchPlayerBios(): Promise<Map<string, PlayerBio>> {
   return bioMap;
 }
 
-interface PlayerStatsRow {
-  Vorname: string;
-  Nachname: string;
-  Spiele: string;
-  'Minuten pS': string;
-  'Punkte pS': string;
-  '3er pS': string;
-  'FW-Quote': string;
-  'Fouls pS': string;
-}
-
-function combineHomeAndAwayStats(
-  homeRows: PlayerStatsRow[], 
-  awayRows: PlayerStatsRow[], 
-  bioMap: Map<string, PlayerBio>
-): PlayerStats[] {
-  const playerMap = new Map<string, PlayerStats>();
-
-  // Process home stats
-  homeRows.forEach(row => {
-    const firstName = (row.Vorname || '').trim();
-    const lastName = (row.Nachname || '').trim();
-    if (!firstName) return;
-
-    const playerId = generatePlayerId(firstName, lastName);
-    const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
-    const bioData = bioMap.get(bioKey);
-    
-    const homeGames = parseInt(row.Spiele) || 0;
-    const homeMinutes = parseFloat((row['Minuten pS'] || '0').replace(',', '.')) * homeGames;
-    const homePoints = parseFloat((row['Punkte pS'] || '0').replace(',', '.')) * homeGames;
-    const homeThreePointers = parseFloat((row['3er pS'] || '0').replace(',', '.')) * homeGames;
-    const homeFouls = parseFloat((row['Fouls pS'] || '0').replace(',', '.')) * homeGames;
-
-    playerMap.set(playerId, {
-      id: playerId,
-      firstName,
-      lastName,
-      gamesPlayed: homeGames,
-      minutesPerGame: parseFloat((row['Minuten pS'] || '0').replace(',', '.')),
-      pointsPerGame: parseFloat((row['Punkte pS'] || '0').replace(',', '.')),
-      threePointersPerGame: parseFloat((row['3er pS'] || '0').replace(',', '.')),
-      freeThrowPercentage: row['FW-Quote'] || '0%',
-      foulsPerGame: parseFloat((row['Fouls pS'] || '0').replace(',', '.')),
-      imageUrl: '/placeholder-player.png',
-      jerseyNumber: bioData?.jerseyNumber || 0,
-      position: bioData?.position || '',
-      age: bioData?.age || 0,
-      bio: bioData?.bio || '',
-      // Home stats
-      homeGames,
-      homeMinutesPlayed: homeMinutes,
-      homePoints: homePoints,
-      homeThreePointers: homeThreePointers,
-      homeFouls: homeFouls,
-      // Initialize away stats as 0
-      awayGames: 0,
-      awayMinutesPlayed: 0,
-      awayPoints: 0,
-      awayThreePointers: 0,
-      awayFouls: 0,
-      // Initialize totals with home stats
-      totalMinutes: homeMinutes,
-      totalPoints: homePoints,
-      totalThreePointers: homeThreePointers,
-      totalFouls: homeFouls
-    });
-  });
-
-  // Process away stats and combine with home stats
-  awayRows.forEach(row => {
-    const firstName = (row.Vorname || '').trim();
-    const lastName = (row.Nachname || '').trim();
-    if (!firstName) return;
-
-    const playerId = generatePlayerId(firstName, lastName);
-    const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
-    const bioData = bioMap.get(bioKey);
-    
-    const awayGames = parseInt(row.Spiele) || 0;
-    const awayMinutes = parseFloat((row['Minuten pS'] || '0').replace(',', '.')) * awayGames;
-    const awayPoints = parseFloat((row['Punkte pS'] || '0').replace(',', '.')) * awayGames;
-    const awayThreePointers = parseFloat((row['3er pS'] || '0').replace(',', '.')) * awayGames;
-    const awayFouls = parseFloat((row['Fouls pS'] || '0').replace(',', '.')) * awayGames;
-
-    const existingPlayer = playerMap.get(playerId);
-    
-    if (existingPlayer) {
-      // Update existing player with away stats
-      existingPlayer.awayGames = awayGames;
-      existingPlayer.awayMinutesPlayed = awayMinutes;
-      existingPlayer.awayPoints = awayPoints;
-      existingPlayer.awayThreePointers = awayThreePointers;
-      existingPlayer.awayFouls = awayFouls;
+// Transform Totals CSV data into PlayerStats
+function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, PlayerBio>): PlayerStats[] {
+  return rows
+    .map(row => {
+      const firstName = (row.Vorname || '').trim();
+      const lastName = (row.Nachname || '').trim();
       
-      // Update totals
-      existingPlayer.gamesPlayed += awayGames;
-      existingPlayer.totalMinutes = (existingPlayer.homeMinutesPlayed || 0) + awayMinutes;
-      existingPlayer.totalPoints = (existingPlayer.homePoints || 0) + awayPoints;
-      existingPlayer.totalThreePointers = (existingPlayer.homeThreePointers || 0) + awayThreePointers;
-      existingPlayer.totalFouls = (existingPlayer.homeFouls || 0) + awayFouls;
+      // Skip if no first name
+      if (!firstName) return null;
       
-      // Update per-game averages
-      if (existingPlayer.gamesPlayed > 0) {
-        existingPlayer.minutesPerGame = existingPlayer.totalMinutes / existingPlayer.gamesPlayed;
-        existingPlayer.pointsPerGame = existingPlayer.totalPoints / existingPlayer.gamesPlayed;
-        existingPlayer.threePointersPerGame = existingPlayer.totalThreePointers / existingPlayer.gamesPlayed;
-        existingPlayer.foulsPerGame = existingPlayer.totalFouls / existingPlayer.gamesPlayed;
-      }
-    } else {
-      // Create new player with away stats only
-      playerMap.set(playerId, {
+      const playerId = generatePlayerId(firstName, lastName);
+      const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
+      const bioData = bioMap.get(bioKey);
+      
+      // Parse stats directly from CSV (already computed)
+      const player: PlayerStats = {
         id: playerId,
         firstName,
         lastName,
-        gamesPlayed: awayGames,
-        minutesPerGame: parseFloat((row['Minuten pS'] || '0').replace(',', '.')),
-        pointsPerGame: parseFloat((row['Punkte pS'] || '0').replace(',', '.')),
-        threePointersPerGame: parseFloat((row['3er pS'] || '0').replace(',', '.')),
-        freeThrowPercentage: row['FW-Quote'] || '0%',
-        foulsPerGame: parseFloat((row['Fouls pS'] || '0').replace(',', '.')),
         imageUrl: '/placeholder-player.png',
         jerseyNumber: bioData?.jerseyNumber || 0,
         position: bioData?.position || '',
         age: bioData?.age || 0,
+        height: bioData?.height || '',
         bio: bioData?.bio || '',
-        // Initialize home stats as 0
-        homeGames: 0,
-        homeMinutesPlayed: 0,
-        homePoints: 0,
-        homeThreePointers: 0,
-        homeFouls: 0,
-        // Away stats
-        awayGames: awayGames,
-        awayMinutesPlayed: awayMinutes,
-        awayPoints: awayPoints,
-        awayThreePointers: awayThreePointers,
-        awayFouls: awayFouls,
-        // Totals (same as away stats since no home stats)
-        totalMinutes: awayMinutes,
-        totalPoints: awayPoints,
-        totalThreePointers: awayThreePointers,
-        totalFouls: awayFouls
-      });
-    }
-  });
-
-  return Array.from(playerMap.values());
+        gamesPlayed: parseInt(row.Spiele) || 0,
+        minutesPerGame: parseFloat((row['Minuten pS'] || '0').replace(',', '.')),
+        pointsPerGame: parseFloat((row['Punkte pS'] || '0').replace(',', '.')),
+        threePointersPerGame: parseFloat((row['3er pS'] || '0').replace(',', '.')),
+        foulsPerGame: parseFloat((row['Fouls pS'] || '0').replace(',', '.')),
+        freeThrowsMadePerGame: parseFloat((row['FWTreffer pS'] || '0').replace(',', '.')),
+        freeThrowAttemptsPerGame: parseFloat((row['FWVersuche pS'] || '0').replace(',', '.')),
+        freeThrowPercentage: row['FW-Quote'] || ''
+      };
+      
+      return player;
+    })
+    .filter(Boolean) as PlayerStats[];
 }
 
 export async function fetchAllData() {
-  const [games, playerStats, homeRows, awayRows, bioMap] = await Promise.all([
+  const [games, playerGameLogs, totalsRows, bioMap] = await Promise.all([
     fetchCSV<GameStats>(CSV_URLS.games, transformGameData),
-    fetchCSV<PlayerGameLog>(CSV_URLS.playerStats, transformPlayerGameLog),
-    fetchCSV<PlayerStatsRow>(CSV_URLS.homeStats, (rows) => rows),
-    fetchCSV<PlayerStatsRow>(CSV_URLS.awayStats, (rows) => rows),
+    fetchCSV<PlayerGameLogRow>(CSV_URLS.playerGameLogs, (rows) => rows),
+    fetchCSV<PlayerTotalsRow>(CSV_URLS.playerTotals, (rows) => rows),
     fetchPlayerBios()
   ]);
   
-  // Combine home and away stats
-  const playerTotals = combineHomeAndAwayStats(homeRows, awayRows, bioMap);
+  // Transform totals with bio data
+  const playerTotals = transformPlayerTotals(totalsRows, bioMap);
+  
+  // Transform game logs
+  const playerStats = transformPlayerGameLogs(playerGameLogs);
   
   return { 
     games, 
@@ -247,61 +169,27 @@ async function fetchCSV<T>(url: string, transform: (data: any) => T[]): Promise<
   }
 }
 
-// Transformers
-function transformPlayerTotals(rows: any[], bioMap: Map<string, PlayerBio>): PlayerStats[] {
+// Transform Spieler CSV data into PlayerGameLog
+function transformPlayerGameLogs(rows: PlayerGameLogRow[]): PlayerGameLog[] {
   return rows.map(row => {
-    const firstName = (row.Vorname || '').trim();
-    const lastName = (row.Nachname || '').trim();
-    const fullName = `${firstName} ${lastName}`.trim();
-    const playerId = generatePlayerId(firstName, lastName);
-    
-    // Skip if no first name
-    if (!firstName) return null;
-    
-    // Find bio data if available
-    const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
-    const bioData = bioMap.get(bioKey);
-    
-    // Base player data
-    const player: PlayerStats = {
-      id: playerId,
-      firstName,
-      lastName,
-      gamesPlayed: parseInt(row.Spiele) || 0,
-      minutesPerGame: typeof row['Minuten pS'] === 'number' ? row['Minuten pS'] : parseFloat((row['Minuten pS'] || '0').replace(',', '.')),
-      pointsPerGame: parseFloat((row['Punkte pS'] || '0').replace(',', '.')),
-      threePointersPerGame: parseFloat((row['3er pS'] || '0').replace(',', '.')),
-      freeThrowPercentage: row['FW-Quote'] || '0%',
-      foulsPerGame: parseFloat((row['Fouls pS'] || '0').replace(',', '.')),
-      imageUrl: '/placeholder-player.png',
-      // Use bio data if available, otherwise use defaults
-      jerseyNumber: bioData?.jerseyNumber || 0,
-      position: bioData?.position || '',
-      age: bioData?.age || 0,
-      bio: bioData?.bio || ''
-    };
-
-    return player;
-  }).filter(Boolean) as PlayerStats[]; // Filter out any null entries
-}
-
-function transformPlayerGameLog(rows: any[]): PlayerGameLog[] {
-  return rows.map(row => {
-    // Log the row keys for debugging
-    if (Object.keys(row).length > 0 && !Object.prototype.hasOwnProperty.call(row, 'Punkte')) {
-      console.log('Available columns:', Object.keys(row));
-    }
+    const playerId = generatePlayerId(row.Vorname, row.Nachname);
+    const gameNumber = parseInt(row.Spieltag) || 0;
     
     return {
-      playerId: generatePlayerId(row.Vorname, row.Nachname),
-      gameNumber: parseInt(row['Spiel-Nr.']) || 0,
-      minutesPlayed: typeof row.Minuten === 'number' ? row.Minuten : parseFloat((row.Minuten || '0').toString().replace(',', '.')),
+      playerId,
+      gameNumber,
+      minutesPlayed: parseFloat((row.Minuten || '0').replace(',', '.')),
       points: parseInt(row.Punkte) || 0,
       twoPointers: parseInt(row['2er']) || 0,
       threePointers: parseInt(row['3er']) || 0,
-      freeThrowsMade: parseInt(row['FTM']) || 0,
-      freeThrowAttempts: parseInt(row['FTA']) || 0,
-      fouls: parseInt(row.Fouls) || 0
+      freeThrowsMade: parseInt(row.FWTreffer) || 0,
+      freeThrowAttempts: parseInt(row.FWVersuche) || 0,
+      freeThrowPercentage: row['FW-Quote'] || '',
+      fouls: parseInt(row.Fouls) || 0,
+      pointsPer40: parseFloat((row['Punkte/40'] || '0').replace(',', '.')),
+      freeThrowAttemptsPer40: parseFloat((row['FWV/40'] || '0').replace(',', '.')),
+      foulsPer40: parseFloat((row['Fouls/40'] || '0').replace(',', '.')),
+      gameType: row['Typ Spiel'] || ''
     };
   });
 }

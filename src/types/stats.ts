@@ -1,5 +1,5 @@
 export interface PlayerStats {
-  // Player info
+  // Player info (from Bio CSV)
   id: string;
   firstName: string;
   lastName: string;
@@ -7,37 +7,18 @@ export interface PlayerStats {
   jerseyNumber?: number;
   position?: string;
   age?: number;
+  height?: string;
   bio?: string;
   
-  // Game stats
+  // Stats from Totals CSV (all games combined)
   gamesPlayed: number;
-  
-  // Per-game stats (averages)
   minutesPerGame: number;
   pointsPerGame: number;
   threePointersPerGame: number;
   foulsPerGame: number;
+  freeThrowsMadePerGame: number;
+  freeThrowAttemptsPerGame: number;
   freeThrowPercentage: string;
-  
-  // Home game stats
-  homeGames: number;
-  homeMinutesPlayed: number;
-  homePoints: number;
-  homeThreePointers: number;
-  homeFouls: number;
-  
-  // Away game stats
-  awayGames: number;
-  awayMinutesPlayed: number;
-  awayPoints: number;
-  awayThreePointers: number;
-  awayFouls: number;
-  
-  // Total stats
-  totalMinutes: number;
-  totalPoints: number;
-  totalThreePointers: number;
-  totalFouls: number;
 }
 
 export interface GameStats {
@@ -54,13 +35,18 @@ export interface GameStats {
 export interface PlayerGameLog {
   playerId: string;
   gameNumber: number;
-  minutesPlayed: number; // Changed from string to number for decimal minutes
+  minutesPlayed: number;
   points: number;
   twoPointers: number;
   threePointers: number;
   freeThrowsMade: number;
   freeThrowAttempts: number;
+  freeThrowPercentage: string;
   fouls: number;
+  pointsPer40: number;
+  freeThrowAttemptsPer40: number;
+  foulsPer40: number;
+  gameType: string; // "Heim" or "Auswärts"
 }
 
 export interface CachedData<T> {
