@@ -14,8 +14,7 @@ export function getPlayerImprovements(
 ): StatImprovement[] {
   // Helper function to check if a player had playing time
   const hasPlayedMinutes = (game: PlayerGameLog): boolean => {
-    if (!game.minutesPlayed) return false;
-    return game.minutesPlayed !== '0:00' && game.minutesPlayed !== '00:00';
+    return (game.minutesPlayed || 0) > 0;
   };
 
   // Filter logs for this player, only include games with playing time, and sort by game number (newest first)
@@ -34,15 +33,9 @@ export function getPlayerImprovements(
   const currentGame = playerLogs[0];
   const previousGame = playerLogs[1];
 
-  // Convert minutes played from 'MM:SS' to minutes (float)
-  const parseMinutes = (timeStr: string): number => {
-    if (!timeStr) return 0;
-    const [minutes, seconds] = timeStr.split(':').map(Number);
-    return minutes + (seconds / 60);
-  };
-
-  const currentMinutes = parseMinutes(currentGame.minutesPlayed);
-  const previousMinutes = parseMinutes(previousGame.minutesPlayed);
+  // Use minutes directly as they are already in numeric format
+  const currentMinutes = currentGame.minutesPlayed || 0;
+  const previousMinutes = previousGame.minutesPlayed || 0;
 
   const statCategories = [
     { 
