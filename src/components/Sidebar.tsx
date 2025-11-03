@@ -36,25 +36,23 @@ const Sidebar = () => {
   return (
     <>
       {/* Menu button - always visible on mobile, only when closed on desktop */}
-      {showMenuButton && (
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className={`fixed z-50 ${
-            isMobile ? 'top-4 left-4' : 'top-4 left-4'
-          }`}
-          aria-label={isOpen ? 'Menü schließen' : 'Menü öffnen'}
-        >
-          {isOpen ? (
-            <X className="text-5xl font-bold text-primary/50 hover:text-primary/70 transition-colors" />
-          ) : (
-            <div className="space-y-1.5">
-              <span className="block w-8 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
-              <span className="block w-8 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
-              <span className="block w-8 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
-            </div>
-          )}
-        </button>
-      )}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`fixed z-50 top-4 left-4 transition-opacity duration-300 ${
+          showMenuButton ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        aria-label={isOpen ? 'Menü schließen' : 'Menü öffnen'}
+      >
+        {isOpen ? (
+          <X className="w-8 h-8 text-primary/50 hover:text-primary/70 transition-colors" />
+        ) : (
+          <div className="space-y-1.5">
+            <span className="block w-8 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
+            <span className="block w-8 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
+            <span className="block w-8 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
+          </div>
+        )}
+      </button>
 
       {/* Overlay - only on mobile */}
       {isMobile && isOpen && (
@@ -71,15 +69,6 @@ const Sidebar = () => {
         } md:translate-x-0`}
       >
         <div className="p-6 h-full flex flex-col pt-4">
-          <div className="flex justify-end mb-8">
-            <button
-              onClick={() => setIsOpen(false)}
-              className="fixed top-4 right-4 z-50 p-2"
-              aria-label="Menü schließen"
-            >
-              <X className="w-8 h-8 text-primary/50 hover:text-primary/70 transition-colors" />
-            </button>
-          </div>
           <nav className="space-y-2 flex-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
