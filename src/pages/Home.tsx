@@ -3,12 +3,9 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useStats } from "@/contexts/StatsContext";
 import { PlayerTrendInfo, getTopTrendingPlayers } from "@/utils/statsTrends";
-import { Player } from "@/data/players";
-import { Flame, TrendingUp } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Flame } from "lucide-react";
 
 const Home = () => {
   const navigate = useNavigate();

@@ -1,89 +1,95 @@
-import { Player } from "@/data/players";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { calculateTotals, calculateAverages } from "@/utils/statsCalculations";
-import { PlayerGameLog, GameStats } from "@/types/stats";
+import { TrendingUp, Home, Plane } from "lucide-react";
+import { PlayerGameLog, PlayerStats } from "@/types/stats";
 import { PlayerTrendIndicator } from "./PlayerTrendIndicator";
 import { useStats } from "@/contexts/StatsContext";
+import { useState, useMemo } from "react";
 
 interface PlayerCardProps {
-  player: Player;
+  player: PlayerStats;
   gameLogs?: PlayerGameLog[];
   currentGameNumber?: number;
 }
 
+type GameFilter = 'all' | 'home' | 'away';
+
 const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCardProps) => {
   const navigate = useNavigate();
-  const { players } = useStats();
+  const [gameFilter, setGameFilter] = useState<GameFilter>('all');
   
-  // Find the player in the players array from the context
-  const playerStats = players.find(p => p.id === player.id);
-  
-  // Calculate average free throws made per game from the player stats or game logs
-  let freeThrowsPerGame = 0;
-  
-  // First try to get from player stats if available
-  if (playerStats?.freeThrowsPerGame !== undefined) {
-    freeThrowsPerGame = playerStats.freeThrowsPerGame;
-  } else {
-    // Fall back to calculating from game logs
-    const playerGameLogs = gameLogs.filter(log => log.playerId === player.id);
-    const totalFreeThrowsMade = playerGameLogs.reduce((sum, game) => sum + (game.freeThrowsMade || 0), 0);
-    freeThrowsPerGame = playerGameLogs.length > 0 
-      ? totalFreeThrowsMade / playerGameLogs.length 
-      : 0;
-  }
-
-  // Helper function to format numbers to one decimal place
-  const formatNumber = (num: number | undefined): number => {
-    if (num === undefined || isNaN(num)) return 0;
-    return Math.round(num * 10) / 10; // Rounds to 1 decimal place
-  };
-
-  // Calculate stats using the player's stats or default to 0
-  const stats = {
-    points: formatNumber(playerStats?.pointsPerGame),
-    twoPointers: 0, // Not available in the current data structure
-    threePointers: formatNumber(playerStats?.threePointersPerGame),
-    freeThrowsPerGame: formatNumber(freeThrowsPerGame),
-    fouls: formatNumber(playerStats?.foulsPerGame),
-    minutesPlayed: formatNumber(playerStats?.minutesPerGame),
-    gamesPlayed: playerStats?.gamesPlayed || 0,
-  };
-  
-  // Debug log to check the stats
-  console.log(`Player: ${player.firstName} ${player.lastName}`, {
-    pointsPerGame: playerStats?.pointsPerGame,
-    freeThrowsPerGame: freeThrowsPerGame,
-    foulsPerGame: playerStats?.foulsPerGame,
-    formattedStats: stats
-  });
+  // Calculate filtered stats based on game type
+  const filteredStats = useMemo(() => {
+    if (gameFilter === 'all') {
+      return {
+        points: player.pointsPerGame,
+        threePointers: player.threePointersPerGame,
+        freeThrowsMade: player.freeThrowsMadePerGame,
+        fouls: player.foulsPerGame,
+        minutesPlayed: player.minutesPerGame,
+        gamesPlayed: player.gamesPlayed,
+        freeThrowPercentage: player.freeThrowPercentage
+      };
+    }
+    
+    // Filter game logs by type
+    const playerGameLogs = gameLogs.filter(log => 
+      log.playerId === player.id && 
+      (gameFilter === 'home' ? log.gameType === 'Heim' : log.gameType === 'Auswärts')
+    );
+    
+    if (playerGameLogs.length === 0) {
+      return {
+        points: 0,
+        threePointers: 0,
+        freeThrowsMade: 0,
+        fouls: 0,
+        minutesPlayed: 0,
+        gamesPlayed: 0,
+        freeThrowPercentage: ''
+      };
+    }
+    
+    const totalPoints = playerGameLogs.reduce((sum, log) => sum + log.points, 0);
+    const totalThreePointers = playerGameLogs.reduce((sum, log) => sum + log.threePointers, 0);
+    const totalFreeThrowsMade = playerGameLogs.reduce((sum, log) => sum + log.freeThrowsMade, 0);
+    const totalFreeThrowAttempts = playerGameLogs.reduce((sum, log) => sum + log.freeThrowAttempts, 0);
+    const totalFouls = playerGameLogs.reduce((sum, log) => sum + log.fouls, 0);
+    const totalMinutes = playerGameLogs.reduce((sum, log) => sum + log.minutesPlayed, 0);
+    const games = playerGameLogs.length;
+    
+    return {
+      points: parseFloat((totalPoints / games).toFixed(1)),
+      threePointers: parseFloat((totalThreePointers / games).toFixed(1)),
+      freeThrowsMade: parseFloat((totalFreeThrowsMade / games).toFixed(1)),
+      fouls: parseFloat((totalFouls / games).toFixed(1)),
+      minutesPlayed: parseFloat((totalMinutes / games).toFixed(1)),
+      gamesPlayed: games,
+      freeThrowPercentage: totalFreeThrowAttempts > 0 
+        ? `${Math.round((totalFreeThrowsMade / totalFreeThrowAttempts) * 100)}%` 
+        : ''
+    };
+  }, [player, gameLogs, gameFilter]);
 
 const renderStats = () => (
-    <div className="grid grid-cols-5 gap-3 text-center">
+    <div className="grid grid-cols-4 gap-3 text-center">
       <div>
-        <p className="text-xl font-bold text-primary">{stats.points}</p>
+        <p className="text-xl font-bold text-primary">{filteredStats.points}</p>
         <p className="text-xs text-muted-foreground">PTS</p>
       </div>
       <div>
-        <p className="text-xl font-bold text-primary">{stats.twoPointers || 0}</p>
-        <p className="text-xs text-muted-foreground">2P</p>
-      </div>
-      <div>
-        <p className="text-xl font-bold text-primary">{stats.threePointers}</p>
+        <p className="text-xl font-bold text-primary">{filteredStats.threePointers}</p>
         <p className="text-xs text-muted-foreground">3P</p>
       </div>
       <div>
         <p className="text-xl font-bold text-primary">
-          {stats.freeThrowsPerGame}
+          {filteredStats.freeThrowsMade}
         </p>
-        <p className="text-xs text-muted-foreground">FT</p>
+        <p className="text-xs text-muted-foreground">FTM</p>
       </div>
       <div>
-        <p className="text-xl font-bold text-primary">{stats.fouls}</p>
+        <p className="text-xl font-bold text-primary">{filteredStats.fouls}</p>
         <p className="text-xs text-muted-foreground">FLS</p>
       </div>
     </div>
@@ -110,7 +116,7 @@ const renderStats = () => (
 
           {/* Right side - Player Info */}
           <div className="flex-1 p-6">
-            {/* Header with Name and Status */}
+            {/* Header with Name and Position */}
             <div className="flex justify-between items-start mb-3">
               <div>
                 <div className="flex items-center gap-2">
@@ -126,75 +132,89 @@ const renderStats = () => (
                     )}
                   </h3>
                 </div>
-                <p className="text-sm text-muted-foreground">{player.team}</p>
+                <p className="text-sm text-muted-foreground">{player.position || 'Position nicht angegeben'}</p>
               </div>
-              <Badge 
-                variant="outline" 
-                className="bg-green-50 text-green-600 border-green-200"
-              >
-                {player.status}
-              </Badge>
+              {player.jerseyNumber && player.jerseyNumber > 0 && (
+                <Badge 
+                  variant="outline" 
+                  className="bg-blue-50 text-blue-600 border-blue-200 text-lg font-bold"
+                >
+                  #{player.jerseyNumber}
+                </Badge>
+              )}
             </div>
 
 {/* Physical Stats */}
             <div className="flex gap-6 mb-4">
-              <div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wide">Height</div>
-                <div className="text-sm font-semibold text-foreground">{player.height}</div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wide">Weight</div>
-                <div className="text-sm font-semibold text-foreground">{player.weight}</div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wide">Age</div>
-                <div className="text-sm font-semibold text-foreground">{player.age}</div>
-              </div>
+              {player.height && (
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide">Größe</div>
+                  <div className="text-sm font-semibold text-foreground">{player.height} cm</div>
+                </div>
+              )}
+              {player.age && player.age > 0 && (
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide">Alter</div>
+                  <div className="text-sm font-semibold text-foreground">{player.age}</div>
+                </div>
+              )}
             </div>
 
-            {/* Badge */}
-            {player.badge && (
-              <div className="mb-4">
-                <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200">
-                  {player.badge}
-                </Badge>
-              </div>
+            {/* Bio */}
+            {player.bio && (
+              <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                {player.bio}
+              </p>
             )}
 
-            {/* Bio */}
-            <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-              {player.bio}
-            </p>
+            {/* Game Filter Toggle */}
+            <div className="flex justify-center gap-2 mb-4">
+              <button
+                onClick={(e) => { e.stopPropagation(); setGameFilter('all'); }}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  gameFilter === 'all' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Alle Spiele
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setGameFilter('home'); }}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${
+                  gameFilter === 'home' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Home size={12} /> Heim
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setGameFilter('away'); }}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${
+                  gameFilter === 'away' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Plane size={12} /> Auswärts
+              </button>
+            </div>
 
-            {/* Stats with Tabs */}
+            {/* Stats */}
             <div className="mt-4">
               {renderStats()}
               <div className="mt-2 text-center space-y-1">
                 <p className="text-sm text-muted-foreground">
-                  ⏱️ {stats.minutesPlayed} Min/Spiel
-                  {stats.gamesPlayed > 0 && ` (${stats.gamesPlayed} Spiele)`}
+                  ⏱️ {filteredStats.minutesPlayed} Min/Spiel
+                  {filteredStats.gamesPlayed > 0 && ` (${filteredStats.gamesPlayed} Spiele)`}
                 </p>
-                {stats.freeThrowPercentage && (
+                {filteredStats.freeThrowPercentage && (
                   <p className="text-sm text-muted-foreground">
-                    🏀 Freiwürfe: {stats.freeThrowPercentage}
+                    🏀 FW-Quote: {filteredStats.freeThrowPercentage}
                   </p>
                 )}
               </div>
-            </div>
-
-            {/* Removed tabs for now to simplify and avoid errors */}
-
-            {/* Skills */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              {player.skills.map((skill, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-1.5 text-xs"
-                >
-                  <div className="w-2 h-2 rounded-full bg-orange-500" />
-                  <span className="text-foreground font-medium">{skill}</span>
-                </div>
-              ))}
             </div>
           </div>
         </div>

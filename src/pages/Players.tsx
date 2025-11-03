@@ -1,56 +1,10 @@
 import React, { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useStats } from '@/contexts/StatsContext';
 import Layout from '@/components/Layout';
 import PlayerCard from '@/components/PlayerCard';
-import { Player } from '@/data/players';
-
-// Generate player ID consistently with statsService.ts
-const generatePlayerId = (firstName: string, lastName: string = ''): string => {
-  const name = `${firstName} ${lastName}`.trim().toLowerCase();
-  return name.replace(/\s+/g, '-');
-};
 
 const Players: React.FC = () => {
-  const { players: playerStats, gameLogs, loading, error, games } = useStats();
-  const navigate = useNavigate();
-
-  // Map player stats to the Player type expected by PlayerCard
-  const players = useMemo(() => {
-    return playerStats.map(stat => {
-      // Calculate total points from points per game and games played
-      const totalPoints = Math.round((stat.pointsPerGame || 0) * (stat.gamesPlayed || 1));
-      
-      return {
-        id: stat.id,
-        firstName: stat.firstName,
-        lastName: stat.lastName || '',
-        team: 'Pitbulls Neuenstadt',
-        bio: stat.bio || '',
-        image: stat.imageUrl || '/placeholder-player.png',
-        height: stat.position || '',
-        weight: 0,
-        age: stat.age || 0,
-        rating: 0,
-        status: 'Active',
-        skills: [],
-        stats: {
-          games: stat.gamesPlayed || 0,
-          points: totalPoints,
-          assists: 0,
-          rebounds: 0,
-          steals: 0,
-          blocks: 0
-        },
-        // Make sure all required Player properties are included
-        pointsPerGame: stat.pointsPerGame || 0,
-        threePointersPerGame: stat.threePointersPerGame || 0,
-        freeThrowPercentage: stat.freeThrowPercentage || '0%',
-        foulsPerGame: stat.foulsPerGame || 0,
-        gamesPlayed: stat.gamesPlayed || 0
-      } as unknown as Player;
-    });
-  }, [playerStats]);
+  const { players, gameLogs, loading, error, games } = useStats();
 
   if (loading) {
     return (
@@ -94,7 +48,7 @@ const Players: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {players
-            .filter(player => player.firstName && player.firstName.trim() !== 'Gesamtsumme')
+            .filter(player => player.firstName && player.firstName.trim() !== '' && player.gamesPlayed > 0)
             .map((player) => {
               return (
                 <div key={player.id} className="h-full">

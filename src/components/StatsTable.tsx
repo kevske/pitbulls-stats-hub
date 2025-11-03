@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { Player } from "@/data/players";
-import { games } from "@/data/games";
-import { calculateAverages } from "@/utils/statsCalculations";
+import { PlayerStats } from "@/types/stats";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -14,10 +12,10 @@ import {
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 interface StatsTableProps {
-  players: Player[];
+  players: PlayerStats[];
 }
 
-type SortField = "name" | "games" | "points" | "assists" | "rebounds" | "steals" | "blocks";
+type SortField = "name" | "games" | "points" | "threePointers" | "fouls" | "minutes";
 type SortDirection = "asc" | "desc" | null;
 
 const StatsTable = ({ players }: StatsTableProps) => {
@@ -51,10 +49,7 @@ const StatsTable = ({ players }: StatsTableProps) => {
     return <ArrowDown size={16} className="text-primary" />;
   };
 
-  const playersWithStats = players.map((player) => ({
-    ...player,
-    calculatedStats: calculateAverages(games, player.id),
-  }));
+  const playersWithStats = players;
 
   const sortedPlayers = [...playersWithStats]
     .filter((player) => {
@@ -73,11 +68,23 @@ const StatsTable = ({ players }: StatsTableProps) => {
         aValue = `${a.firstName} ${a.lastName}`.toLowerCase();
         bValue = `${b.firstName} ${b.lastName}`.toLowerCase();
       } else if (sortField === "games") {
-        aValue = a.calculatedStats.games;
-        bValue = b.calculatedStats.games;
+        aValue = a.gamesPlayed;
+        bValue = b.gamesPlayed;
+      } else if (sortField === "points") {
+        aValue = a.pointsPerGame;
+        bValue = b.pointsPerGame;
+      } else if (sortField === "threePointers") {
+        aValue = a.threePointersPerGame;
+        bValue = b.threePointersPerGame;
+      } else if (sortField === "fouls") {
+        aValue = a.foulsPerGame;
+        bValue = b.foulsPerGame;
+      } else if (sortField === "minutes") {
+        aValue = a.minutesPerGame;
+        bValue = b.minutesPerGame;
       } else {
-        aValue = a.calculatedStats[sortField];
-        bValue = b.calculatedStats[sortField];
+        aValue = 0;
+        bValue = 0;
       }
 
       if (sortDirection === "asc") {
@@ -128,39 +135,33 @@ const StatsTable = ({ players }: StatsTableProps) => {
               </TableHead>
               <TableHead 
                 className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("assists")}
+                onClick={() => handleSort("threePointers")}
               >
                 <div className="flex items-center justify-center gap-2">
-                  Assists
-                  {getSortIcon("assists")}
+                  3-Punkte
+                  {getSortIcon("threePointers")}
                 </div>
               </TableHead>
               <TableHead 
                 className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("rebounds")}
+                onClick={() => handleSort("fouls")}
               >
                 <div className="flex items-center justify-center gap-2">
-                  Rebounds
-                  {getSortIcon("rebounds")}
+                  Fouls
+                  {getSortIcon("fouls")}
                 </div>
               </TableHead>
               <TableHead 
                 className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("steals")}
+                onClick={() => handleSort("minutes")}
               >
                 <div className="flex items-center justify-center gap-2">
-                  Steals
-                  {getSortIcon("steals")}
+                  Minuten
+                  {getSortIcon("minutes")}
                 </div>
               </TableHead>
-              <TableHead 
-                className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("blocks")}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  Blocks
-                  {getSortIcon("blocks")}
-                </div>
+              <TableHead className="text-primary font-bold text-center">
+                FW-Quote
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -170,15 +171,15 @@ const StatsTable = ({ players }: StatsTableProps) => {
                 <TableCell className="font-medium text-foreground">
                   <div className="flex flex-col">
                     <span>{player.firstName} {player.lastName}</span>
-                    <span className="text-xs text-muted-foreground">{player.team}</span>
+                    <span className="text-xs text-muted-foreground">{player.position || 'Position nicht angegeben'}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-center">{player.calculatedStats.games}</TableCell>
-                <TableCell className="text-center font-semibold">{player.calculatedStats.points}</TableCell>
-                <TableCell className="text-center">{player.calculatedStats.assists}</TableCell>
-                <TableCell className="text-center">{player.calculatedStats.rebounds}</TableCell>
-                <TableCell className="text-center">{player.calculatedStats.steals}</TableCell>
-                <TableCell className="text-center">{player.calculatedStats.blocks}</TableCell>
+                <TableCell className="text-center">{player.gamesPlayed}</TableCell>
+                <TableCell className="text-center font-semibold">{player.pointsPerGame.toFixed(1)}</TableCell>
+                <TableCell className="text-center">{player.threePointersPerGame.toFixed(1)}</TableCell>
+                <TableCell className="text-center">{player.foulsPerGame.toFixed(1)}</TableCell>
+                <TableCell className="text-center">{player.minutesPerGame.toFixed(1)}</TableCell>
+                <TableCell className="text-center">{player.freeThrowPercentage || '-'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
