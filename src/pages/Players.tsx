@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStats } from '@/contexts/StatsContext';
 import Layout from '@/components/Layout';
+import PlayerCard from '@/components/PlayerCard';
+import { Player } from '@/data/players';
 
 // Generate player ID consistently with statsService.ts
 const generatePlayerId = (firstName: string, lastName: string = ''): string => {
@@ -11,8 +12,45 @@ const generatePlayerId = (firstName: string, lastName: string = ''): string => {
 };
 
 const Players: React.FC = () => {
-  const { players, loading, error } = useStats();
+  const { players: playerStats, gameLogs, loading, error, games } = useStats();
   const navigate = useNavigate();
+
+  // Map player stats to the Player type expected by PlayerCard
+  const players = useMemo(() => {
+    return playerStats.map(stat => {
+      // Calculate total points from points per game and games played
+      const totalPoints = Math.round((stat.pointsPerGame || 0) * (stat.gamesPlayed || 1));
+      
+      return {
+        id: stat.id,
+        firstName: stat.firstName,
+        lastName: stat.lastName || '',
+        team: 'Pitbulls Neuenstadt',
+        bio: stat.bio || '',
+        image: stat.imageUrl || '/placeholder-player.png',
+        height: stat.position || '',
+        weight: 0,
+        age: stat.age || 0,
+        rating: 0,
+        status: 'Active',
+        skills: [],
+        stats: {
+          games: stat.gamesPlayed || 0,
+          points: totalPoints,
+          assists: 0,
+          rebounds: 0,
+          steals: 0,
+          blocks: 0
+        },
+        // Make sure all required Player properties are included
+        pointsPerGame: stat.pointsPerGame || 0,
+        threePointersPerGame: stat.threePointersPerGame || 0,
+        freeThrowPercentage: stat.freeThrowPercentage || '0%',
+        foulsPerGame: stat.foulsPerGame || 0,
+        gamesPlayed: stat.gamesPlayed || 0
+      } as unknown as Player;
+    });
+  }, [playerStats]);
 
   if (loading) {
     return (
@@ -36,55 +74,45 @@ const Players: React.FC = () => {
     );
   }
 
+  // Get the latest game number
+  const latestGameNumber = useMemo(() => {
+    return games.length > 0 ? Math.max(...games.map(g => g.gameNumber)) : 0;
+  }, [games]);
+
   return (
     <Layout>
       <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-6">Spielerstatistiken</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Spielerstatistiken</h1>
+          {latestGameNumber > 1 && (
+            <div className="text-sm text-muted-foreground flex items-center">
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+              Letzte Spieltag: {latestGameNumber}
+            </div>
+          )}
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {players
             .filter(player => player.firstName && player.firstName.trim() !== 'Gesamtsumme')
-            .map((player) => (
-            <Card 
-              key={generatePlayerId(player.firstName, player.lastName)} 
-              className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => navigate(`/players/${generatePlayerId(player.firstName, player.lastName)}`)}
-            >
-              <CardHeader className="flex flex-row items-center space-x-4 p-4">
-                <img
-                  src={player.imageUrl}
-                  alt={`${player.firstName} ${player.lastName}`}
-                  className="w-16 h-16 rounded-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/pitbulls-stats-hub/placeholder-player.png';
-                  }}
-                />
-                <div>
-                  <CardTitle className="text-xl">
-                    {player.firstName} {player.lastName || ''}
-                  </CardTitle>
-                  <p className="text-sm text-gray-500">
-                    {player.gamesPlayed} Spiele
-                  </p>
+            .map((player) => {
+              return (
+                <div key={player.id} className="h-full">
+                  <PlayerCard 
+                    player={player}
+                    gameLogs={gameLogs}
+                    currentGameNumber={latestGameNumber}
+                  />
                 </div>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <StatItem label="Punkte/Spiel" value={player.pointsPerGame.toFixed(1)} />
-                  <StatItem label="3-Punkte/Spiel" value={player.threePointersPerGame.toFixed(1)} />
-                  <StatItem label="Freiwurfquote" value={player.freeThrowPercentage} />
-                  <StatItem label="Fouls/Spiel" value={player.foulsPerGame.toFixed(1)} />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              );
+            })}
         </div>
       </div>
     </Layout>
   );
 };
 
+// Helper component for displaying stats (kept for reference, not used in current implementation)
 const StatItem = ({ label, value }: { label: string; value: string }) => (
   <div className="flex flex-col bg-gray-50 p-2 rounded">
     <span className="text-xs text-gray-500">{label}</span>
