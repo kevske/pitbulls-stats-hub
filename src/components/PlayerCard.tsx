@@ -4,8 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { games } from "@/data/games";
-import { calculateTotals, calculateAverages } from "@/utils/statsCalculations";
 import { PlayerGameLog } from "@/types/stats";
 import { PlayerTrendIndicator } from "./PlayerTrendIndicator";
 
@@ -18,10 +16,33 @@ interface PlayerCardProps {
 const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCardProps) => {
   const navigate = useNavigate();
 
-  const totals = calculateTotals(games, player.id);
-  const averages = calculateAverages(games, player.id);
-  const homeAverages = calculateAverages(games, player.id, "home");
-  const awayAverages = calculateAverages(games, player.id, "away");
+  // Calculate stats from gameLogs instead of hardcoded games
+  const playerGameLogs = gameLogs.filter(log => log.playerId === player.id);
+  
+  const totals = {
+    games: playerGameLogs.length,
+    points: playerGameLogs.reduce((sum, log) => sum + (log.points || 0), 0),
+    twoPointers: playerGameLogs.reduce((sum, log) => sum + (log.twoPointers || 0), 0),
+    threePointers: playerGameLogs.reduce((sum, log) => sum + (log.threePointers || 0), 0),
+    freeThrowsMade: playerGameLogs.reduce((sum, log) => sum + (log.freeThrowsMade || 0), 0),
+    freeThrowAttempts: playerGameLogs.reduce((sum, log) => sum + (log.freeThrowAttempts || 0), 0),
+    fouls: playerGameLogs.reduce((sum, log) => sum + (log.fouls || 0), 0)
+  };
+  
+  const gamesPlayed = totals.games || 1;
+  const averages = {
+    games: totals.games,
+    points: parseFloat((totals.points / gamesPlayed).toFixed(1)),
+    twoPointers: parseFloat((totals.twoPointers / gamesPlayed).toFixed(1)),
+    threePointers: parseFloat((totals.threePointers / gamesPlayed).toFixed(1)),
+    freeThrowsMade: parseFloat((totals.freeThrowsMade / gamesPlayed).toFixed(1)),
+    freeThrowAttempts: parseFloat((totals.freeThrowAttempts / gamesPlayed).toFixed(1)),
+    fouls: parseFloat((totals.fouls / gamesPlayed).toFixed(1))
+  };
+  
+  // For now, use same values for home/away until we have location data in gameLogs
+  const homeAverages = averages;
+  const awayAverages = averages;
 
 const renderStats = (stats: any) => (
     <div className="grid grid-cols-5 gap-3 text-center">

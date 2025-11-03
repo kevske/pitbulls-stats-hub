@@ -12,6 +12,7 @@ export interface PlayerStats {
   jerseyNumber?: number;
   position?: string;
   age?: number;
+  height?: string;
   bio?: string;
 }
 
