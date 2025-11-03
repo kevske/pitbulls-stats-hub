@@ -119,7 +119,7 @@ function transformPlayerTotals(rows: any[], bioMap: Map<string, PlayerBio>): Pla
       firstName,
       lastName,
       gamesPlayed: parseInt(row.Spiele) || 0,
-      minutesPerGame: row['Minuten pS'] || '00:00',
+      minutesPerGame: typeof row['Minuten pS'] === 'number' ? row['Minuten pS'] : parseFloat((row['Minuten pS'] || '0').replace(',', '.')),
       pointsPerGame: parseFloat((row['Punkte pS'] || '0').replace(',', '.')),
       threePointersPerGame: parseFloat((row['3er pS'] || '0').replace(',', '.')),
       freeThrowPercentage: row['FW-Quote'] || '0%',
@@ -141,7 +141,7 @@ function transformPlayerGameLog(rows: any[]): PlayerGameLog[] {
   return rows.map(row => ({
     playerId: generatePlayerId(row.Vorname, row.Nachname),
     gameNumber: parseInt(row.Spieltag) || 0,
-    minutesPlayed: row.Minuten || '00:00',
+    minutesPlayed: typeof row.Minuten === 'number' ? row.Minuten : parseFloat((row.Minuten || '0').replace(',', '.')),
     points: parseInt(row.Punkte) || 0,
     twoPointers: parseInt(row['2er']) || 0,
     threePointers: parseInt(row['3er']) || 0,
