@@ -4,10 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { games } from "@/data/games";
 import { calculateTotals, calculateAverages } from "@/utils/statsCalculations";
-import { PlayerGameLog } from "@/types/stats";
+import { PlayerGameLog, GameStats } from "@/types/stats";
 import { PlayerTrendIndicator } from "./PlayerTrendIndicator";
+import { useStats } from "@/contexts/StatsContext";
 
 interface PlayerCardProps {
   player: Player;
@@ -17,13 +17,26 @@ interface PlayerCardProps {
 
 const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCardProps) => {
   const navigate = useNavigate();
+  const { games } = useStats();
 
-  const totals = calculateTotals(games, player.id);
-  const averages = calculateAverages(games, player.id);
-  const homeAverages = calculateAverages(games, player.id, "home");
-  const awayAverages = calculateAverages(games, player.id, "away");
+  // Find the player's stats from the players array
+  const playerStats = games.length > 0 ? games[0].playerStats.find(p => p.playerId === player.id) : null;
+  
+  // If we have game logs, use those, otherwise fall back to the hardcoded games
+  const gamesToUse = gameLogs.length > 0 ? gameLogs : [];
+  
+  // Calculate stats using the game logs
+  const stats = {
+    points: playerStats?.points || 0,
+    twoPointers: 0, // Not available in the current data structure
+    threePointers: playerStats?.threePointers || 0,
+    freeThrowsMade: playerStats?.freeThrowsMade || 0,
+    freeThrowAttempts: playerStats?.freeThrowAttempts || 0,
+    fouls: playerStats?.fouls || 0,
+    minutesPlayed: playerStats?.minutesPlayed || 0
+  };
 
-const renderStats = (stats: any) => (
+const renderStats = () => (
     <div className="grid grid-cols-5 gap-3 text-center">
       <div>
         <p className="text-xl font-bold text-primary">{stats.points || 0}</p>
@@ -129,7 +142,17 @@ const renderStats = (stats: any) => (
             </p>
 
             {/* Stats with Tabs */}
-            <Tabs defaultValue="totals" className="w-full">
+            <div className="mt-4">
+              {renderStats(stats)}
+              <div className="mt-2 text-center">
+                <p className="text-sm text-muted-foreground">
+                  ⏱️ {stats.minutesPlayed ? stats.minutesPlayed.toFixed(1) : '0.0'} Min/Spiel
+                </p>
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <Tabs defaultValue="totals" className="w-full mt-4">
               <TabsList className="grid w-full grid-cols-4 mb-3">
                 <TabsTrigger value="totals" className="text-xs">Gesamt</TabsTrigger>
                 <TabsTrigger value="average" className="text-xs">Ø</TabsTrigger>
