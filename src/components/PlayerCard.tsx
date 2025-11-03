@@ -22,17 +22,22 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCard
   // Find the player in the players array from the context
   const playerStats = players.find(p => p.id === player.id);
   
+  // Calculate average free throws made per game from the game logs
+  const playerGameLogs = gameLogs.filter(log => log.playerId === player.id);
+  const totalFreeThrowsMade = playerGameLogs.reduce((sum, game) => sum + (game.freeThrowsMade || 0), 0);
+  const freeThrowsPerGame = playerGameLogs.length > 0 
+    ? totalFreeThrowsMade / playerGameLogs.length 
+    : 0;
+
   // Calculate stats using the player's stats or default to 0
   const stats = {
     points: playerStats?.pointsPerGame || 0,
     twoPointers: 0, // Not available in the current data structure
     threePointers: playerStats?.threePointersPerGame || 0,
-    freeThrowsMade: 0, // Not directly available in PlayerStats
-    freeThrowAttempts: 0, // Not directly available in PlayerStats
+    freeThrowsPerGame,
     fouls: playerStats?.foulsPerGame || 0,
     minutesPlayed: playerStats?.minutesPerGame || 0,
     gamesPlayed: playerStats?.gamesPlayed || 0,
-    freeThrowPercentage: playerStats?.freeThrowPercentage || '0%'
   };
 
 const renderStats = () => (
@@ -51,8 +56,7 @@ const renderStats = () => (
       </div>
       <div>
         <p className="text-xl font-bold text-primary">
-          {stats.freeThrowsMade || 0}
-          {stats.freeThrowAttempts ? `/${stats.freeThrowAttempts}` : ''}
+          {stats.freeThrowsPerGame.toFixed(1)}
         </p>
         <p className="text-xs text-muted-foreground">FT</p>
       </div>
