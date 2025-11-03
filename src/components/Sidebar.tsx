@@ -70,16 +70,15 @@ const Sidebar = () => {
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
-        <div className="p-6 h-full flex flex-col">
-          <div className="flex items-center justify-between mb-8">
-            <h2 
-              className="text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+        <div className="p-6 h-full flex flex-col pt-4">
+          <div className="flex justify-end mb-8">
+            <button
               onClick={() => setIsOpen(false)}
-              role="button"
+              className="fixed top-4 right-4 z-50 p-2"
               aria-label="Menü schließen"
             >
-              ×
-            </h2>
+              <X className="w-8 h-8 text-primary/50 hover:text-primary/70 transition-colors" />
+            </button>
           </div>
           <nav className="space-y-2 flex-1">
             {menuItems.map((item) => {
