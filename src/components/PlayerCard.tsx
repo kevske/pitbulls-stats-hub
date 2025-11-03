@@ -22,23 +22,45 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCard
   // Find the player in the players array from the context
   const playerStats = players.find(p => p.id === player.id);
   
-  // Calculate average free throws made per game from the game logs
-  const playerGameLogs = gameLogs.filter(log => log.playerId === player.id);
-  const totalFreeThrowsMade = playerGameLogs.reduce((sum, game) => sum + (game.freeThrowsMade || 0), 0);
-  const freeThrowsPerGame = playerGameLogs.length > 0 
-    ? totalFreeThrowsMade / playerGameLogs.length 
-    : 0;
+  // Calculate average free throws made per game from the player stats or game logs
+  let freeThrowsPerGame = 0;
+  
+  // First try to get from player stats if available
+  if (playerStats?.freeThrowsPerGame !== undefined) {
+    freeThrowsPerGame = playerStats.freeThrowsPerGame;
+  } else {
+    // Fall back to calculating from game logs
+    const playerGameLogs = gameLogs.filter(log => log.playerId === player.id);
+    const totalFreeThrowsMade = playerGameLogs.reduce((sum, game) => sum + (game.freeThrowsMade || 0), 0);
+    freeThrowsPerGame = playerGameLogs.length > 0 
+      ? totalFreeThrowsMade / playerGameLogs.length 
+      : 0;
+  }
 
-  // Calculate stats using the player's stats or default to 0 and ensure one decimal place
+  // Helper function to format numbers to one decimal place
+  const formatNumber = (num: number | undefined): number => {
+    if (num === undefined || isNaN(num)) return 0;
+    return Math.round(num * 10) / 10; // Rounds to 1 decimal place
+  };
+
+  // Calculate stats using the player's stats or default to 0
   const stats = {
-    points: playerStats?.pointsPerGame ? parseFloat(playerStats.pointsPerGame.toFixed(1)) : 0,
+    points: formatNumber(playerStats?.pointsPerGame),
     twoPointers: 0, // Not available in the current data structure
-    threePointers: playerStats?.threePointersPerGame ? parseFloat(playerStats.threePointersPerGame.toFixed(1)) : 0,
-    freeThrowsPerGame: parseFloat(freeThrowsPerGame.toFixed(1)),
-    fouls: playerStats?.foulsPerGame ? parseFloat(playerStats.foulsPerGame.toFixed(1)) : 0,
-    minutesPlayed: playerStats?.minutesPerGame ? parseFloat(playerStats.minutesPerGame.toFixed(1)) : 0,
+    threePointers: formatNumber(playerStats?.threePointersPerGame),
+    freeThrowsPerGame: formatNumber(freeThrowsPerGame),
+    fouls: formatNumber(playerStats?.foulsPerGame),
+    minutesPlayed: formatNumber(playerStats?.minutesPerGame),
     gamesPlayed: playerStats?.gamesPlayed || 0,
   };
+  
+  // Debug log to check the stats
+  console.log(`Player: ${player.firstName} ${player.lastName}`, {
+    pointsPerGame: playerStats?.pointsPerGame,
+    freeThrowsPerGame: freeThrowsPerGame,
+    foulsPerGame: playerStats?.foulsPerGame,
+    formattedStats: stats
+  });
 
 const renderStats = () => (
     <div className="grid grid-cols-5 gap-3 text-center">
