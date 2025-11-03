@@ -36,24 +36,27 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCard
   const renderStats = (stats: any) => (
     <div className="grid grid-cols-5 gap-3 text-center">
       <div>
-        <p className="text-xl font-bold text-primary">{stats.points}</p>
+        <p className="text-xl font-bold text-primary">{stats.points || 0}</p>
         <p className="text-xs text-muted-foreground">PTS</p>
       </div>
       <div>
-        <p className="text-xl font-bold text-primary">{stats.assists}</p>
-        <p className="text-xs text-muted-foreground">AST</p>
+        <p className="text-xl font-bold text-primary">{stats.twoPointers || 0}</p>
+        <p className="text-xs text-muted-foreground">2P</p>
       </div>
       <div>
-        <p className="text-xl font-bold text-primary">{stats.rebounds}</p>
-        <p className="text-xs text-muted-foreground">REB</p>
+        <p className="text-xl font-bold text-primary">{stats.threePointers || 0}</p>
+        <p className="text-xs text-muted-foreground">3P</p>
       </div>
       <div>
-        <p className="text-xl font-bold text-primary">{stats.steals}</p>
-        <p className="text-xs text-muted-foreground">STL</p>
+        <p className="text-xl font-bold text-primary">
+          {stats.freeThrowsMade || 0}
+          {stats.freeThrowAttempts ? `/${stats.freeThrowAttempts}` : ''}
+        </p>
+        <p className="text-xs text-muted-foreground">FT</p>
       </div>
       <div>
-        <p className="text-xl font-bold text-primary">{stats.blocks}</p>
-        <p className="text-xs text-muted-foreground">BLK</p>
+        <p className="text-xl font-bold text-primary">{stats.fouls || 0}</p>
+        <p className="text-xs text-muted-foreground">FLS</p>
       </div>
     </div>
   );

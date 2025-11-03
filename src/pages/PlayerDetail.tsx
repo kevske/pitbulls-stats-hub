@@ -79,14 +79,14 @@ const PlayerDetail: React.FC = () => {
   const totalMinutes = gameLogs.reduce((sum, game) => {
     if (!game.minutesPlayed) return sum;
     try {
-      const [hours = 0, minutes = 0] = game.minutesPlayed.split(':').map(Number);
-      return sum + (hours * 60) + minutes;
+      const [minutes = 0, seconds = 0] = game.minutesPlayed.split(':').map(Number);
+      return sum + minutes + (seconds > 0 ? 1 : 0); // Round up if there are any seconds
     } catch (e) {
       return sum;
     }
   }, 0);
   
-  const averageMinutes = totalGames > 0 ? (totalMinutes / totalGames / 60).toFixed(1) : '0.0';
+  const averageMinutes = totalGames > 0 ? (totalMinutes / totalGames).toFixed(1) : '0.0';
 
   return (
     <Layout>
