@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useStats } from "@/contexts/StatsContext";
 import { PlayerTrendInfo, getTopTrendingPlayers } from "@/utils/statsTrends";
+import { Player } from "@/data/players";
 import { Flame, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -60,7 +61,7 @@ const Home = () => {
         id: p.id,
         firstName: p.firstName,
         lastName: p.lastName || '',
-        imageUrl: p.imageUrl || '/placeholder-player.png'
+        image: p.imageUrl || '/placeholder-player.png'
       })),
       latestGameNumber,
       gameLogs,
@@ -125,6 +126,9 @@ const Home = () => {
     return (
       <Layout>
         <div className="container mx-auto p-4">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold">Spielerstatistiken</h1>
+          </div>
           <div className="text-center py-8">Lade Daten...</div>
         </div>
       </Layout>
@@ -203,19 +207,17 @@ const Home = () => {
                 <Button 
                   variant="outline" 
                   onClick={() => navigate(`/games/${lastGame.gameNumber}`)}
+                  className="mt-4"
                 >
                   Spielbericht ansehen
                 </Button>
               </div>
             </CardContent>
           </Card>
-              Spielübersicht anzeigen
-            </Button>
-          </div>
 
           {/* Top 3 Performers */}
           <div className="space-y-4 mt-12">
-          <h3 className="text-2xl font-bold text-center">Top 3 Performer</h3>
+            <h3 className="text-2xl font-bold text-center">Top 3 Performer</h3>
           <div className="grid md:grid-cols-3 gap-4">
             {topPerformers.map((performer, index) => (
               <Card 
@@ -293,7 +295,7 @@ const Home = () => {
                       <div className="flex items-center gap-4 mb-4">
                         <div className="relative">
                           <img 
-                            src={player.imageUrl} 
+                            src={player.image} 
                             alt={`${player.firstName} ${player.lastName}`}
                             className="w-16 h-16 rounded-full object-cover border-2 border-orange-200"
                           />
@@ -362,6 +364,7 @@ const Home = () => {
               <div className="font-semibold">Spiel hochladen</div>
             </div>
           </Button>
+        </div>
         </div>
       </div>
     </Layout>
