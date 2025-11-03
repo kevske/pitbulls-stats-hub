@@ -129,7 +129,6 @@ function transformPlayerTotals(rows: any[], bioMap: Map<string, PlayerBio>): Pla
       jerseyNumber: bioData?.jerseyNumber || 0,
       position: bioData?.position || '',
       age: bioData?.age || 0,
-      height: bioData?.height || '',
       bio: bioData?.bio || ''
     };
 
