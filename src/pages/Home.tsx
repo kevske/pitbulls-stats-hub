@@ -5,6 +5,9 @@ import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useStats } from "@/contexts/StatsContext";
+import { PlayerTrendInfo, getTopTrendingPlayers } from "@/utils/statsTrends";
+import { Flame, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -42,6 +45,29 @@ const Home = () => {
     return { homeScore, awayScore, homeTeam, awayTeam };
   }, [lastGame]);
   
+  // Get the latest game number
+  const latestGameNumber = useMemo(() => {
+    if (!games.length) return 0;
+    return Math.max(...games.map(g => g.gameNumber));
+  }, [games]);
+
+  // Get top trending players (most improvements)
+  const risingStars = useMemo<PlayerTrendInfo[]>(() => {
+    if (!players.length || !gameLogs.length || latestGameNumber < 2) return [];
+    
+    return getTopTrendingPlayers(
+      players.map(p => ({
+        id: p.id,
+        firstName: p.firstName,
+        lastName: p.lastName || '',
+        imageUrl: p.imageUrl || '/placeholder-player.png'
+      })),
+      latestGameNumber,
+      gameLogs,
+      3
+    );
+  }, [players, gameLogs, latestGameNumber]);
+
   // Get top 3 performers from all games (sorted by points per game)
   const topPerformers = useMemo(() => {
     if (!players.length || !gameLogs.length) return [];
@@ -183,20 +209,12 @@ const Home = () => {
               </div>
             </CardContent>
           </Card>
-          <div className="text-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/games")}
-              className="text-muted-foreground hover:text-primary"
-            >
-              Alle Spiele →
+              Spielübersicht anzeigen
             </Button>
           </div>
-        </div>
 
-        {/* Top 3 Performers */}
-        <div className="space-y-4">
+          {/* Top 3 Performers */}
+          <div className="space-y-4 mt-12">
           <h3 className="text-2xl font-bold text-center">Top 3 Performer</h3>
           <div className="grid md:grid-cols-3 gap-4">
             {topPerformers.map((performer, index) => (
@@ -241,17 +259,84 @@ const Home = () => {
               </Card>
             ))}
           </div>
-          <div className="text-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/players")}
-              className="text-muted-foreground hover:text-primary"
-            >
-              Alle Spieler →
-            </Button>
+            <div className="text-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/players")}
+                className="text-muted-foreground hover:text-primary"
+              >
+                Alle Spieler →
+              </Button>
+            </div>
           </div>
-        </div>
+
+          {/* Rising Stars Section */}
+          {risingStars.length > 0 && (
+            <div className="space-y-4 mt-12">
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold">Aufsteigende Sterne</h3>
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Flame className="w-4 h-4 mr-1 text-orange-500" />
+                  <span>Verbesserungen im Vergleich zum letzten Spiel</span>
+                </div>
+              </div>
+              
+              <div className="grid md:grid-cols-3 gap-4">
+                {risingStars.map((player, index) => (
+                  <Card 
+                    key={player.playerId}
+                    className="border-orange-100 hover:border-orange-200 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/players/${player.playerId}`)}
+                  >
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="relative">
+                          <img 
+                            src={player.imageUrl} 
+                            alt={`${player.firstName} ${player.lastName}`}
+                            className="w-16 h-16 rounded-full object-cover border-2 border-orange-200"
+                          />
+                          <div className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                            {index + 1}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-lg">
+                            {player.firstName} {player.lastName}
+                          </div>
+                          <div className="flex items-center text-sm text-orange-600">
+                            <Flame className="w-4 h-4 mr-1" />
+                            <span>{player.improvementCount} Verbesserungen</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        {player.improvements.slice(0, 3).map((improvement, i) => (
+                          <div key={i} className="flex justify-between">
+                            <span className="text-muted-foreground">{improvement.category}:</span>
+                            <span className="font-medium">
+                              {improvement.previousValue} →{' '}
+                              <span className="text-green-600">{improvement.currentValue}</span>
+                              <span className="ml-1 text-xs text-green-600">
+                                (+{improvement.improvement}%)
+                              </span>
+                            </span>
+                          </div>
+                        ))}
+                        {player.improvements.length > 3 && (
+                          <div className="text-xs text-muted-foreground text-right">
+                            +{player.improvements.length - 3} weitere Verbesserungen
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
         {/* Quick Links */}
         <div className="grid md:grid-cols-2 gap-4 pt-8">

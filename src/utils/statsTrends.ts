@@ -12,16 +12,27 @@ export function getPlayerImprovements(
   currentGameNumber: number,
   allGameLogs: PlayerGameLog[]
 ): StatImprovement[] {
-  // Filter logs for this player and sort by game number
-  const playerLogs = allGameLogs
-    .filter(log => log.playerId === playerId && log.gameNumber <= currentGameNumber)
-    .sort((a, b) => a.gameNumber - b.gameNumber);
+  // Helper function to check if a player had playing time
+  const hasPlayedMinutes = (game: PlayerGameLog): boolean => {
+    if (!game.minutesPlayed) return false;
+    return game.minutesPlayed !== '0:00' && game.minutesPlayed !== '00:00';
+  };
 
-  // We need at least 2 games to calculate improvement
+  // Filter logs for this player, only include games with playing time, and sort by game number (newest first)
+  const playerLogs = allGameLogs
+    .filter(log => 
+      log.playerId === playerId && 
+      log.gameNumber <= currentGameNumber &&
+      hasPlayedMinutes(log)
+    )
+    .sort((a, b) => b.gameNumber - a.gameNumber);
+
+  // We need at least 2 games with playing time to calculate improvement
   if (playerLogs.length < 2) return [];
 
-  const currentGame = playerLogs[playerLogs.length - 1];
-  const previousGame = playerLogs[playerLogs.length - 2];
+  // Always compare the two most recent games where player had playing time
+  const currentGame = playerLogs[0];
+  const previousGame = playerLogs[1];
 
   // Convert minutes played from 'MM:SS' to minutes (float)
   const parseMinutes = (timeStr: string): number => {
@@ -99,4 +110,45 @@ export function getTopImprovement(
 ): StatImprovement | null {
   const improvements = getPlayerImprovements(playerId, currentGameNumber, allGameLogs);
   return improvements.length > 0 ? improvements[0] : null;
+}
+
+export interface PlayerTrendInfo {
+  playerId: string;
+  firstName: string;
+  lastName: string;
+  image: string;
+  improvements: StatImprovement[];
+  improvementCount: number;
+}
+
+export function getTopTrendingPlayers(
+  players: Array<{ id: string; firstName: string; lastName: string; image?: string }>,
+  currentGameNumber: number,
+  allGameLogs: PlayerGameLog[],
+  limit: number = 3
+): PlayerTrendInfo[] {
+  // Get all players with their improvements
+  const playersWithImprovements = players.map(player => {
+    const improvements = getPlayerImprovements(
+      player.id,
+      currentGameNumber,
+      allGameLogs
+    );
+    
+    return {
+      playerId: player.id,
+      firstName: player.firstName,
+      lastName: player.lastName,
+      image: player.image || '/placeholder-player.png',
+      improvements,
+      improvementCount: improvements.length
+    };
+  });
+
+  // Sort by number of improvements (descending) and get top N
+  return playersWithImprovements
+    .filter(player => player.improvementCount > 0)
+    .sort((a, b) => b.improvementCount - a.improvementCount || 
+                    b.improvements[0]?.improvement - (a.improvements[0]?.improvement || 0))
+    .slice(0, limit);
 }
