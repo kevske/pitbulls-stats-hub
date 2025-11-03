@@ -82,15 +82,9 @@ const Home = () => {
       const totalPoints = playerGames.reduce((sum, game) => sum + (game.points || 0), 0);
       const gamesPlayed = playerGames.length;
       
-      // Calculate total minutes played (convert from HH:MM:SS to minutes)
+      // Calculate total minutes played (now in decimal format)
       const totalMinutes = playerGames.reduce((sum, game) => {
-        if (!game.minutesPlayed) return sum;
-        try {
-          const [hours = 0, minutes = 0, seconds = 0] = game.minutesPlayed.split(':').map(Number);
-          return sum + (hours * 60) + minutes + (seconds > 0 ? 1 : 0);
-        } catch (e) {
-          return sum;
-        }
+        return sum + (game.minutesPlayed || 0);
       }, 0);
       
       const averageMinutes = gamesPlayed > 0 ? (totalMinutes / gamesPlayed).toFixed(1) : '0.0';
