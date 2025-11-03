@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 
 interface GameLog {
   gameNumber: number;
-  minutesPlayed: string;
+  minutesPlayed: number;
   points: number;
   threePointers: number;
   freeThrowsMade: number;
