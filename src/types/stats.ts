@@ -1,18 +1,43 @@
 export interface PlayerStats {
+  // Player info
   id: string;
   firstName: string;
   lastName: string;
-  gamesPlayed: number;
-  minutesPerGame: number;
-  pointsPerGame: number;
-  threePointersPerGame: number;
-  freeThrowPercentage: string;
-  foulsPerGame: number;
   imageUrl: string;
   jerseyNumber?: number;
   position?: string;
   age?: number;
   bio?: string;
+  
+  // Game stats
+  gamesPlayed: number;
+  
+  // Per-game stats (averages)
+  minutesPerGame: number;
+  pointsPerGame: number;
+  threePointersPerGame: number;
+  foulsPerGame: number;
+  freeThrowPercentage: string;
+  
+  // Home game stats
+  homeGames: number;
+  homeMinutesPlayed: number;
+  homePoints: number;
+  homeThreePointers: number;
+  homeFouls: number;
+  
+  // Away game stats
+  awayGames: number;
+  awayMinutesPlayed: number;
+  awayPoints: number;
+  awayThreePointers: number;
+  awayFouls: number;
+  
+  // Total stats
+  totalMinutes: number;
+  totalPoints: number;
+  totalThreePointers: number;
+  totalFouls: number;
 }
 
 export interface GameStats {
