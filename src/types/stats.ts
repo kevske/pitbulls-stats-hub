@@ -3,7 +3,7 @@ export interface PlayerStats {
   firstName: string;
   lastName: string;
   gamesPlayed: number;
-  minutesPerGame: string;
+  minutesPerGame: number;
   pointsPerGame: number;
   threePointersPerGame: number;
   freeThrowPercentage: string;

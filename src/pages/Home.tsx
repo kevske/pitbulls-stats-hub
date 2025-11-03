@@ -82,12 +82,8 @@ const Home = () => {
       const totalPoints = playerGames.reduce((sum, game) => sum + (game.points || 0), 0);
       const gamesPlayed = playerGames.length;
       
-      // Calculate total minutes played (now in decimal format)
-      const totalMinutes = playerGames.reduce((sum, game) => {
-        return sum + (game.minutesPlayed || 0);
-      }, 0);
-      
-      const averageMinutes = gamesPlayed > 0 ? (totalMinutes / gamesPlayed).toFixed(1) : '0.0';
+      // Use the player's average minutes directly from the player data
+      const averageMinutes = player.minutesPerGame || 0;
       
       // Calculate other stats
       const totalThreePointers = playerGames.reduce((sum, game) => sum + (game.threePointers || 0), 0);
@@ -104,7 +100,7 @@ const Home = () => {
         pointsPerGame: gamesPlayed > 0 ? totalPoints / gamesPlayed : 0,
         threePointersPerGame,
         freeThrowPercentage,
-        averageMinutes,
+        averageMinutes: Number(averageMinutes).toFixed(1),
         totalPoints,
         gamesPlayed
       };
@@ -226,9 +222,9 @@ const Home = () => {
                       <div className="text-lg font-semibold">
                         {performer.firstName} {performer.lastName || ''}
                       </div>
-                      {performer.averageMinutes !== '0.0' && (
+                      {performer.averageMinutes > 0 && (
                         <div className="text-sm text-muted-foreground">
-                          ⏱️ {performer.averageMinutes} Min/Spiel
+                          ⏱️ {Number(performer.averageMinutes).toFixed(1)} Min/Spiel
                         </div>
                       )}
                     </div>
