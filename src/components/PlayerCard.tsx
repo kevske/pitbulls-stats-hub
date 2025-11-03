@@ -11,17 +11,17 @@ interface PlayerCardProps {
   player: PlayerStats;
   gameLogs?: PlayerGameLog[];
   currentGameNumber?: number;
+  gameFilter?: 'all' | 'home' | 'away';
 }
 
-type GameFilter = 'all' | 'home' | 'away';
-
-const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCardProps) => {
+const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter = 'all' }: PlayerCardProps) => {
   const navigate = useNavigate();
-  const [gameFilter, setGameFilter] = useState<GameFilter>('all');
+  // Game filter is now controlled by parent component
   
   // Calculate filtered stats based on game type
   const filteredStats = useMemo(() => {
-    if (gameFilter === 'all') {
+    const filter = gameFilter || 'all';
+    if (filter === 'all') {
       return {
         points: player.pointsPerGame,
         threePointers: player.threePointersPerGame,
@@ -36,7 +36,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCard
     // Filter game logs by type
     const playerGameLogs = gameLogs.filter(log => 
       log.playerId === player.id && 
-      (gameFilter === 'home' ? log.gameType === 'Heim' : log.gameType === 'Auswärts')
+      (filter === 'home' ? log.gameType === 'Heim' : log.gameType === 'Auswärts')
     );
     
     if (playerGameLogs.length === 0) {
@@ -167,39 +167,6 @@ const renderStats = () => (
               </p>
             )}
 
-            {/* Game Filter Toggle */}
-            <div className="flex justify-center gap-2 mb-4">
-              <button
-                onClick={(e) => { e.stopPropagation(); setGameFilter('all'); }}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                  gameFilter === 'all' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                Alle Spiele
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setGameFilter('home'); }}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${
-                  gameFilter === 'home' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <Home size={12} /> Heim
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setGameFilter('away'); }}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${
-                  gameFilter === 'away' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <Plane size={12} /> Auswärts
-              </button>
-            </div>
 
             {/* Stats */}
             <div className="mt-4">
