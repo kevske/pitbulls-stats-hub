@@ -71,14 +71,16 @@ const Sidebar = () => {
         } md:translate-x-0`}
       >
         <div className="p-6 h-full flex flex-col">
-          <h2 
-            className="text-5xl font-bold text-primary/50 mb-8 cursor-pointer hover:text-primary/70 transition-colors"
-            onClick={() => setIsOpen(false)}
-            role="button"
-            aria-label="Menü schließen"
-          >
-            ×
-          </h2>
+          <div className="flex items-center justify-between mb-8">
+            <h2 
+              className="text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+              onClick={() => setIsOpen(false)}
+              role="button"
+              aria-label="Menü schließen"
+            >
+              ×
+            </h2>
+          </div>
           <nav className="space-y-2 flex-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
