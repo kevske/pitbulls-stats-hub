@@ -6,7 +6,7 @@ export interface GamePlayerStats {
   freeThrowsMade: number;
   freeThrowAttempts: number;
   fouls: number;
-  minutesPlayed: string;
+  minutesPlayed: number;
 }
 
 export interface Game {

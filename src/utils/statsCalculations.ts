@@ -8,7 +8,7 @@ export interface PlayerStats {
   freeThrowsMade: number;
   freeThrowAttempts: number;
   fouls: number;
-  minutesPlayed: string;
+  minutesPlayed: number;
 }
 
 export interface PlayerAverages extends Omit<PlayerStats, 'minutesPlayed'> {
@@ -28,30 +28,10 @@ export const calculateTotals = (
     .map((game) => game.playerStats.find((ps) => ps.playerId === playerId))
     .filter((ps): ps is GamePlayerStats => ps !== undefined);
 
-  // Helper function to convert MM:SS to total minutes
-  const parseMinutes = (timeStr: string): number => {
-    if (!timeStr) return 0;
-    const [minutes = 0, seconds = 0] = timeStr.split(':').map(Number);
-    return minutes + (seconds / 60);
-  };
-
-  // Calculate total minutes as a string in MM:SS format
+  // Calculate total minutes
   const totalMinutes = playerGames.reduce((sum, game) => {
-    if (!game.minutesPlayed) return sum;
-    try {
-      const [minutes = 0, seconds = 0] = game.minutesPlayed.split(':').map(Number);
-      return sum + (minutes * 60) + seconds;
-    } catch (e) {
-      return sum;
-    }
+    return sum + (game.minutesPlayed || 0);
   }, 0);
-
-  // Convert total seconds back to MM:SS format
-  const formatMinutes = (totalSeconds: number): string => {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   return {
     games: playerGames.length,
@@ -61,7 +41,7 @@ export const calculateTotals = (
     freeThrowsMade: playerGames.reduce((sum, ps) => sum + (ps.freeThrowsMade || 0), 0),
     freeThrowAttempts: playerGames.reduce((sum, ps) => sum + (ps.freeThrowAttempts || 0), 0),
     fouls: playerGames.reduce((sum, ps) => sum + (ps.fouls || 0), 0),
-    minutesPlayed: formatMinutes(totalMinutes)
+    minutesPlayed: totalMinutes
   };
 };
 
@@ -77,13 +57,7 @@ export const calculateAverages = (
   const playerGames = getPlayerGames(games, playerId);
   const totalMinutes = playerGames.reduce((sum, game) => {
     const playerStats = game.playerStats.find(ps => ps.playerId === playerId);
-    if (!playerStats?.minutesPlayed) return sum;
-    try {
-      const [minutes = 0, seconds = 0] = playerStats.minutesPlayed.split(':').map(Number);
-      return sum + minutes + (seconds / 60);
-    } catch (e) {
-      return sum;
-    }
+    return sum + (playerStats?.minutesPlayed || 0);
   }, 0);
 
   return {
