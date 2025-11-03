@@ -31,7 +31,10 @@ const UploadGame = () => {
     setPlayerStats((prev) =>
       prev.map((ps) =>
         ps.playerId === playerId
-          ? { ...ps, [field]: parseInt(value) || 0 }
+          ? { 
+              ...ps, 
+              [field]: parseFloat(value) || 0 // Parse as float to handle decimal minutes
+            }
           : ps
       )
     );

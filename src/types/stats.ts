@@ -30,7 +30,7 @@ export interface GameStats {
 export interface PlayerGameLog {
   playerId: string;
   gameNumber: number;
-  minutesPlayed: string;
+  minutesPlayed: number; // Changed from string to number for decimal minutes
   points: number;
   twoPointers: number;
   threePointers: number;

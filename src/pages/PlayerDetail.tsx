@@ -16,12 +16,13 @@ interface GameLog {
   [key: string]: string | number | undefined;
 }
 
-interface Player {
-  firstName: string;
-  lastName: string;
-  jerseyNumber?: string;
+// Using the main Player interface from data/players
+import { Player as MainPlayer } from '@/data/players';
+
+// Extend the main Player interface with any additional fields needed for this component
+interface Player extends Omit<MainPlayer, 'jerseyNumber'> {
+  jerseyNumber?: number;
   position?: string;
-  age?: number;
   bio?: string;
   imageUrl?: string;
 }
@@ -75,15 +76,9 @@ const PlayerDetail: React.FC = () => {
     : '0%';
   const fpg = totalGames > 0 ? (totalFouls / totalGames).toFixed(1) : '0.0';
 
-  // Calculate total minutes played
+  // Calculate total minutes played (now in decimal format)
   const totalMinutes = gameLogs.reduce((sum, game) => {
-    if (!game.minutesPlayed) return sum;
-    try {
-      const [minutes = 0, seconds = 0] = game.minutesPlayed.split(':').map(Number);
-      return sum + minutes + (seconds > 0 ? 1 : 0); // Round up if there are any seconds
-    } catch (e) {
-      return sum;
-    }
+    return sum + (game.minutesPlayed || 0);
   }, 0);
   
   const averageMinutes = totalGames > 0 ? (totalMinutes / totalGames).toFixed(1) : '0.0';
@@ -181,7 +176,7 @@ const PlayerDetail: React.FC = () => {
                         Spiel {game.gameNumber}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {game.minutesPlayed || '00:00'}
+                        {game.minutesPlayed.toFixed(1) || '0.0'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {game.points || 0}
