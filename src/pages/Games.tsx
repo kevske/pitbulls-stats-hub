@@ -66,14 +66,9 @@ const Games: React.FC = () => {
                   </div>
                   <div className="text-2xl font-bold mx-4 text-center">
                     {game.finalScore ? (
-                      <>
-                        <div className="text-3xl">
-                          {game.finalScore.split('-')[0]?.split(':')[0]?.trim() || '0'} : {game.finalScore.split('-')[1]?.split(':')[0]?.trim() || '0'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {game.finalScore.split(':').slice(0, 2).join(':')}
-                        </div>
-                      </>
+                      <div className="text-3xl">
+                        {game.finalScore.split('-')[0]?.split(':')[0]?.trim() || '0'} : {game.finalScore.split('-')[1]?.split(':')[0]?.trim() || '0'}
+                      </div>
                     ) : (
                       <div className="text-gray-400">vs</div>
                     )}

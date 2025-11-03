@@ -165,10 +165,9 @@ const Home = () => {
                 </div>
                 {lastGame.finalScore && (lastGame.finalScore.includes('-') || lastGame.finalScore.includes(':')) ? (
                   <div className="text-xl font-bold">
-                    {Number(homeScore) > Number(awayScore) ? '🏆 Sieg' : '😞 Niederlage'}
-                    <div className="text-sm font-normal text-gray-500 mt-1">
-                      {lastGame.finalScore}
-                    </div>
+                    {homeTeam === 'TSV Neuenstadt' 
+                      ? (Number(homeScore) > Number(awayScore) ? '🏆 Sieg' : '😞 Niederlage')
+                      : (Number(awayScore) > Number(homeScore) ? '🏆 Sieg' : '😞 Niederlage')}
                   </div>
                 ) : (
                   <div className="text-xl font-bold text-yellow-600">
