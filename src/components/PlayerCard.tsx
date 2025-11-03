@@ -98,7 +98,7 @@ const renderStats = () => (
   return (
     <Card 
       className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border overflow-hidden"
-      onClick={() => navigate(`/player/${player.id}`)}
+      onClick={() => navigate(`/players/${player.id}`)}
     >
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row">
