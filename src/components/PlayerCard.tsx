@@ -108,6 +108,10 @@ const renderStats = () => (
               src="/placeholder-player.png"
               alt={`${player.firstName} ${player.lastName}`}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/placeholder-player.png';
+              }}
             />
             <div className="absolute bottom-3 left-3 bg-primary/90 text-primary-foreground rounded-full p-1.5">
               <TrendingUp size={20} />
