@@ -124,7 +124,7 @@ function transformPlayerTotals(rows: any[], bioMap: Map<string, PlayerBio>): Pla
       threePointersPerGame: parseFloat((row['3er pS'] || '0').replace(',', '.')),
       freeThrowPercentage: row['FW-Quote'] || '0%',
       foulsPerGame: parseFloat((row['Fouls pS'] || '0').replace(',', '.')),
-      imageUrl: `/pitbulls-stats-hub/players/${playerId}.jpg`,
+      imageUrl: '/placeholder-player.png',
       // Use bio data if available, otherwise use defaults
       jerseyNumber: bioData?.jerseyNumber || 0,
       position: bioData?.position || '',
