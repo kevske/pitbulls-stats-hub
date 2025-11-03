@@ -74,10 +74,12 @@ export const calculateAverages = (
   const gamesPlayed = totals.games || 1;
 
   // Calculate average minutes as a number (in minutes)
+  const playerGames = getPlayerGames(games, playerId);
   const totalMinutes = playerGames.reduce((sum, game) => {
-    if (!game.minutesPlayed) return sum;
+    const playerStats = game.playerStats.find(ps => ps.playerId === playerId);
+    if (!playerStats?.minutesPlayed) return sum;
     try {
-      const [minutes = 0, seconds = 0] = game.minutesPlayed.split(':').map(Number);
+      const [minutes = 0, seconds = 0] = playerStats.minutesPlayed.split(':').map(Number);
       return sum + minutes + (seconds / 60);
     } catch (e) {
       return sum;

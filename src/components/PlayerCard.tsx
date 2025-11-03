@@ -2,7 +2,7 @@ import { Player } from "@/data/players";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { Star, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { games } from "@/data/games";
 import { calculateTotals, calculateAverages } from "@/utils/statsCalculations";
@@ -23,17 +23,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCard
   const homeAverages = calculateAverages(games, player.id, "home");
   const awayAverages = calculateAverages(games, player.id, "away");
 
-  const renderStars = (rating: number) => {
-    return [...Array(5)].map((_, i) => (
-      <Star
-        key={i}
-        size={16}
-        className={i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}
-      />
-    ));
-  };
-
-  const renderStats = (stats: any) => (
+const renderStats = (stats: any) => (
     <div className="grid grid-cols-5 gap-3 text-center">
       <div>
         <p className="text-xl font-bold text-primary">{stats.points || 0}</p>
@@ -88,15 +78,15 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCard
                 <div className="flex items-center gap-2">
                   <h3 className="text-2xl font-bold text-foreground">
                     {player.firstName} {player.lastName}
+                    {currentGameNumber > 1 && gameLogs.length > 1 && (
+                      <PlayerTrendIndicator 
+                        playerId={player.id}
+                        currentGameNumber={currentGameNumber}
+                        allGameLogs={gameLogs}
+                        className="ml-2 -mt-1"
+                      />
+                    )}
                   </h3>
-                  {currentGameNumber > 1 && gameLogs.length > 1 && (
-                    <PlayerTrendIndicator 
-                      playerId={player.id}
-                      currentGameNumber={currentGameNumber}
-                      allGameLogs={gameLogs}
-                      className="-mt-1"
-                    />
-                  )}
                 </div>
                 <p className="text-sm text-muted-foreground">{player.team}</p>
               </div>
@@ -108,15 +98,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCard
               </Badge>
             </div>
 
-            {/* Rating */}
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex gap-0.5">
-                {renderStars(player.rating)}
-              </div>
-              <span className="text-sm font-semibold text-foreground">{player.rating}/5</span>
-            </div>
-
-            {/* Physical Stats */}
+{/* Physical Stats */}
             <div className="flex gap-6 mb-4">
               <div>
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">Height</div>
