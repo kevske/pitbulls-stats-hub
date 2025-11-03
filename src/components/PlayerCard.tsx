@@ -29,21 +29,21 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCard
     ? totalFreeThrowsMade / playerGameLogs.length 
     : 0;
 
-  // Calculate stats using the player's stats or default to 0
+  // Calculate stats using the player's stats or default to 0 and ensure one decimal place
   const stats = {
-    points: playerStats?.pointsPerGame || 0,
+    points: playerStats?.pointsPerGame ? parseFloat(playerStats.pointsPerGame.toFixed(1)) : 0,
     twoPointers: 0, // Not available in the current data structure
-    threePointers: playerStats?.threePointersPerGame || 0,
-    freeThrowsPerGame,
-    fouls: playerStats?.foulsPerGame || 0,
-    minutesPlayed: playerStats?.minutesPerGame || 0,
+    threePointers: playerStats?.threePointersPerGame ? parseFloat(playerStats.threePointersPerGame.toFixed(1)) : 0,
+    freeThrowsPerGame: parseFloat(freeThrowsPerGame.toFixed(1)),
+    fouls: playerStats?.foulsPerGame ? parseFloat(playerStats.foulsPerGame.toFixed(1)) : 0,
+    minutesPlayed: playerStats?.minutesPerGame ? parseFloat(playerStats.minutesPerGame.toFixed(1)) : 0,
     gamesPlayed: playerStats?.gamesPlayed || 0,
   };
 
 const renderStats = () => (
     <div className="grid grid-cols-5 gap-3 text-center">
       <div>
-        <p className="text-xl font-bold text-primary">{stats.points || 0}</p>
+        <p className="text-xl font-bold text-primary">{stats.points}</p>
         <p className="text-xs text-muted-foreground">PTS</p>
       </div>
       <div>
@@ -51,17 +51,17 @@ const renderStats = () => (
         <p className="text-xs text-muted-foreground">2P</p>
       </div>
       <div>
-        <p className="text-xl font-bold text-primary">{stats.threePointers || 0}</p>
+        <p className="text-xl font-bold text-primary">{stats.threePointers}</p>
         <p className="text-xs text-muted-foreground">3P</p>
       </div>
       <div>
         <p className="text-xl font-bold text-primary">
-          {stats.freeThrowsPerGame.toFixed(1)}
+          {stats.freeThrowsPerGame}
         </p>
         <p className="text-xs text-muted-foreground">FT</p>
       </div>
       <div>
-        <p className="text-xl font-bold text-primary">{stats.fouls || 0}</p>
+        <p className="text-xl font-bold text-primary">{stats.fouls}</p>
         <p className="text-xs text-muted-foreground">FLS</p>
       </div>
     </div>
@@ -149,7 +149,7 @@ const renderStats = () => (
               {renderStats()}
               <div className="mt-2 text-center space-y-1">
                 <p className="text-sm text-muted-foreground">
-                  ⏱️ {stats.minutesPlayed ? stats.minutesPlayed.toFixed(1) : '0.0'} Min/Spiel
+                  ⏱️ {stats.minutesPlayed} Min/Spiel
                   {stats.gamesPlayed > 0 && ` (${stats.gamesPlayed} Spiele)`}
                 </p>
                 {stats.freeThrowPercentage && (
