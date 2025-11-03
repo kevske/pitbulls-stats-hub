@@ -71,7 +71,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCard
           {/* Left side - Player Image */}
           <div className="md:w-48 h-48 md:h-auto flex-shrink-0 relative bg-secondary">
             <img
-              src={player.image}
+              src="/placeholder-player.png"
               alt={`${player.firstName} ${player.lastName}`}
               className="w-full h-full object-cover"
             />
