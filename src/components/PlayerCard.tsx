@@ -17,36 +17,22 @@ interface PlayerCardProps {
 
 const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0 }: PlayerCardProps) => {
   const navigate = useNavigate();
-  const { games } = useStats();
-
-  // Safely find the player's stats from the games data
-  let playerStats = null;
-  if (games.length > 0) {
-    // Try to find the player in any of the games
-    for (const game of games) {
-      if (game.playerStats) {
-        const found = game.playerStats.find((p: any) => p.playerId === player.id);
-        if (found) {
-          playerStats = found;
-          break;
-        }
-      }
-    }
-  }
+  const { players } = useStats();
   
-  // If we have game logs, use those, otherwise fall back to the hardcoded games
-  const gamesToUse = gameLogs.length > 0 ? gameLogs : [];
+  // Find the player in the players array from the context
+  const playerStats = players.find(p => p.id === player.id);
   
-  // Calculate stats using the found player stats or default to 0
+  // Calculate stats using the player's stats or default to 0
   const stats = {
-    points: playerStats?.points || 0,
+    points: playerStats?.pointsPerGame || 0,
     twoPointers: 0, // Not available in the current data structure
-    threePointers: playerStats?.threePointers || 0,
-    freeThrowsMade: playerStats?.freeThrowsMade || 0,
-    freeThrowAttempts: playerStats?.freeThrowAttempts || 0,
-    fouls: playerStats?.fouls || 0,
-    minutesPlayed: playerStats?.minutesPlayed || 0,
-    gamesPlayed: playerStats ? 1 : 0 // Add games played count
+    threePointers: playerStats?.threePointersPerGame || 0,
+    freeThrowsMade: 0, // Not directly available in PlayerStats
+    freeThrowAttempts: 0, // Not directly available in PlayerStats
+    fouls: playerStats?.foulsPerGame || 0,
+    minutesPlayed: playerStats?.minutesPerGame || 0,
+    gamesPlayed: playerStats?.gamesPlayed || 0,
+    freeThrowPercentage: playerStats?.freeThrowPercentage || '0%'
   };
 
 const renderStats = () => (
@@ -157,11 +143,16 @@ const renderStats = () => (
             {/* Stats with Tabs */}
             <div className="mt-4">
               {renderStats()}
-              <div className="mt-2 text-center">
+              <div className="mt-2 text-center space-y-1">
                 <p className="text-sm text-muted-foreground">
                   ⏱️ {stats.minutesPlayed ? stats.minutesPlayed.toFixed(1) : '0.0'} Min/Spiel
                   {stats.gamesPlayed > 0 && ` (${stats.gamesPlayed} Spiele)`}
                 </p>
+                {stats.freeThrowPercentage && (
+                  <p className="text-sm text-muted-foreground">
+                    🏀 Freiwürfe: {stats.freeThrowPercentage}
+                  </p>
+                )}
               </div>
             </div>
 
