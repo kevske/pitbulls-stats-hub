@@ -40,8 +40,8 @@ const Players: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Fixed Filter Toggle */}
-      <div className="fixed top-0 left-0 right-0 bg-background/95 backdrop-blur-sm z-40 border-b">
+      {/* Fixed Filter Toggle - Higher z-index to appear above header */}
+      <div className="fixed top-0 left-0 right-0 bg-background/95 backdrop-blur-sm z-50 border-b">
         <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-center gap-2">
             <Filter size={16} className="text-muted-foreground" />
@@ -80,8 +80,8 @@ const Players: React.FC = () => {
         </div>
       </div>
       
-      {/* Add padding to account for fixed header */}
-      <div className="pt-16">
+      {/* Add padding to account for fixed header and filter toggle */}
+      <div className="pt-24">
         <Layout>
           <div className="container mx-auto p-4">
         <div className="space-y-4 mb-8">
