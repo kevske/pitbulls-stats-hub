@@ -11,19 +11,19 @@ const Layout = ({ children }: LayoutProps) => {
       <Sidebar />
       
       <div className="transition-all duration-300 md:pl-64">
-        {/* Decorative X marks top-right */}
+        {/* Decorative X marks commented out as requested
         <div className="fixed top-8 right-8 z-0 flex flex-col gap-4">
           {[...Array(4)].map((_, i) => (
             <div key={`top-${i}`} className="text-primary/30 text-5xl font-bold select-none">×</div>
           ))}
         </div>
 
-        {/* Decorative X marks bottom-right */}
         <div className="fixed bottom-8 right-8 z-0 flex flex-col gap-4">
           {[...Array(4)].map((_, i) => (
             <div key={`bottom-${i}`} className="text-primary/50 text-5xl font-bold select-none">×</div>
           ))}
         </div>
+        */}
 
         <main className="p-6 pt-20 md:pt-6">
           {children}

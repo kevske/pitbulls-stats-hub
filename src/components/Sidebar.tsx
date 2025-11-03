@@ -93,16 +93,6 @@ const Sidebar = () => {
               );
             })}
           </nav>
-          
-          {/* Close button for desktop */}
-          {!isMobile && (
-            <button
-              onClick={() => setIsOpen(false)}
-              className="mt-auto text-left text-sm text-muted-foreground hover:text-foreground transition-colors p-2"
-            >
-              Menü schließen
-            </button>
-          )}
         </div>
       </aside>
     </>
