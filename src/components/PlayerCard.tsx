@@ -105,7 +105,7 @@ const renderStats = () => (
           {/* Left side - Player Image */}
           <div className="md:w-48 h-48 md:h-auto flex-shrink-0 relative bg-secondary">
             <img
-              src="/placeholder-player.png"
+              src={`/players/${player.firstName.toLowerCase()}-${player.lastName?.toLowerCase() || ''}.jpg`}
               alt={`${player.firstName} ${player.lastName}`}
               className="w-full h-full object-cover"
               onError={(e) => {
