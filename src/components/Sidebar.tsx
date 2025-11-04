@@ -35,7 +35,7 @@ const Sidebar = () => {
       {/* Menu button - always visible, toggles between burger and X */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed z-50 top-4 left-4 p-2"
+        className="fixed z-[60] top-4 left-4 p-2"
         aria-label={isOpen ? 'Menü schließen' : 'Menü öffnen'}
       >
         {isOpen ? (
@@ -52,14 +52,14 @@ const Sidebar = () => {
       {/* Overlay - only on mobile */}
       {isMobile && isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40"
+          className="fixed inset-0 bg-black/50 z-50"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside 
-        className={`fixed top-0 left-0 h-screen w-64 bg-background/95 backdrop-blur-md border-r border-border z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-screen w-64 bg-background/95 backdrop-blur-md border-r border-border z-40 transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
