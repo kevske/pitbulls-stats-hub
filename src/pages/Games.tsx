@@ -47,6 +47,22 @@ const Games: React.FC = () => {
       <div className="container mx-auto p-4">
         <h1 className="text-3xl font-bold mb-6">Spiele</h1>
         
+        {/* YouTube Video Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4">Letztes Spiel</h2>
+          <div className="aspect-w-16 aspect-h-9 w-full max-w-4xl mx-auto">
+            <iframe 
+              className="w-full h-[315px] rounded-lg shadow-lg"
+              src="https://www.youtube.com/embed/videoseries?si=yV-ubstdCCUPmekk&amp;list=PLo9Gj2rLRK5xZB-MKl2i8T1gEyCti4Y71" 
+              title="YouTube video player" 
+              frameBorder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              referrerPolicy="strict-origin-when-cross-origin" 
+              allowFullScreen>
+            </iframe>
+          </div>
+        </div>
+        
         <div className="space-y-4">
           {games.map((game) => (
             <Card 
