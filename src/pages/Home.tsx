@@ -209,18 +209,42 @@ const Home = () => {
               <div className="flex flex-col items-center gap-4">
                 <div className="text-2xl font-bold">Spieltag {lastGame.gameNumber}</div>
                 <div className="text-lg">{lastGame.date}</div>
-                <div className="flex items-center justify-center gap-8 my-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{homeTeam}</div>
-                    <div className="text-5xl font-black text-primary">
-                      {homeScore}
+                <div className="w-full">
+                  {/* Team names row - only on mobile */}
+                  <div className="md:hidden flex items-center justify-center gap-2 mb-2">
+                    <div className="text-sm font-medium text-center flex-1 line-clamp-2 min-h-[2.5rem] flex items-center justify-center">
+                      {homeTeam}
+                    </div>
+                    <div className="px-2 text-sm font-medium">vs</div>
+                    <div className="text-sm font-medium text-center flex-1 line-clamp-2 min-h-[2.5rem] flex items-center justify-center">
+                      {awayTeam}
                     </div>
                   </div>
-                  <div className="text-2xl font-bold">vs</div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{awayTeam}</div>
-                    <div className="text-5xl font-black">
-                      {awayScore}
+                  
+                  {/* Score row */}
+                  <div className="flex items-center justify-center gap-4 md:gap-8 my-2">
+                    {/* Hidden on mobile - team name is shown in the row above */}
+                    <div className="hidden md:block text-center flex-1">
+                      <div className="text-2xl font-bold line-clamp-2">{homeTeam}</div>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="text-4xl md:text-5xl font-black text-primary">
+                        {homeScore}
+                      </div>
+                    </div>
+                    
+                    <div className="text-2xl font-bold">:</div>
+                    
+                    <div className="text-center">
+                      <div className="text-4xl md:text-5xl font-black">
+                        {awayScore}
+                      </div>
+                    </div>
+                    
+                    {/* Hidden on mobile - team name is shown in the row above */}
+                    <div className="hidden md:block text-center flex-1">
+                      <div className="text-2xl font-bold line-clamp-2">{awayTeam}</div>
                     </div>
                   </div>
                 </div>
