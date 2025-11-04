@@ -60,15 +60,13 @@ const Games: React.FC = () => {
               </CardHeader>
               <CardContent>
                 {/* Team names row - only on mobile */}
-                <div className="md:hidden flex items-center justify-between mb-2">
+                <div className="md:hidden flex items-center justify-between mb-1">
                   <div className="text-sm font-medium text-right flex-1 pr-2 line-clamp-2">
                     {game.homeTeam || 'Pitbulls'}
-                    <div className="text-xs text-gray-500">Heim</div>
                   </div>
-                  <div className="px-2 text-sm font-medium">vs</div>
+                  <div className="px-1 text-sm font-medium">vs</div>
                   <div className="text-sm font-medium text-left flex-1 pl-2 line-clamp-2">
                     {game.awayTeam || 'Gegner'}
-                    <div className="text-xs text-gray-500">Gast</div>
                   </div>
                 </div>
                 
