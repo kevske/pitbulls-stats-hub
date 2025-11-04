@@ -96,7 +96,13 @@ const Players: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {players
-            .filter(player => player.firstName && player.firstName.trim() !== '' && player.gamesPlayed > 0)
+            .filter(player => player.firstName && player.firstName.trim() !== '')
+            .sort((a, b) => {
+              // Sort by last name, then first name
+              const nameA = `${a.lastName} ${a.firstName}`.toLowerCase();
+              const nameB = `${b.lastName} ${b.firstName}`.toLowerCase();
+              return nameA.localeCompare(nameB);
+            })
             .map((player) => {
               return (
                 <div key={player.id} className="h-full">
