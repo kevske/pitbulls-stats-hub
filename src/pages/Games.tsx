@@ -114,16 +114,11 @@ const Games: React.FC = () => {
                     <div className="text-sm text-gray-500">Gast</div>
                   </div>
                 </div>
-                    <div className="mt-4 grid grid-cols-3 text-center text-sm text-gray-500">
-                      <div>1. Q: {game.q1Score}</div>
-                      <div>Halbzeit: {game.halfTimeScore}</div>
-                      <div>3. Q: {game.q3Score}</div>
-                    </div>
                   </div>
                   
                   {/* Chart - shown on right side on desktop, below scores on mobile */}
-                  <div className="mt-4 md:mt-0 md:w-1/2 lg:w-2/5 xl:w-1/3">
-                    <div className="h-48 md:h-full">
+                  <div className="mt-4 md:mt-0 md:w-2/5 lg:w-1/3">
+                    <div className="h-64">
                       <ScoreProgressionChart game={game} />
                     </div>
                   </div>
@@ -148,79 +143,105 @@ const ScoreProgressionChart: React.FC<ScoreProgressionChartProps> = ({ game }) =
   }
 
   const chartData = useMemo(() => {
-    const parseScore = (score: string, isHome: boolean) => {
-      if (!score) return 0;
-      const [home, away] = score.split('-').map(Number);
-      return isHome ? home : away;
+    const parseScore = (score: string) => {
+      if (!score) return { home: 0, away: 0 };
+      // Handle both '14:14' and '14 - 14' formats
+      const [home, away] = score.split(/[:\-]/).map(s => parseInt(s.trim()));
+      return { home: isNaN(home) ? 0 : home, away: isNaN(away) ? 0 : away };
     };
 
     const isHomeGame = game.homeTeam?.toLowerCase().includes('neuenstadt') || 
                       game.homeTeam?.toLowerCase().includes('pitbulls');
 
-    const tsvScores = [
-      { period: 'Q1', score: parseScore(game.q1Score, isHomeGame) },
-      { period: 'HT', score: parseScore(game.halfTimeScore, isHomeGame) },
-      { period: 'Q3', score: parseScore(game.q3Score, isHomeGame) },
-      { period: 'FT', score: parseScore(game.finalScore, isHomeGame) }
-    ];
+    const q1 = parseScore(game.q1Score);
+    const ht = parseScore(game.halfTimeScore);
+    const q3 = parseScore(game.q3Score);
+    const ft = parseScore(game.finalScore);
 
-    const opponentScores = [
-      { period: 'Q1', score: parseScore(game.q1Score, !isHomeGame) },
-      { period: 'HT', score: parseScore(game.halfTimeScore, !isHomeGame) },
-      { period: 'Q3', score: parseScore(game.q3Score, !isHomeGame) },
-      { period: 'FT', score: parseScore(game.finalScore, !isHomeGame) }
+    return [
+      { 
+        period: 'Q1', 
+        'TSV Neuenstadt': isHomeGame ? q1.home : q1.away,
+        'Gegner': isHomeGame ? q1.away : q1.home
+      },
+      { 
+        period: 'HT',
+        'TSV Neuenstadt': isHomeGame ? ht.home : ht.away,
+        'Gegner': isHomeGame ? ht.away : ht.home
+      },
+      { 
+        period: 'Q3',
+        'TSV Neuenstadt': isHomeGame ? q3.home : q3.away,
+        'Gegner': isHomeGame ? q3.away : q3.home
+      },
+      { 
+        period: 'FT',
+        'TSV Neuenstadt': isHomeGame ? ft.home : ft.away,
+        'Gegner': isHomeGame ? ft.away : ft.home
+      }
     ];
-
-    return tsvScores.map((tsv, index) => ({
-      period: tsv.period,
-      'TSV Neuenstadt': tsv.score,
-      'Gegner': opponentScores[index].score
-    }));
   }, [game]);
 
+  // Add starting point at 0
+  const chartDataWithStart = [
+    { period: 'Start', 'TSV Neuenstadt': 0, 'Gegner': 0 },
+    ...chartData
+  ];
+
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-        <XAxis 
-          dataKey="period" 
-          tick={{ fill: '#666', fontSize: 12 }}
-          tickLine={false}
-          axisLine={false}
-        />
-        <YAxis 
-          domain={[0, 'dataMax + 10']}
-          tick={{ fill: '#666', fontSize: 12 }}
-          tickLine={false}
-          axisLine={false}
-          width={30}
-        />
-        <Tooltip 
-          contentStyle={{
-            backgroundColor: 'white',
-            borderRadius: '4px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}
-        />
-        <Legend />
-        <Line 
-          type="monotone" 
-          dataKey="TSV Neuenstadt" 
-          stroke="#3b82f6" 
-          strokeWidth={2}
-          dot={{ r: 4 }}
-          activeDot={{ r: 6 }}
-        />
-        <Line 
-          type="monotone" 
-          dataKey="Gegner" 
-          stroke="#ef4444" 
-          strokeWidth={2}
-          dot={{ r: 4 }}
-          activeDot={{ r: 6 }}
-        />
-      </LineChart>
-    </ResponsiveContainer>
+    <div className="h-64 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart 
+          data={chartDataWithStart}
+          margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+          <XAxis 
+            dataKey="period" 
+            tick={{ fill: '#666', fontSize: 12 }}
+            tickLine={false}
+            axisLine={false}
+            padding={{ left: 10, right: 10 }}
+          />
+          <YAxis 
+            domain={[0, (dataMax: number) => Math.max(50, dataMax + 5)]}
+            tick={{ fill: '#666', fontSize: 11 }}
+            tickLine={false}
+            axisLine={false}
+            width={25}
+            tickCount={6}
+            tickFormatter={(value) => Math.floor(value) === value ? value.toString() : ''}
+          />
+          <Tooltip 
+            contentStyle={{
+              backgroundColor: 'white',
+              borderRadius: '4px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              padding: '8px 12px',
+              fontSize: '13px'
+            }}
+            labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
+            formatter={(value: number) => [value, 'Punkte']}
+          />
+          <Line 
+            type="monotone" 
+            dataKey="TSV Neuenstadt" 
+            stroke="#3b82f6" 
+            strokeWidth={2}
+            dot={{ r: 4 }}
+            activeDot={{ r: 6 }}
+          />
+          <Line 
+            type="monotone" 
+            dataKey="Gegner" 
+            stroke="#ef4444" 
+            strokeWidth={2}
+            dot={{ r: 4 }}
+            activeDot={{ r: 6 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
 
