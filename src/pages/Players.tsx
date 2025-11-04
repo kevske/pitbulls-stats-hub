@@ -103,7 +103,7 @@ const Players: React.FC = () => {
           <div className="container mx-auto p-4">
         <div className="space-y-4 mb-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">Spielerstatistiken</h1>
+            <h1 className="text-3xl font-bold">Spieler</h1>
             {latestGameNumber > 1 && (
               <div className="text-sm text-muted-foreground flex items-center">
                 <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>

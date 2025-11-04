@@ -44,7 +44,7 @@ const Games: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-6">Spielplan</h1>
+        <h1 className="text-3xl font-bold mb-6">Spiele</h1>
         
         <div className="space-y-4">
           {games.map((game) => (
@@ -67,7 +67,20 @@ const Games: React.FC = () => {
                   <div className="text-2xl font-bold mx-4 text-center">
                     {game.finalScore ? (
                       <div className="text-3xl">
-                        {game.finalScore.split('-')[0]?.split(':')[0]?.trim() || '0'} : {game.finalScore.split('-')[1]?.split(':')[0]?.trim() || '0'}
+                        {(() => {
+                          // Try to handle different score formats
+                          const scoreParts = game.finalScore.split('-');
+                          if (scoreParts.length === 2) {
+                            const homeScore = scoreParts[0].trim();
+                            const awayScore = scoreParts[1].trim();
+                            return (
+                              <>
+                                {homeScore} : {awayScore}
+                              </>
+                            );
+                          }
+                          return game.finalScore;
+                        })()}
                       </div>
                     ) : (
                       <div className="text-gray-400">vs</div>
