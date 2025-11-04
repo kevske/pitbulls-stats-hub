@@ -268,7 +268,7 @@ const Home = () => {
                     variant="ghost" 
                     size="sm" 
                     onClick={() => navigate('/games')}
-                    className="text-blue-600 hover:text-blue-700 p-0 h-auto"
+                    className="text-muted-foreground hover:text-primary p-0 h-auto"
                   >
                     Alle Spiele →
                   </Button>
@@ -282,7 +282,7 @@ const Home = () => {
               variant="ghost" 
               size="sm" 
               onClick={() => navigate('/games')}
-              className="text-blue-600 hover:text-blue-700 p-0 h-auto"
+              className="text-muted-foreground hover:text-primary p-0 h-auto"
             >
               Alle Spiele →
             </Button>
@@ -415,7 +415,7 @@ const Home = () => {
                   variant="ghost" 
                   size="sm" 
                   onClick={() => navigate('/players')}
-                  className="text-blue-600 hover:text-blue-700 p-0 h-auto"
+                  className="text-muted-foreground hover:text-primary"
                 >
                   Alle Spieler →
                 </Button>
