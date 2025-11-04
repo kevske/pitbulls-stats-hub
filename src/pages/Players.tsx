@@ -31,57 +31,55 @@ const Players: React.FC = () => {
     );
   }
 
-  const [gameFilter, setGameFilter] = useState<GameFilter>('all');
+  const [gameFilter, setGameFilter] = useState<GameFilter | null>(null);
 
   // Get the latest game number
   const latestGameNumber = useMemo(() => {
     return games.length > 0 ? Math.max(...games.map(g => g.gameNumber)) : 0;
   }, [games]);
 
+  // Toggle filter function
+  const toggleFilter = (filter: GameFilter) => {
+    setGameFilter(current => current === filter ? null : filter);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Fixed Filter Toggle - Higher z-index to appear above header */}
-      <div className="fixed top-0 left-0 right-0 bg-background/95 backdrop-blur-sm z-50 border-b">
-        <div className="container mx-auto px-4 py-2">
-          <div className="flex items-center justify-center gap-2">
-            <Filter size={16} className="text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">Filter:</span>
+      {/* Fixed Filter Toggle - Positioned to not overlap with menu */}
+      <div className="fixed top-4 left-20 right-4 z-50">
+        <div className="bg-background/80 backdrop-blur-sm rounded-lg shadow-lg border border-border/50 p-1.5 max-w-max mx-auto">
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => setGameFilter('all')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                gameFilter === 'all' 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-              }`}
-            >
-              Alle Spiele
-            </button>
-            <button
-              onClick={() => setGameFilter('home')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
+              onClick={() => toggleFilter('home')}
+              className={`px-3 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 ${
                 gameFilter === 'home' 
                   ? 'bg-primary text-primary-foreground' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                  : 'bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }`}
+              title="Heimspiele"
             >
-              <Home size={14} /> Heimspiele
+              <Home size={14} className="mr-1" />
+              Heim
             </button>
+            <div className="h-6 w-px bg-border"></div>
             <button
-              onClick={() => setGameFilter('away')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
+              onClick={() => toggleFilter('away')}
+              className={`px-3 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 ${
                 gameFilter === 'away' 
                   ? 'bg-primary text-primary-foreground' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                  : 'bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }`}
+              title="Auswärtsspiele"
             >
-              <Plane size={14} /> Auswärtsspiele
+              <Plane size={14} className="mr-1" />
+              Auswärts
             </button>
           </div>
         </div>
       </div>
       
-      {/* Add padding to account for fixed header and filter toggle */}
-      <div className="pt-24">
+      {/* Add padding to account for fixed header */}
+      <div className="pt-4">
         <Layout>
           <div className="container mx-auto p-4">
         <div className="space-y-4 mb-8">
