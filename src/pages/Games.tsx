@@ -59,23 +59,39 @@ const Games: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Team names row - only on mobile */}
+                <div className="md:hidden flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium text-right flex-1 pr-2 line-clamp-2">
+                    {game.homeTeam || 'Pitbulls'}
+                    <div className="text-xs text-gray-500">Heim</div>
+                  </div>
+                  <div className="px-2 text-sm font-medium">vs</div>
+                  <div className="text-sm font-medium text-left flex-1 pl-2 line-clamp-2">
+                    {game.awayTeam || 'Gegner'}
+                    <div className="text-xs text-gray-500">Gast</div>
+                  </div>
+                </div>
+                
+                {/* Score row */}
                 <div className="grid grid-cols-3 items-center">
-                  <div className="text-right">
-                    <div className="font-medium">{game.homeTeam || 'Pitbulls'}</div>
+                  {/* Hidden on mobile - team name is shown in the row above */}
+                  <div className="hidden md:block text-right pr-4">
+                    <div className="font-medium line-clamp-2">{game.homeTeam || 'Pitbulls'}</div>
                     <div className="text-sm text-gray-500">Heim</div>
                   </div>
-                  <div className="text-2xl font-bold mx-4 text-center">
+                  
+                  <div className="text-2xl font-bold mx-2 md:mx-4 text-center">
                     {game.finalScore ? (
-                      <div className="text-3xl">
+                      <div className="text-2xl md:text-3xl">
                         {(() => {
-                          // Try to handle different score formats
                           const scoreParts = game.finalScore.split('-');
                           if (scoreParts.length === 2) {
                             const homeScore = scoreParts[0].trim();
                             const awayScore = scoreParts[1].trim();
                             return (
                               <>
-                                {homeScore} : {awayScore}
+                                <span className="md:hidden">{homeScore} : {awayScore}</span>
+                                <span className="hidden md:inline">{homeScore} : {awayScore}</span>
                               </>
                             );
                           }
@@ -83,11 +99,13 @@ const Games: React.FC = () => {
                         })()}
                       </div>
                     ) : (
-                      <div className="text-gray-400">vs</div>
+                      <div className="text-gray-400 hidden md:block">vs</div>
                     )}
                   </div>
-                  <div>
-                    <div className="font-medium">{game.awayTeam || 'Gegner'}</div>
+                  
+                  {/* Hidden on mobile - team name is shown in the row above */}
+                  <div className="hidden md:block pl-4">
+                    <div className="font-medium line-clamp-2">{game.awayTeam || 'Gegner'}</div>
                     <div className="text-sm text-gray-500">Gast</div>
                   </div>
                 </div>
