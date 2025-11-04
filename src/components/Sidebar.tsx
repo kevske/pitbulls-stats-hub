@@ -9,7 +9,7 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
-  const [refreshStatus, setRefreshStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [refreshStatus, setRefreshStatus] = useState<'idle' | 'loading' | 'success' | 'error' | `reloading${number}`>('idle');
   const refreshTimeoutRef = useRef<NodeJS.Timeout>();
   const location = useLocation();
   const { refresh } = useStats();
@@ -105,27 +105,41 @@ const Sidebar = () => {
           {/* Refresh Button in Menu */}
           <div className="mt-auto pt-4 border-t border-border">
             <button
-              onClick={async () => {
+              onClick={async (e) => {
+                e.preventDefault();
                 setRefreshStatus('loading');
+                
+                // Start countdown
+                let countdown = 3;
+                const countdownInterval = setInterval(() => {
+                  setRefreshStatus(`reloading${countdown}`);
+                  countdown--;
+                  
+                  if (countdown < 0) {
+                    clearInterval(countdownInterval);
+                    // Force reload the page to ensure fresh data
+                    window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();
+                  }
+                }, 1000);
+                
+                // In the background, refresh the data
                 try {
                   await refresh();
                   setLastRefreshed(new Date());
-                  setRefreshStatus('success');
                 } catch (error) {
                   console.error('Failed to refresh data:', error);
+                  clearInterval(countdownInterval);
                   setRefreshStatus('error');
-                } finally {
-                  if (refreshTimeoutRef.current) {
-                    clearTimeout(refreshTimeoutRef.current);
-                  }
+                  
+                  // Reset to idle after error
                   refreshTimeoutRef.current = setTimeout(() => {
                     setRefreshStatus('idle');
                   }, 3000);
                 }
               }}
-              disabled={refreshStatus === 'loading'}
+              disabled={typeof refreshStatus === 'string' && refreshStatus.startsWith('reloading')}
               className={`w-full flex items-center px-4 py-3 rounded-lg transition-elegant text-left ${
-                refreshStatus === 'loading'
+                refreshStatus === 'loading' || refreshStatus?.startsWith('reloading')
                   ? 'text-primary animate-pulse'
                   : refreshStatus === 'success'
                   ? 'text-green-500'
@@ -135,15 +149,31 @@ const Sidebar = () => {
               }`}
             >
               {refreshStatus === 'loading' ? (
-                <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
+                <>
+                  <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
+                  <span>Aktualisiere Daten...</span>
+                </>
+              ) : refreshStatus?.startsWith('reloading') ? (
+                <>
+                  <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
+                  <span>Lade neu in {refreshStatus.replace('reloading', '')}s</span>
+                </>
               ) : refreshStatus === 'success' ? (
-                <Check className="w-5 h-5 mr-3" />
+                <>
+                  <Check className="w-5 h-5 mr-3" />
+                  <span>Erfolgreich aktualisiert</span>
+                </>
               ) : refreshStatus === 'error' ? (
-                <AlertCircle className="w-5 h-5 mr-3" />
+                <>
+                  <AlertCircle className="w-5 h-5 mr-3" />
+                  <span>Fehler beim Aktualisieren</span>
+                </>
               ) : (
-                <RefreshCw className="w-5 h-5 mr-3" />
+                <>
+                  <RefreshCw className="w-5 h-5 mr-3" />
+                  <span>Daten aktualisieren</span>
+                </>
               )}
-              <span>Daten aktualisieren</span>
               {lastRefreshed && refreshStatus === 'idle' && (
                 <span className="ml-auto text-xs opacity-70">
                   {formatDistanceToNow(lastRefreshed, { addSuffix: true, locale: de })}
