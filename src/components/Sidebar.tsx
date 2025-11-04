@@ -44,7 +44,6 @@ const Sidebar = () => {
     { to: '/stats', icon: BarChart2, label: 'Statistiken' },
     { to: '/games', icon: Gamepad2, label: 'Spiele' },
     { to: '/videos', icon: Film, label: 'Videos' },
-    { to: '/upload-game', icon: Upload, label: 'Spiel hochladen' },
   ];
 
   return (
@@ -74,71 +73,14 @@ const Sidebar = () => {
         />
       )}
 
-      {/* Refresh Data Button */}
-      <div className="fixed bottom-4 left-4 z-50">
-        <div className="relative">
-          <button
-            onClick={async () => {
-              setRefreshStatus('loading');
-              try {
-                await refresh();
-                setLastRefreshed(new Date());
-                setRefreshStatus('success');
-              } catch (error) {
-                console.error('Failed to refresh data:', error);
-                setRefreshStatus('error');
-              } finally {
-                if (refreshTimeoutRef.current) {
-                  clearTimeout(refreshTimeoutRef.current);
-                }
-                refreshTimeoutRef.current = setTimeout(() => {
-                  setRefreshStatus('idle');
-                }, 3000);
-              }
-            }}
-            disabled={refreshStatus === 'loading'}
-            className={`p-2 rounded-full shadow-lg transition-all ${
-              refreshStatus === 'loading' 
-                ? 'bg-primary/80 text-primary-foreground animate-spin' 
-                : refreshStatus === 'success'
-                ? 'bg-green-500 text-white'
-                : refreshStatus === 'error'
-                ? 'bg-red-500 text-white'
-                : 'bg-primary text-primary-foreground hover:bg-primary/90'
-            }`}
-            aria-label="Daten aktualisieren"
-          >
-            {refreshStatus === 'loading' ? (
-              <RefreshCw className="w-5 h-5" />
-            ) : refreshStatus === 'success' ? (
-              <Check className="w-5 h-5" />
-            ) : refreshStatus === 'error' ? (
-              <AlertCircle className="w-5 h-5" />
-            ) : (
-              <RefreshCw className="w-5 h-5" />
-            )}
-          </button>
-          {lastRefreshed && refreshStatus !== 'loading' && (
-            <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-background/90 backdrop-blur-sm text-xs text-muted-foreground whitespace-nowrap px-2 py-1 rounded-md shadow-sm border border-border">
-              {refreshStatus === 'success' ? 'Aktualisiert' : refreshStatus === 'error' ? 'Fehler' : 'Aktualisieren'}
-              {refreshStatus === 'idle' && lastRefreshed && (
-                <span className="block text-xs opacity-70">
-                  {formatDistanceToNow(lastRefreshed, { addSuffix: true, locale: de })}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Sidebar */}
       <aside 
         className={`fixed top-0 left-0 h-screen w-64 bg-background/95 backdrop-blur-md border-r border-border z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
-        <div className="p-6 h-full flex flex-col pt-20">
-          <nav className="space-y-1 flex-1">
+        <div className="p-6 h-full flex flex-col">
+          <nav className="space-y-1 flex-1 pt-20">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.to;
@@ -159,6 +101,56 @@ const Sidebar = () => {
               );
             })}
           </nav>
+          
+          {/* Refresh Button in Menu */}
+          <div className="mt-auto pt-4 border-t border-border">
+            <button
+              onClick={async () => {
+                setRefreshStatus('loading');
+                try {
+                  await refresh();
+                  setLastRefreshed(new Date());
+                  setRefreshStatus('success');
+                } catch (error) {
+                  console.error('Failed to refresh data:', error);
+                  setRefreshStatus('error');
+                } finally {
+                  if (refreshTimeoutRef.current) {
+                    clearTimeout(refreshTimeoutRef.current);
+                  }
+                  refreshTimeoutRef.current = setTimeout(() => {
+                    setRefreshStatus('idle');
+                  }, 3000);
+                }
+              }}
+              disabled={refreshStatus === 'loading'}
+              className={`w-full flex items-center px-4 py-3 rounded-lg transition-elegant text-left ${
+                refreshStatus === 'loading'
+                  ? 'text-primary animate-pulse'
+                  : refreshStatus === 'success'
+                  ? 'text-green-500'
+                  : refreshStatus === 'error'
+                  ? 'text-red-500'
+                  : 'text-foreground/70 hover:text-foreground hover:bg-accent'
+              }`}
+            >
+              {refreshStatus === 'loading' ? (
+                <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
+              ) : refreshStatus === 'success' ? (
+                <Check className="w-5 h-5 mr-3" />
+              ) : refreshStatus === 'error' ? (
+                <AlertCircle className="w-5 h-5 mr-3" />
+              ) : (
+                <RefreshCw className="w-5 h-5 mr-3" />
+              )}
+              <span>Daten aktualisieren</span>
+              {lastRefreshed && refreshStatus === 'idle' && (
+                <span className="ml-auto text-xs opacity-70">
+                  {formatDistanceToNow(lastRefreshed, { addSuffix: true, locale: de })}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </aside>
     </>
