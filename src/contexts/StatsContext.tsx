@@ -20,11 +20,11 @@ export const StatsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = async () => {
+  const loadData = async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
     try {
-      const { games, playerStats, playerTotals } = await fetchAllData();
+      const { games, playerStats, playerTotals } = await fetchAllData(forceRefresh);
       setGames(games);
       setPlayers(playerTotals);
       setGameLogs(playerStats);
@@ -35,6 +35,9 @@ export const StatsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setLoading(false);
     }
   };
+  
+  // Expose a refresh function that forces a refresh
+  const refresh = () => loadData(true);
 
   useEffect(() => {
     loadData();
