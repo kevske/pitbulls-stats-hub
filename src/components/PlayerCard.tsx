@@ -110,7 +110,7 @@ const renderStats = () => (
               className="w-full h-full object-cover"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.src = '/placeholder-player.png';
+                target.src = '/pitbulls-stats-hub/placeholder-player.png';
               }}
             />
             <div className="absolute bottom-3 left-3 bg-primary/90 text-primary-foreground rounded-full p-1.5">
