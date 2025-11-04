@@ -192,13 +192,10 @@ const Home = () => {
     <Layout>
       <div className="container mx-auto max-w-6xl space-y-12 animate-fade-in">
         {/* Hero Section */}
-        <div className="text-center space-y-4">
-          <h2 className="text-5xl md:text-6xl font-bold text-foreground">
-            Willkommen bei den <span className="text-primary">Pitbulls</span>
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Verfolgen Sie unsere Mannschaft, Statistiken und Videos aus der aktuellen Saison.
-          </p>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400">
+            Pitbulls Stats Hub
+          </h1>
         </div>
 
         {/* Last Game Result */}
