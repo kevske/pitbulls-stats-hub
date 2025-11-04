@@ -90,7 +90,7 @@ const Players: React.FC = () => {
             {latestGameNumber > 1 && (
               <div className="text-sm text-muted-foreground flex items-center">
                 <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
-                Letzte Spieltag: {latestGameNumber}
+                Letzter Spieltag: {latestGameNumber}
               </div>
             )}
           </div>
