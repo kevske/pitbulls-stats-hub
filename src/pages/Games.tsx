@@ -73,38 +73,42 @@ const Games: React.FC = () => {
                 </div>
                 
                 {/* Score row */}
-                <div className="grid grid-cols-3 items-center">
-                  {/* Hidden on mobile - team name is shown in the row above */}
-                  <div className="hidden md:block text-right pr-4">
-                    <div className="font-medium line-clamp-2">{game.homeTeam || 'Pitbulls'}</div>
-                    <div className="text-sm text-gray-500">Heim</div>
-                  </div>
-                  
-                  <div className="text-2xl font-bold mx-2 md:mx-4 text-center">
+                <div className="flex justify-center my-2">
+                  <div className="text-3xl font-bold text-center">
                     {game.finalScore ? (
-                      <div className="text-2xl md:text-3xl">
+                      <div>
                         {(() => {
                           const scoreParts = game.finalScore.split('-');
                           if (scoreParts.length === 2) {
                             const homeScore = scoreParts[0].trim();
                             const awayScore = scoreParts[1].trim();
                             return (
-                              <>
-                                <span className="md:hidden">{homeScore} : {awayScore}</span>
-                                <span className="hidden md:inline">{homeScore} : {awayScore}</span>
-                              </>
+                              <div className="flex items-center justify-center gap-2">
+                                <span className="md:hidden">{homeScore}</span>
+                                <span className="hidden md:inline-block w-16 text-right">{homeScore}</span>
+                                <span>:</span>
+                                <span className="md:hidden">{awayScore}</span>
+                                <span className="hidden md:inline-block w-16 text-left">{awayScore}</span>
+                              </div>
                             );
                           }
                           return game.finalScore;
                         })()}
                       </div>
                     ) : (
-                      <div className="text-gray-400 hidden md:block">vs</div>
+                      <div className="text-gray-400">vs</div>
                     )}
                   </div>
-                  
-                  {/* Hidden on mobile - team name is shown in the row above */}
-                  <div className="hidden md:block pl-4">
+                </div>
+                
+                {/* Desktop team names - hidden on mobile */}
+                <div className="hidden md:grid grid-cols-3 items-center">
+                  <div className="text-right pr-4">
+                    <div className="font-medium line-clamp-2">{game.homeTeam || 'Pitbulls'}</div>
+                    <div className="text-sm text-gray-500">Heim</div>
+                  </div>
+                  <div></div>
+                  <div className="pl-4">
                     <div className="font-medium line-clamp-2">{game.awayTeam || 'Gegner'}</div>
                     <div className="text-sm text-gray-500">Gast</div>
                   </div>
