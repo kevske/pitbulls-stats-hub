@@ -76,8 +76,8 @@ const Sidebar = () => {
       {/* Sidebar */}
       <aside 
         className={`fixed top-0 left-0 h-screen w-64 bg-background/95 backdrop-blur-md border-r border-border z-50 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0`}
+          isOpen ? 'translate-x-0' : '-translate-x-full md:-translate-x-full'
+        }`}
       >
         <div className="p-6 h-full flex flex-col">
           <nav className="space-y-1 flex-1 pt-20">
