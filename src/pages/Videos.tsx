@@ -22,33 +22,23 @@ const Videos = () => {
     <Layout>
       <div className="container mx-auto max-w-6xl">
         <h2 className="text-4xl font-bold text-primary mb-8">Spielvideos</h2>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="aspect-video bg-secondary rounded-lg overflow-hidden border border-primary/20">
+        <div className="max-w-4xl mx-auto">
+          <div className="aspect-video w-full bg-secondary rounded-lg overflow-hidden shadow-lg">
             <iframe
-              width="100%"
-              height="100%"
-              src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-              title="Sample Video 1"
+              className="w-full h-full"
+              src="https://www.youtube.com/embed/videoseries?si=yV-ubstdCCUPmekk&amp;list=PLo9Gj2rLRK5xZB-MKl2i8T1gEyCti4Y71"
+              title="TSV Neuenstadt Pitbulls Spiele"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
             />
           </div>
-          <div className="aspect-video bg-secondary rounded-lg overflow-hidden border border-primary/20">
-            <iframe
-              width="100%"
-              height="100%"
-              src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-              title="Sample Video 2"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
+          <h3 className="text-2xl font-semibold mt-6 mb-4">Saison 2024/2025</h3>
+          <p className="text-muted-foreground">
+            Schaut euch hier die Spiele der Saison 2024/2025 an. Weitere Videos werden nach den Spielen hinzugefügt.
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground mt-6 text-center">
-          Weitere Videos werden in Kürze hinzugefügt
-        </p>
       </div>
     </Layout>
   );
