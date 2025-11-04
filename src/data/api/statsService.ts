@@ -75,9 +75,15 @@ async function fetchPlayerBios(forceRefresh = false): Promise<Map<string, Player
 
 // Transform Totals CSV data into PlayerStats and include all players from Bio-CSV
 function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, PlayerBio>): PlayerStats[] {
+  console.log('Bio Map Contents:');
+  bioMap.forEach((bio, key) => {
+    console.log(`Bio: ${bio.firstName} ${bio.lastName} (${key})`);
+  });
+  
   // First, process players with stats
   const playersWithStats = new Map<string, PlayerStats>();
   
+  console.log('Processing players with stats:');
   rows.forEach(row => {
     const firstName = (row.Vorname || '').trim();
     const lastName = (row.Nachname || '').trim();
@@ -109,9 +115,11 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
     };
     
     playersWithStats.set(bioKey, player);
+    console.log(`Added player with stats: ${player.firstName} ${player.lastName}`);
   });
   
   // Then add players from bio who don't have stats yet
+  console.log('\nAdding players from Bio-CSV without stats:');
   bioMap.forEach((bio, bioKey) => {
     if (!playersWithStats.has(bioKey)) {
       const player: PlayerStats = {
@@ -134,10 +142,15 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
         freeThrowPercentage: ''
       };
       playersWithStats.set(bioKey, player);
+      console.log(`Added player from Bio-CSV: ${player.firstName} ${player.lastName}`);
+    } else {
+      console.log(`Player already exists in stats: ${bio.firstName} ${bio.lastName}`);
     }
   });
   
-  return Array.from(playersWithStats.values());
+  const result = Array.from(playersWithStats.values());
+  console.log('\nFinal player list:', result.map(p => `${p.firstName} ${p.lastName} (${p.gamesPlayed} games)`));
+  return result;
 }
 
 export async function fetchAllData(forceRefresh = false) {

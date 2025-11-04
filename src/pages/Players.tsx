@@ -43,6 +43,25 @@ const Players: React.FC = () => {
     setGameFilter(current => current === filter ? null : filter);
   };
 
+  // Debug: Log the players being received
+  console.log('Players received in component:', players.map(p => ({
+    name: `${p.firstName} ${p.lastName}`,
+    gamesPlayed: p.gamesPlayed,
+    id: p.id
+  })));
+
+  // Filter and sort players
+  const filteredPlayers = useMemo(() => {
+    const filtered = players.filter(player => player.firstName && player.firstName.trim() !== '');
+    console.log('Filtered players:', filtered.map(p => `${p.firstName} ${p.lastName}`));
+    
+    return filtered.sort((a, b) => {
+      const nameA = `${a.lastName} ${a.firstName}`.toLowerCase();
+      const nameB = `${b.lastName} ${b.firstName}`.toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, [players]);
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Fixed Filter Toggle - Positioned to not overlap with menu */}
@@ -95,15 +114,15 @@ const Players: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {players
-            .filter(player => player.firstName && player.firstName.trim() !== '')
-            .sort((a, b) => {
-              // Sort by last name, then first name
-              const nameA = `${a.lastName} ${a.firstName}`.toLowerCase();
-              const nameB = `${b.lastName} ${b.firstName}`.toLowerCase();
-              return nameA.localeCompare(nameB);
-            })
-            .map((player) => {
+          {filteredPlayers.length === 0 ? (
+            <div className="col-span-3 text-center py-8">
+              <p>Keine Spieler gefunden.</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                {players.length} Spieler geladen, aber keiner erfüllt die Filterkriterien.
+              </p>
+            </div>
+          ) : (
+            filteredPlayers.map((player) => {
               return (
                 <div key={player.id} className="h-full">
                   <PlayerCard 
@@ -114,7 +133,8 @@ const Players: React.FC = () => {
                   />
                 </div>
               );
-            })}
+            })
+          )}
         </div>
           </div>
         </Layout>
