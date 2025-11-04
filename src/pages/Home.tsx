@@ -263,16 +263,6 @@ const Home = () => {
                 >
                   Spielbericht ansehen
                 </Button>
-                <div className="text-center mt-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => navigate('/games')}
-                    className="text-muted-foreground hover:text-primary p-0 h-auto"
-                  >
-                    Alle Spiele →
-                  </Button>
-                </div>
               </div>
             </CardContent>
           </Card>
