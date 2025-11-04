@@ -256,13 +256,22 @@ const Home = () => {
                     ⏳ Spiel steht noch aus
                   </div>
                 )}
-                <Button 
-                  variant="outline" 
-                  onClick={() => navigate(`/games/${lastGame.gameNumber}`)}
-                  className="mt-4"
-                >
-                  Spielbericht ansehen
-                </Button>
+                <div className="flex flex-col space-y-2 mt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate(`/games/${lastGame.gameNumber}`)}
+                  >
+                    Spielbericht ansehen
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => navigate('/games')}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    Alle Spiele →
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -329,7 +338,7 @@ const Home = () => {
           {risingStars.length > 0 && (
             <div className="space-y-4 mt-12">
               <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold">Aufsteigende Sterne</h3>
+                <h3 className="text-2xl font-bold text-center">Aufsteiger der Woche</h3>
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Flame className="w-4 h-4 mr-1 text-orange-500" />
                   <span>Verbesserungen im Vergleich zum letzten Spiel</span>
@@ -393,7 +402,7 @@ const Home = () => {
           )}
 
         {/* Quick Links */}
-        <div className="grid md:grid-cols-2 gap-4 pt-8">
+        <div className="grid md:grid-cols-1 gap-4 pt-8">
           <Button
             variant="outline"
             size="lg"
@@ -403,17 +412,6 @@ const Home = () => {
             <div className="text-center">
               <div className="text-2xl mb-1 group-hover:scale-110 transition-elegant">🎥</div>
               <div className="font-semibold">Videos</div>
-            </div>
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => navigate("/upload-game")}
-            className="h-20 shadow-elegant hover:shadow-elegant-lg transition-elegant group"
-          >
-            <div className="text-center">
-              <div className="text-2xl mb-1 group-hover:scale-110 transition-elegant">➕</div>
-              <div className="font-semibold">Spiel hochladen</div>
             </div>
           </Button>
         </div>
