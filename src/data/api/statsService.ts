@@ -73,44 +73,71 @@ async function fetchPlayerBios(forceRefresh = false): Promise<Map<string, Player
   return bioMap;
 }
 
-// Transform Totals CSV data into PlayerStats
+// Transform Totals CSV data into PlayerStats and include all players from Bio-CSV
 function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, PlayerBio>): PlayerStats[] {
-  return rows
-    .map(row => {
-      const firstName = (row.Vorname || '').trim();
-      const lastName = (row.Nachname || '').trim();
-      
-      // Skip if no first name
-      if (!firstName) return null;
-      
-      const playerId = generatePlayerId(firstName, lastName);
-      const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
-      const bioData = bioMap.get(bioKey);
-      
-      // Parse stats directly from CSV (already computed)
+  // First, process players with stats
+  const playersWithStats = new Map<string, PlayerStats>();
+  
+  rows.forEach(row => {
+    const firstName = (row.Vorname || '').trim();
+    const lastName = (row.Nachname || '').trim();
+    
+    if (!firstName) return;
+    
+    const playerId = generatePlayerId(firstName, lastName);
+    const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
+    const bioData = bioMap.get(bioKey);
+    
+    const player: PlayerStats = {
+      id: playerId,
+      firstName,
+      lastName,
+      imageUrl: '/placeholder-player.png',
+      jerseyNumber: bioData?.jerseyNumber || 0,
+      position: bioData?.position || '',
+      age: bioData?.age || 0,
+      height: bioData?.height || '',
+      bio: bioData?.bio || '',
+      gamesPlayed: parseInt(row.Spiele) || 0,
+      minutesPerGame: parseFloat((row['Minuten pS'] || '0').replace(',', '.')),
+      pointsPerGame: parseFloat((row['Punkte pS'] || '0').replace(',', '.')),
+      threePointersPerGame: parseFloat((row['3er pS'] || '0').replace(',', '.')),
+      foulsPerGame: parseFloat((row['Fouls pS'] || '0').replace(',', '.')),
+      freeThrowsMadePerGame: parseFloat((row['FWTreffer pS'] || '0').replace(',', '.')),
+      freeThrowAttemptsPerGame: parseFloat((row['FWVersuche pS'] || '0').replace(',', '.')),
+      freeThrowPercentage: row['FW-Quote'] || ''
+    };
+    
+    playersWithStats.set(bioKey, player);
+  });
+  
+  // Then add players from bio who don't have stats yet
+  bioMap.forEach((bio, bioKey) => {
+    if (!playersWithStats.has(bioKey)) {
       const player: PlayerStats = {
-        id: playerId,
-        firstName,
-        lastName,
+        id: generatePlayerId(bio.firstName, bio.lastName),
+        firstName: bio.firstName,
+        lastName: bio.lastName,
         imageUrl: '/placeholder-player.png',
-        jerseyNumber: bioData?.jerseyNumber || 0,
-        position: bioData?.position || '',
-        age: bioData?.age || 0,
-        height: bioData?.height || '',
-        bio: bioData?.bio || '',
-        gamesPlayed: parseInt(row.Spiele) || 0,
-        minutesPerGame: parseFloat((row['Minuten pS'] || '0').replace(',', '.')),
-        pointsPerGame: parseFloat((row['Punkte pS'] || '0').replace(',', '.')),
-        threePointersPerGame: parseFloat((row['3er pS'] || '0').replace(',', '.')),
-        foulsPerGame: parseFloat((row['Fouls pS'] || '0').replace(',', '.')),
-        freeThrowsMadePerGame: parseFloat((row['FWTreffer pS'] || '0').replace(',', '.')),
-        freeThrowAttemptsPerGame: parseFloat((row['FWVersuche pS'] || '0').replace(',', '.')),
-        freeThrowPercentage: row['FW-Quote'] || ''
+        jerseyNumber: bio.jerseyNumber,
+        position: bio.position,
+        age: bio.age,
+        height: bio.height,
+        bio: bio.bio,
+        gamesPlayed: 0,
+        minutesPerGame: 0,
+        pointsPerGame: 0,
+        threePointersPerGame: 0,
+        foulsPerGame: 0,
+        freeThrowsMadePerGame: 0,
+        freeThrowAttemptsPerGame: 0,
+        freeThrowPercentage: ''
       };
-      
-      return player;
-    })
-    .filter(Boolean) as PlayerStats[];
+      playersWithStats.set(bioKey, player);
+    }
+  });
+  
+  return Array.from(playersWithStats.values());
 }
 
 export async function fetchAllData(forceRefresh = false) {
