@@ -256,18 +256,19 @@ const Home = () => {
                     ⏳ Spiel steht noch aus
                   </div>
                 )}
-                <div className="flex flex-col space-y-2 mt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate(`/games/${lastGame.gameNumber}`)}
-                  >
-                    Spielbericht ansehen
-                  </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate(`/games/${lastGame.gameNumber}`)}
+                  className="mt-4"
+                >
+                  Spielbericht ansehen
+                </Button>
+                <div className="text-center mt-2">
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     onClick={() => navigate('/games')}
-                    className="text-blue-600 hover:text-blue-700"
+                    className="text-blue-600 hover:text-blue-700 p-0 h-auto"
                   >
                     Alle Spiele →
                   </Button>
@@ -275,6 +276,17 @@ const Home = () => {
               </div>
             </CardContent>
           </Card>
+          
+          <div className="text-center mt-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/games')}
+              className="text-blue-600 hover:text-blue-700 p-0 h-auto"
+            >
+              Alle Spiele →
+            </Button>
+          </div>
 
           {/* Top 3 Performers */}
           <div className="space-y-4 mt-12">
@@ -337,9 +349,9 @@ const Home = () => {
           {/* Rising Stars Section */}
           {risingStars.length > 0 && (
             <div className="space-y-4 mt-12">
-              <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold text-center">Aufsteiger der Woche</h3>
-                <div className="flex items-center text-sm text-muted-foreground">
+              <div className="w-full text-center">
+                <h3 className="text-2xl font-bold">Aufsteiger der Woche</h3>
+                <div className="flex justify-center items-center text-sm text-muted-foreground mt-1">
                   <Flame className="w-4 h-4 mr-1 text-orange-500" />
                   <span>Verbesserungen im Vergleich zum letzten Spiel</span>
                 </div>
@@ -397,6 +409,16 @@ const Home = () => {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+              <div className="text-center mt-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => navigate('/players')}
+                  className="text-blue-600 hover:text-blue-700 p-0 h-auto"
+                >
+                  Alle Spieler →
+                </Button>
               </div>
             </div>
           )}
