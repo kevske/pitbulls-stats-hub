@@ -32,19 +32,19 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Menu button - always visible, toggles between burger and X */}
+      {/* Menu button - elegant toggle */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed z-[60] top-4 left-4 p-2"
+        className="fixed z-50 top-4 left-4 p-3 rounded-lg bg-card/80 backdrop-blur-md border border-border shadow-elegant hover:shadow-elegant-lg transition-elegant hover:bg-card"
         aria-label={isOpen ? 'Menü schließen' : 'Menü öffnen'}
       >
         {isOpen ? (
-          <X className="w-6 h-6 text-primary/50 hover:text-primary/70 transition-colors" />
+          <X className="w-5 h-5 text-foreground transition-elegant" />
         ) : (
           <div className="space-y-1.5">
-            <span className="block w-6 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
-            <span className="block w-6 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
-            <span className="block w-6 h-0.5 bg-primary/50 hover:bg-primary/70 transition-colors"></span>
+            <span className="block w-5 h-0.5 bg-foreground transition-elegant"></span>
+            <span className="block w-5 h-0.5 bg-foreground transition-elegant"></span>
+            <span className="block w-5 h-0.5 bg-foreground transition-elegant"></span>
           </div>
         )}
       </button>
@@ -52,19 +52,19 @@ const Sidebar = () => {
       {/* Overlay - only on mobile */}
       {isMobile && isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-elegant"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside 
-        className={`fixed top-0 left-0 h-screen w-64 bg-background/95 backdrop-blur-md border-r border-border z-40 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-screen w-64 bg-card/95 backdrop-blur-md border-r border-border shadow-elegant-lg z-50 transform transition-all duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
-        <div className="p-6 h-full flex flex-col pt-4">
-          <nav className="space-y-2 flex-1">
+        <div className="p-6 h-full flex flex-col pt-20">
+          <nav className="space-y-1 flex-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.to;
@@ -72,15 +72,15 @@ const Sidebar = () => {
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
+                  className={`flex items-center px-4 py-3 rounded-lg transition-elegant group relative overflow-hidden ${
                     isActive 
-                      ? 'bg-primary/10 text-primary font-medium' 
-                      : 'text-foreground/80 hover:bg-accent/50'
+                      ? 'bg-primary text-primary-foreground shadow-sm font-medium' 
+                      : 'text-foreground/70 hover:text-foreground hover:bg-accent'
                   }`}
                   onClick={() => isMobile && setIsOpen(false)}
                 >
-                  <Icon className="w-5 h-5 mr-3" />
-                  {item.label}
+                  <Icon className={`w-5 h-5 mr-3 transition-elegant ${isActive ? '' : 'group-hover:scale-110'}`} />
+                  <span>{item.label}</span>
                 </NavLink>
               );
             })}
