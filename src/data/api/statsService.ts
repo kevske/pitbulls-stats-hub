@@ -94,11 +94,12 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
     const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
     const bioData = bioMap.get(bioKey);
     
+    const imageName = `${firstName.toLowerCase()}-${lastName.toLowerCase()}`.replace(/\s+/g, '-');
     const player: PlayerStats = {
       id: playerId,
       firstName,
       lastName,
-      imageUrl: '/placeholder-player.png',
+      imageUrl: `/players/${imageName}.jpg`,
       jerseyNumber: bioData?.jerseyNumber || 0,
       position: bioData?.position || '',
       age: bioData?.age || 0,
@@ -122,11 +123,12 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
   console.log('\nAdding players from Bio-CSV without stats:');
   bioMap.forEach((bio, bioKey) => {
     if (!playersWithStats.has(bioKey)) {
+      const imageName = `${bio.firstName.toLowerCase()}-${bio.lastName.toLowerCase()}`.replace(/\s+/g, '-');
       const player: PlayerStats = {
         id: generatePlayerId(bio.firstName, bio.lastName),
         firstName: bio.firstName,
         lastName: bio.lastName,
-        imageUrl: '/placeholder-player.png',
+        imageUrl: `/players/${imageName}.jpg`,
         jerseyNumber: bio.jerseyNumber,
         position: bio.position,
         age: bio.age,
