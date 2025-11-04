@@ -1,11 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Users, BarChart2, Film, Upload, X } from 'lucide-react';
+import { Home, Users, BarChart2, Film, Gamepad2, Upload, X, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { useStats } from '@/contexts/StatsContext';
+import { formatDistanceToNow } from 'date-fns';
+import { de } from 'date-fns/locale';
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+  const [refreshStatus, setRefreshStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const refreshTimeoutRef = useRef<NodeJS.Timeout>();
   const location = useLocation();
+  const { refresh } = useStats();
+
+  // Set initial last refreshed time
+  useEffect(() => {
+    setLastRefreshed(new Date());
+  }, []);
 
   // Update mobile state on window resize
   useEffect(() => {
@@ -18,14 +30,19 @@ const Sidebar = () => {
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
   }, []);
 
   const menuItems = [
     { to: '/', icon: Home, label: 'Home' },
     { to: '/players', icon: Users, label: 'Spieler' },
     { to: '/stats', icon: BarChart2, label: 'Statistiken' },
-    { to: '/games', icon: Film, label: 'Spiele' },
+    { to: '/games', icon: Gamepad2, label: 'Spiele' },
     { to: '/videos', icon: Film, label: 'Videos' },
     { to: '/upload-game', icon: Upload, label: 'Spiel hochladen' },
   ];
@@ -56,6 +73,63 @@ const Sidebar = () => {
           onClick={() => setIsOpen(false)}
         />
       )}
+
+      {/* Refresh Data Button */}
+      <div className="fixed bottom-4 left-4 z-50">
+        <div className="relative">
+          <button
+            onClick={async () => {
+              setRefreshStatus('loading');
+              try {
+                await refresh();
+                setLastRefreshed(new Date());
+                setRefreshStatus('success');
+              } catch (error) {
+                console.error('Failed to refresh data:', error);
+                setRefreshStatus('error');
+              } finally {
+                if (refreshTimeoutRef.current) {
+                  clearTimeout(refreshTimeoutRef.current);
+                }
+                refreshTimeoutRef.current = setTimeout(() => {
+                  setRefreshStatus('idle');
+                }, 3000);
+              }
+            }}
+            disabled={refreshStatus === 'loading'}
+            className={`p-2 rounded-full shadow-lg transition-all ${
+              refreshStatus === 'loading' 
+                ? 'bg-primary/80 text-primary-foreground animate-spin' 
+                : refreshStatus === 'success'
+                ? 'bg-green-500 text-white'
+                : refreshStatus === 'error'
+                ? 'bg-red-500 text-white'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+            }`}
+            aria-label="Daten aktualisieren"
+          >
+            {refreshStatus === 'loading' ? (
+              <RefreshCw className="w-5 h-5" />
+            ) : refreshStatus === 'success' ? (
+              <Check className="w-5 h-5" />
+            ) : refreshStatus === 'error' ? (
+              <AlertCircle className="w-5 h-5" />
+            ) : (
+              <RefreshCw className="w-5 h-5" />
+            )}
+          </button>
+          {lastRefreshed && refreshStatus !== 'loading' && (
+            <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-background/90 backdrop-blur-sm text-xs text-muted-foreground whitespace-nowrap px-2 py-1 rounded-md shadow-sm border border-border">
+              {refreshStatus === 'success' ? 'Aktualisiert' : refreshStatus === 'error' ? 'Fehler' : 'Aktualisieren'}
+              {refreshStatus === 'idle' && lastRefreshed && (
+                <span className="block text-xs opacity-70">
+                  {formatDistanceToNow(lastRefreshed, { addSuffix: true, locale: de })}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Sidebar */}
       <aside 
