@@ -50,7 +50,7 @@ interface PlayerGameLogRow {
   'Typ Spiel': string;
 }
 
-async function fetchPlayerBios(): Promise<Map<string, PlayerBio>> {
+async function fetchPlayerBios(forceRefresh = false): Promise<Map<string, PlayerBio>> {
   const bios = await fetchCSV<any>(CSV_URLS.playerBios, (rows) => 
     rows.map(row => ({
       firstName: (row.Vorname || '').trim(),
@@ -113,12 +113,12 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
     .filter(Boolean) as PlayerStats[];
 }
 
-export async function fetchAllData() {
+export async function fetchAllData(forceRefresh = false) {
   const [games, playerGameLogs, totalsRows, bioMap] = await Promise.all([
-    fetchCSV<GameStats>(CSV_URLS.games, transformGameData),
-    fetchCSV<PlayerGameLogRow>(CSV_URLS.playerGameLogs, (rows) => rows),
-    fetchCSV<PlayerTotalsRow>(CSV_URLS.playerTotals, (rows) => rows),
-    fetchPlayerBios()
+    fetchCSV<GameStats>(CSV_URLS.games, transformGameData, forceRefresh),
+    fetchCSV<PlayerGameLogRow>(CSV_URLS.playerGameLogs, (rows) => rows, forceRefresh),
+    fetchCSV<PlayerTotalsRow>(CSV_URLS.playerTotals, (rows) => rows, forceRefresh),
+    forceRefresh ? fetchPlayerBios(true) : fetchPlayerBios()
   ]);
   
   // Transform totals with bio data
@@ -134,15 +134,18 @@ export async function fetchAllData() {
   };
 }
 
-async function fetchCSV<T>(url: string, transform: (data: any) => T[]): Promise<T[]> {
+async function fetchCSV<T>(url: string, transform: (data: any) => T[], forceRefresh = false): Promise<T[]> {
   const cacheKey = `cache_${btoa(url)}`;
-  const cached = localStorage.getItem(cacheKey);
   const now = Date.now();
-
-  if (cached) {
-    const { data, timestamp } = JSON.parse(cached) as CachedData<T>;
-    if (now - timestamp < CACHE_DURATION) {
-      return data;
+  
+  // Only check cache if not forcing a refresh
+  if (!forceRefresh) {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached) as CachedData<T>;
+      if (now - timestamp < CACHE_DURATION) {
+        return data;
+      }
     }
   }
 
