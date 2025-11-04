@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStats } from '@/contexts/StatsContext';
 import { format, parse } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Layout from '@/components/Layout';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const Games: React.FC = () => {
   const { games, loading, error } = useStats();
@@ -53,14 +54,16 @@ const Games: React.FC = () => {
               className="hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => navigate(`/games/${game.gameNumber}`)}
             >
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-lg">
                   Spieltag {game.gameNumber} • {formatGameDate(game.date)}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {/* Team names row - only on mobile */}
-                <div className="md:hidden flex items-center justify-between mb-1">
+              <CardContent className="p-4">
+                <div className="md:flex md:gap-6">
+                  <div className="md:flex-1">
+                    {/* Team names row - only on mobile */}
+                    <div className="md:hidden flex items-center justify-between mb-1">
                   <div className="text-sm font-medium text-right flex-1 pr-2 line-clamp-2">
                     {game.homeTeam || 'Pitbulls'}
                   </div>
@@ -111,10 +114,19 @@ const Games: React.FC = () => {
                     <div className="text-sm text-gray-500">Gast</div>
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-3 text-center text-sm text-gray-500">
-                  <div>1. Q: {game.q1Score}</div>
-                  <div>Halbzeit: {game.halfTimeScore}</div>
-                  <div>3. Q: {game.q3Score}</div>
+                    <div className="mt-4 grid grid-cols-3 text-center text-sm text-gray-500">
+                      <div>1. Q: {game.q1Score}</div>
+                      <div>Halbzeit: {game.halfTimeScore}</div>
+                      <div>3. Q: {game.q3Score}</div>
+                    </div>
+                  </div>
+                  
+                  {/* Chart - shown on right side on desktop, below scores on mobile */}
+                  <div className="mt-4 md:mt-0 md:w-1/2 lg:w-2/5 xl:w-1/3">
+                    <div className="h-48 md:h-full">
+                      <ScoreProgressionChart game={game} />
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -122,6 +134,93 @@ const Games: React.FC = () => {
         </div>
       </div>
     </Layout>
+  );
+};
+
+interface ScoreProgressionChartProps {
+  game: GameStats;
+}
+
+const ScoreProgressionChart: React.FC<ScoreProgressionChartProps> = ({ game }) => {
+  // Hide chart if no score data is available
+  if (!game.q1Score && !game.halfTimeScore && !game.q3Score && !game.finalScore) {
+    return null;
+  }
+
+  const chartData = useMemo(() => {
+    const parseScore = (score: string, isHome: boolean) => {
+      if (!score) return 0;
+      const [home, away] = score.split('-').map(Number);
+      return isHome ? home : away;
+    };
+
+    const isHomeGame = game.homeTeam?.toLowerCase().includes('neuenstadt') || 
+                      game.homeTeam?.toLowerCase().includes('pitbulls');
+
+    const tsvScores = [
+      { period: 'Q1', score: parseScore(game.q1Score, isHomeGame) },
+      { period: 'HT', score: parseScore(game.halfTimeScore, isHomeGame) },
+      { period: 'Q3', score: parseScore(game.q3Score, isHomeGame) },
+      { period: 'FT', score: parseScore(game.finalScore, isHomeGame) }
+    ];
+
+    const opponentScores = [
+      { period: 'Q1', score: parseScore(game.q1Score, !isHomeGame) },
+      { period: 'HT', score: parseScore(game.halfTimeScore, !isHomeGame) },
+      { period: 'Q3', score: parseScore(game.q3Score, !isHomeGame) },
+      { period: 'FT', score: parseScore(game.finalScore, !isHomeGame) }
+    ];
+
+    return tsvScores.map((tsv, index) => ({
+      period: tsv.period,
+      'TSV Neuenstadt': tsv.score,
+      'Gegner': opponentScores[index].score
+    }));
+  }, [game]);
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={chartData}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+        <XAxis 
+          dataKey="period" 
+          tick={{ fill: '#666', fontSize: 12 }}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis 
+          domain={[0, 'dataMax + 10']}
+          tick={{ fill: '#666', fontSize: 12 }}
+          tickLine={false}
+          axisLine={false}
+          width={30}
+        />
+        <Tooltip 
+          contentStyle={{
+            backgroundColor: 'white',
+            borderRadius: '4px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}
+        />
+        <Legend />
+        <Line 
+          type="monotone" 
+          dataKey="TSV Neuenstadt" 
+          stroke="#3b82f6" 
+          strokeWidth={2}
+          dot={{ r: 4 }}
+          activeDot={{ r: 6 }}
+        />
+        <Line 
+          type="monotone" 
+          dataKey="Gegner" 
+          stroke="#ef4444" 
+          strokeWidth={2}
+          dot={{ r: 4 }}
+          activeDot={{ r: 6 }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
   );
 };
 
