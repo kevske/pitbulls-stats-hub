@@ -35,7 +35,7 @@ const Sidebar = () => {
       {/* Menu button - elegant toggle */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed z-50 top-4 left-4 p-3 rounded-lg bg-card/80 backdrop-blur-md border border-border shadow-elegant hover:shadow-elegant-lg transition-elegant hover:bg-card"
+        className="fixed z-60 top-4 left-4 p-2"
         aria-label={isOpen ? 'Menü schließen' : 'Menü öffnen'}
       >
         {isOpen ? (
@@ -52,14 +52,14 @@ const Sidebar = () => {
       {/* Overlay - only on mobile */}
       {isMobile && isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-elegant"
+          className="fixed inset-0 bg-black/50 z-40"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside 
-        className={`fixed top-0 left-0 h-screen w-64 bg-card/95 backdrop-blur-md border-r border-border shadow-elegant-lg z-50 transform transition-all duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-screen w-64 bg-background/95 backdrop-blur-md border-r border-border z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
