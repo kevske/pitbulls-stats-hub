@@ -5,8 +5,12 @@ import { useStats } from '@/contexts/StatsContext';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface SidebarProps {
+  isOpen: boolean;
+  onToggle: (isOpen: boolean) => void;
+}
+
+const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [refreshStatus, setRefreshStatus] = useState<'idle' | 'loading' | 'success' | 'error' | `reloading${number}`>('idle');
@@ -50,7 +54,7 @@ const Sidebar = () => {
     <>
       {/* Menu button - elegant toggle */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => onToggle(!isOpen)}
         className="fixed z-60 top-4 left-4 p-2"
         aria-label={isOpen ? 'Menü schließen' : 'Menü öffnen'}
       >
@@ -93,7 +97,7 @@ const Sidebar = () => {
                       ? 'bg-primary text-primary-foreground shadow-sm font-medium' 
                       : 'text-foreground/70 hover:text-foreground hover:bg-accent'
                   }`}
-                  onClick={() => isMobile && setIsOpen(false)}
+                  onClick={() => isMobile && onToggle(false)}
                 >
                   <Icon className={`w-5 h-5 mr-3 transition-elegant ${isActive ? '' : 'group-hover:scale-110'}`} />
                   <span>{item.label}</span>

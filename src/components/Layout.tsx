@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import React, { ReactNode, useState } from "react";
 import Sidebar from "./Sidebar";
 
 interface LayoutProps {
@@ -6,11 +6,13 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
   return (
     <div className="min-h-screen bg-background relative">
-      <Sidebar />
+      <Sidebar isOpen={isSidebarOpen} onToggle={setIsSidebarOpen} />
       
-      <div className="transition-all duration-300 md:pl-64">
+      <div className={`transition-all duration-300 ${isSidebarOpen ? 'md:pl-64' : 'md:pl-0'}`}>
         {/* Decorative X marks commented out as requested
         <div className="fixed top-8 right-8 z-0 flex flex-col gap-4">
           {[...Array(4)].map((_, i) => (
