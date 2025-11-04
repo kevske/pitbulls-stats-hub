@@ -112,11 +112,55 @@ const Home = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="container mx-auto p-4">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Spielerstatistiken</h1>
+        <div className="container mx-auto max-w-6xl space-y-12 animate-fade-in">
+          {/* Hero Section Skeleton */}
+          <div className="text-center space-y-4">
+            <div className="h-14 bg-muted/60 rounded-lg w-3/4 mx-auto skeleton-pulse" />
+            <div className="h-6 bg-muted/60 rounded w-1/2 mx-auto skeleton-pulse" />
           </div>
-          <div className="text-center py-8">Lade Daten...</div>
+
+          {/* Last Game Skeleton */}
+          <div className="space-y-4">
+            <div className="h-8 bg-muted/60 rounded w-48 mx-auto skeleton-pulse" />
+            <Card className="border-border">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="h-8 w-32 bg-muted/60 rounded skeleton-pulse" />
+                  <div className="h-6 w-24 bg-muted/60 rounded skeleton-pulse" />
+                  <div className="flex items-center justify-center gap-8 my-4">
+                    <div className="text-center space-y-2">
+                      <div className="h-8 w-32 bg-muted/60 rounded skeleton-pulse" />
+                      <div className="h-12 w-20 bg-muted/60 rounded skeleton-pulse" />
+                    </div>
+                    <div className="h-8 w-12 bg-muted/60 rounded skeleton-pulse" />
+                    <div className="text-center space-y-2">
+                      <div className="h-8 w-32 bg-muted/60 rounded skeleton-pulse" />
+                      <div className="h-12 w-20 bg-muted/60 rounded skeleton-pulse" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Top Performers Skeleton */}
+          <div className="grid md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="border-border">
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="h-10 w-10 bg-muted/60 rounded-full mx-auto skeleton-pulse" />
+                    <div className="h-6 bg-muted/60 rounded w-3/4 mx-auto skeleton-pulse" />
+                    <div className="grid grid-cols-2 gap-2">
+                      {[1, 2, 3, 4].map((j) => (
+                        <div key={j} className="h-16 bg-muted/60 rounded skeleton-pulse" />
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </Layout>
     );
@@ -146,11 +190,11 @@ const Home = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto max-w-6xl space-y-12">
+      <div className="container mx-auto max-w-6xl space-y-12 animate-fade-in">
         {/* Hero Section */}
         <div className="text-center space-y-4">
-          <h2 className="text-5xl md:text-6xl font-bold text-primary">
-            Willkommen bei den Pitbulls
+          <h2 className="text-5xl md:text-6xl font-bold text-foreground">
+            Willkommen bei den <span className="text-primary">Pitbulls</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Verfolgen Sie unsere Mannschaft, Statistiken und Videos aus der aktuellen Saison.
@@ -160,7 +204,7 @@ const Home = () => {
         {/* Last Game Result */}
         <div className="space-y-4">
           <h3 className="text-2xl font-bold text-center">Letztes Spiel</h3>
-          <Card className="border-primary/20">
+          <Card className="border-border shadow-elegant hover:shadow-elegant-lg transition-elegant">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center gap-4">
                 <div className="text-2xl font-bold">Spieltag {lastGame.gameNumber}</div>
@@ -209,12 +253,12 @@ const Home = () => {
             {topPerformers.map((performer, index) => (
               <Card 
                 key={performer.id}
-                className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer"
+                className="border-border shadow-elegant hover:shadow-elegant-lg transition-elegant cursor-pointer group"
                 onClick={() => navigate(`/players/${performer.id}`)}
               >
                 <CardContent className="pt-6">
                   <div className="text-center space-y-3">
-                    <div className="text-3xl font-bold text-primary">#{index + 1}</div>
+                    <div className="text-3xl font-bold text-primary group-hover:scale-110 transition-elegant">#{index + 1}</div>
                     <div className="text-center">
                       <div className="text-lg font-semibold">
                         {performer.firstName} {performer.lastName || ''}
@@ -226,19 +270,19 @@ const Home = () => {
                       )}
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm w-full">
-                      <div className="bg-gray-50 p-2 rounded">
+                      <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
                         <div className="text-muted-foreground text-xs">Punkte/Spiel</div>
                         <div className="text-lg font-bold text-primary">{performer.pointsPerGame.toFixed(1)}</div>
                       </div>
-                      <div className="bg-gray-50 p-2 rounded">
+                      <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
                         <div className="text-muted-foreground text-xs">Gesamtpunkte</div>
                         <div className="text-lg font-bold">{performer.totalPoints}</div>
                       </div>
-                      <div className="bg-gray-50 p-2 rounded">
+                      <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
                         <div className="text-muted-foreground text-xs">3-Punkte/Spiel</div>
                         <div className="text-lg font-bold">{performer.threePointersPerGame.toFixed(1)}</div>
                       </div>
-                      <div className="bg-gray-50 p-2 rounded">
+                      <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
                         <div className="text-muted-foreground text-xs">FW-Quote</div>
                         <div className="text-lg font-bold">{performer.freeThrowPercentage}</div>
                       </div>
@@ -275,12 +319,12 @@ const Home = () => {
                 {risingStars.map((player, index) => (
                   <Card 
                     key={player.playerId}
-                    className="border-orange-100 hover:border-orange-200 transition-colors cursor-pointer"
+                    className="border-orange-100 shadow-elegant hover:shadow-elegant-lg transition-elegant cursor-pointer group"
                     onClick={() => navigate(`/players/${player.playerId}`)}
                   >
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-4 mb-4">
-                        <div className="relative">
+                        <div className="relative group-hover:scale-105 transition-elegant">
                           <img 
                             src={player.image} 
                             alt={`${player.firstName} ${player.lastName}`}
@@ -333,10 +377,10 @@ const Home = () => {
             variant="outline"
             size="lg"
             onClick={() => navigate("/videos")}
-            className="h-20"
+            className="h-20 shadow-elegant hover:shadow-elegant-lg transition-elegant group"
           >
             <div className="text-center">
-              <div className="text-2xl mb-1">🎥</div>
+              <div className="text-2xl mb-1 group-hover:scale-110 transition-elegant">🎥</div>
               <div className="font-semibold">Videos</div>
             </div>
           </Button>
@@ -344,10 +388,10 @@ const Home = () => {
             variant="outline"
             size="lg"
             onClick={() => navigate("/upload-game")}
-            className="h-20"
+            className="h-20 shadow-elegant hover:shadow-elegant-lg transition-elegant group"
           >
             <div className="text-center">
-              <div className="text-2xl mb-1">➕</div>
+              <div className="text-2xl mb-1 group-hover:scale-110 transition-elegant">➕</div>
               <div className="font-semibold">Spiel hochladen</div>
             </div>
           </Button>

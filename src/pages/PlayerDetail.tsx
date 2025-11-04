@@ -5,31 +5,11 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
-interface GameLog {
-  gameNumber: number;
-  minutesPlayed: number;
-  points: number;
-  threePointers: number;
-  freeThrowsMade: number;
-  freeThrowAttempts: number;
-  fouls: number;
-  [key: string]: string | number | undefined;
-}
-
-// Using the main Player interface from data/players
-import { Player as MainPlayer } from '@/data/players';
-
-// Extend the main Player interface with any additional fields needed for this component
-interface Player extends Omit<MainPlayer, 'jerseyNumber'> {
-  jerseyNumber?: number;
-  position?: string;
-  bio?: string;
-  imageUrl?: string;
-}
+import { PlayerStats, PlayerGameLog } from '@/types/stats';
 
 const PlayerDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { player, gameLogs } = usePlayerStats(id) as { player: Player | null; gameLogs: GameLog[] };
+  const { player, gameLogs } = usePlayerStats(id) as { player: PlayerStats | null; gameLogs: PlayerGameLog[] };
   const navigate = useNavigate();
 
   if (!player || !player.firstName) {
@@ -53,7 +33,7 @@ const PlayerDetail: React.FC = () => {
     );
   }
 
-  const calculateTotal = (stat: string): number => {
+  const calculateTotal = (stat: keyof PlayerGameLog): number => {
     return gameLogs.reduce((sum, log) => {
       const value = log[stat];
       return sum + (typeof value === 'number' ? value : 0);
@@ -95,11 +75,11 @@ const PlayerDetail: React.FC = () => {
           Zurück zur Übersicht
         </Button>
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-card rounded-lg shadow-elegant overflow-hidden">
           {/* Player Header */}
-          <div className="bg-primary/10 p-6">
+          <div className="bg-accent p-6">
             <div className="flex flex-col md:flex-row items-center">
-              <div className="w-32 h-32 md:w-40 md:h-40 bg-white rounded-full overflow-hidden border-4 border-white shadow-lg mb-4 md:mb-0 md:mr-8">
+              <div className="w-32 h-32 md:w-40 md:h-40 bg-background rounded-full overflow-hidden border-4 border-background shadow-elegant mb-4 md:mb-0 md:mr-8">
                 <img
                   src={player.imageUrl || '/pitbulls-stats-hub/placeholder-player.png'}
                   alt={`${player.firstName} ${player.lastName}`}
@@ -111,22 +91,22 @@ const PlayerDetail: React.FC = () => {
                 />
               </div>
               <div className="text-center md:text-left">
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold">
                   {player.firstName} <span className="text-primary">{player.lastName}</span>
                 </h1>
-                <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-2">
+                <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-2 text-muted-foreground">
                   {player.jerseyNumber && (
-                    <span className="text-gray-600">
+                    <span>
                       <span className="font-medium">#</span>{player.jerseyNumber}
                     </span>
                   )}
                   {player.position && (
-                    <span className="text-gray-600">
+                    <span>
                       <span className="font-medium">Position:</span> {player.position}
                     </span>
                   )}
                   {player.age && (
-                    <span className="text-gray-600">
+                    <span>
                       <span className="font-medium">Alter:</span> {player.age}
                     </span>
                   )}
@@ -137,8 +117,8 @@ const PlayerDetail: React.FC = () => {
 
           {/* Player Bio */}
           {player.bio && (
-            <div className="p-6 border-b">
-              <p className="text-gray-700 italic">"{player.bio}"</p>
+            <div className="p-6 border-b border-border">
+              <p className="text-muted-foreground italic">"{player.bio}"</p>
             </div>
           )}
           
@@ -155,39 +135,39 @@ const PlayerDetail: React.FC = () => {
           </div>
 
           {/* Game Log */}
-          <div className="p-6 border-t">
+          <div className="p-6 border-t border-border">
             <h3 className="text-lg font-semibold mb-4">Spielverlauf</h3>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-accent">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spiel</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Minuten</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Punkte</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">3P</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">FW</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fouls</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Spiel</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Minuten</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Punkte</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">3P</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">FW</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Fouls</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-card divide-y divide-border">
                   {gameLogs.map((game, index) => (
-                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <tr key={index} className={index % 2 === 0 ? 'bg-card' : 'bg-accent/50'}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         Spiel {game.gameNumber}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {game.minutesPlayed.toFixed(1) || '0.0'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         {game.points || 0}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {game.threePointers || 0}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {game.freeThrowsMade || 0}/{game.freeThrowAttempts || 0}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {game.fouls || 0}
                       </td>
                     </tr>
@@ -203,8 +183,8 @@ const PlayerDetail: React.FC = () => {
 };
 
 const StatCard = ({ label, value }: { label: string; value: string }) => (
-  <div className="bg-gray-50 p-4 rounded-lg text-center">
-    <div className="text-sm text-gray-500 mb-1">{label}</div>
+  <div className="bg-accent p-4 rounded-lg text-center transition-elegant hover:bg-accent/70">
+    <div className="text-sm text-muted-foreground mb-1">{label}</div>
     <div className="text-2xl font-bold">{value}</div>
   </div>
 );
