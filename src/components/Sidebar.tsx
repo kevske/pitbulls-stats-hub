@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Users, BarChart2, Film, Gamepad2, Upload, X, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { Home, Users, BarChart2, Film, Upload, X, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { Basketball } from '@lucide/lab';
 import { useStats } from '@/contexts/StatsContext';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -46,7 +47,7 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     { to: '/', icon: Home, label: 'Home' },
     { to: '/players', icon: Users, label: 'Spieler' },
     { to: '/stats', icon: BarChart2, label: 'Statistiken' },
-    { to: '/games', icon: Gamepad2, label: 'Spiele' },
+    { to: '/games', icon: Basketball, label: 'Spiele' },
     { to: '/videos', icon: Film, label: 'Videos' },
   ];
 
