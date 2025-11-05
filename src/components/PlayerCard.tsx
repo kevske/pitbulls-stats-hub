@@ -16,6 +16,7 @@ interface PlayerCardProps {
 
 const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter = 'all' }: PlayerCardProps) => {
   const navigate = useNavigate();
+  const [isBioExpanded, setIsBioExpanded] = useState(false);
   // Game filter is now controlled by parent component
   
   // Calculate filtered stats based on game type
@@ -166,9 +167,22 @@ const renderStats = () => (
 
             {/* Bio */}
             {player.bio && (
-              <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                {player.bio}
-              </p>
+              <div className="mb-4">
+                <p className={`text-sm text-muted-foreground ${!isBioExpanded ? 'line-clamp-3' : ''}`}>
+                  {player.bio}
+                </p>
+                {player.bio.length > 150 && (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsBioExpanded(!isBioExpanded);
+                    }}
+                    className="text-xs text-blue-500 hover:text-blue-600 hover:underline mt-1 focus:outline-none"
+                  >
+                    {isBioExpanded ? 'Weniger anzeigen' : '...mehr'}
+                  </button>
+                )}
+              </div>
             )}
 
 
