@@ -31,21 +31,20 @@ const App = () => {
       if (window.location.pathname + window.location.search + (window.location.hash || '') !== redirect) {
         window.history.replaceState(null, '', redirect);
       }
+      return; // Skip the rest if we handled a session redirect
     }
+    
     // Handle GitHub Pages redirect parameter
-    else {
-      const params = new URLSearchParams(window.location.search);
-      const redirect = params.get('redirect');
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+    
+    if (redirect) {
+      // Remove the redirect parameter from the URL
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('redirect');
       
-      if (redirect) {
-        // Remove the redirect parameter from the URL
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete('redirect');
-        window.history.replaceState(null, '', newUrl.pathname + newUrl.search + newUrl.hash);
-        
-        // Navigate to the intended path
-        window.location.href = redirect;
-      }
+      // Navigate to the intended path without causing a page reload
+      window.history.replaceState(null, '', redirect);
     }
   }, []);
 
