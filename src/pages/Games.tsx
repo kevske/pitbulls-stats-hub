@@ -125,7 +125,7 @@ const Games: React.FC = () => {
                     {/* Top scorers - Desktop only */}
                     <div className="hidden md:block pt-2">
                       <div className="text-sm font-medium text-gray-700 mb-2">Topscorer</div>
-                      <div className="flex items-center space-x-4">
+                      <div className="grid grid-cols-3 gap-2">
                         {gameLogs
                           .filter(log => log.gameNumber === game.gameNumber)
                           .sort((a, b) => b.points - a.points)
@@ -136,17 +136,19 @@ const Games: React.FC = () => {
                             const avatarSrc = playerData?.imageUrl || '/players/placeholder-player.png';
                             
                             return (
-                              <div key={player.playerId} className="flex flex-col items-center">
-                                <Avatar className="h-12 w-12 border-2 border-primary">
-                                  <AvatarImage src={avatarSrc} alt={playerName} />
-                                  <AvatarFallback>
-                                    {playerName.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="text-xs mt-1 text-center">
-                                  <div className="font-medium truncate w-16">{playerName.split(' ')[0]}</div>
-                                  <div className="text-primary font-semibold">{player.points} P</div>
-                                </span>
+                              <div key={player.playerId} className="bg-gray-50 p-2 rounded-lg">
+                                <div className="flex items-center space-x-2">
+                                  <Avatar className="h-10 w-10 border-2 border-primary">
+                                    <AvatarImage src={avatarSrc} alt={playerName} />
+                                    <AvatarFallback>
+                                      {playerName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="text-sm font-medium">{playerName.split(' ')[0]}</div>
+                                    <div className="text-primary font-bold">{player.points} P</div>
+                                  </div>
+                                </div>
                               </div>
                             );
                           })}
