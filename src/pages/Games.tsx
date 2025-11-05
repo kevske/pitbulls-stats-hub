@@ -9,7 +9,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Games: React.FC = () => {
-  const { games, loading, error } = useStats();
+  const { games, gameLogs, players, loading, error } = useStats();
   const navigate = useNavigate();
 
   const formatGameDate = (dateString: string) => {
