@@ -20,15 +20,32 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Handle GitHub Pages redirect
+  // Handle redirects from 404 page or direct navigation
   React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect');
-    const currentPath = window.location.pathname.replace(/^\/pitbulls-stats-hub/, '');
-    
-    // Only redirect if we're on the root path and have a redirect parameter
-    if (redirect && currentPath === '/') {
-      window.history.replaceState(null, '', redirect);
+    // Check for redirect in sessionStorage (from 404 page)
+    if (sessionStorage.redirect) {
+      const redirect = sessionStorage.redirect;
+      delete sessionStorage.redirect;
+      
+      // Only redirect if we're not already on that path
+      if (window.location.pathname + window.location.search + (window.location.hash || '') !== redirect) {
+        window.history.replaceState(null, '', redirect);
+      }
+    }
+    // Handle GitHub Pages redirect parameter
+    else {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect');
+      
+      if (redirect) {
+        // Remove the redirect parameter from the URL
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('redirect');
+        window.history.replaceState(null, '', newUrl.pathname + newUrl.search + newUrl.hash);
+        
+        // Navigate to the intended path
+        window.location.href = redirect;
+      }
     }
   }, []);
 
