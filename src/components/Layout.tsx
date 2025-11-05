@@ -12,7 +12,7 @@ const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen bg-background relative">
       <Sidebar isOpen={isSidebarOpen} onToggle={setIsSidebarOpen} />
       
-      <div className={`transition-all duration-300 ${isSidebarOpen ? 'md:pl-64' : 'md:pl-0'}`}>
+      <div className={`transition-all duration-300 min-h-screen flex flex-col ${isSidebarOpen ? 'md:pl-64' : 'md:pl-0'}`}>
         {/* Decorative X marks commented out as requested
         <div className="fixed top-8 right-8 z-0 flex flex-col gap-4">
           {[...Array(4)].map((_, i) => (
@@ -27,13 +27,12 @@ const Layout = ({ children }: LayoutProps) => {
         </div>
         */}
 
-        <main className="p-6 pt-20 md:pt-6">
+        <main className="flex-grow p-6 pt-20 md:pt-6 pb-24">
           {children}
         </main>
-      </div>
 
-      {/* Footer with links */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border py-3 z-30 shadow-elegant">
+        {/* Footer with links */}
+        <footer className="bg-card/95 backdrop-blur-md border-t border-border py-3 shadow-elegant">
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8">
             <a 
@@ -62,6 +61,7 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 };

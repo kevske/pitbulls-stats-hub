@@ -58,7 +58,7 @@ const Home = () => {
         id: p.id,
         firstName: p.firstName,
         lastName: p.lastName || '',
-        image: p.imageUrl || '/placeholder-player.png'
+        image: p.imageUrl || '/pitbulls-stats-hub/placeholder-player.png'
       })),
       latestGameNumber,
       gameLogs,

@@ -107,7 +107,7 @@ const renderStats = () => (
             <img
               src={`/pitbulls-stats-hub/players/${player.firstName.toLowerCase()}-${player.lastName?.toLowerCase() || ''}.jpg`}
               alt={`${player.firstName} ${player.lastName}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-top"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = '/pitbulls-stats-hub/placeholder-player.png';
