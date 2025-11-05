@@ -4,14 +4,43 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pitbulls Stats Hub</title>
-    <script type="module">
-      const pathSegments = window.location.pathname.split('/');
-      const basePath = pathSegments[1] ? `/${pathSegments[1]}/` : '/';
-      sessionStorage.redirect = window.location.pathname + window.location.search;
-      window.location.href = `${window.location.origin}${basePath}?redirect=${encodeURIComponent(window.location.pathname)}`;
+    <script>
+      // Single Page Apps for GitHub Pages
+      (function() {
+        var basePath = '/pitbulls-stats-hub';
+        var l = window.location;
+        
+        // If we're not at the root path, try to redirect
+        if (l.pathname !== basePath + '/' && l.pathname !== basePath + '/index.html') {
+          var redirect = basePath + '/index.html';
+          var qs = l.search;
+          
+          // Preserve query parameters
+          if (qs) {
+            redirect += qs;
+          }
+          
+          // Preserve hash fragment if present
+          if (l.hash) {
+            redirect += l.hash;
+          }
+          
+          // Store the original URL in sessionStorage
+          sessionStorage.redirect = l.pathname + l.search + (l.hash || '');
+          
+          // Redirect to index.html
+          window.location.href = redirect;
+        }
+      })();
     </script>
   </head>
   <body>
     <p>Redirecting to the app...</p>
+    <script>
+      // If we get here, the redirect didn't work, so try a full page reload
+      setTimeout(function() {
+        window.location.href = window.location.origin + '/pitbulls-stats-hub/';
+      }, 1000);
+    </script>
   </body>
 </html>
