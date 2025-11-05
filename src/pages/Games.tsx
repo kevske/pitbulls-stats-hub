@@ -6,6 +6,7 @@ import { format, parse } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Layout from '@/components/Layout';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Games: React.FC = () => {
   const { games, loading, error } = useStats();
@@ -50,74 +51,100 @@ const Games: React.FC = () => {
           {games.map((game) => (
             <Card 
               key={game.gameNumber}
-              className="hover:shadow-md transition-shadow cursor-pointer"
+              className="hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden border border-gray-200"
               onClick={() => navigate(`/games/${game.gameNumber}`)}
             >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">
-                  Spieltag {game.gameNumber} • {formatGameDate(game.date)}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4">
-                <div className="md:flex md:gap-6">
-                  <div className="md:flex-1">
-                    {/* Team names row - only on mobile */}
-                    <div className="md:hidden flex items-center justify-between mb-1">
-                  <div className="text-sm font-medium text-right flex-1 pr-2 line-clamp-2">
-                    {game.homeTeam || 'Pitbulls'}
-                  </div>
-                  <div className="px-1 text-sm font-medium">vs</div>
-                  <div className="text-sm font-medium text-left flex-1 pl-2 line-clamp-2">
-                    {game.awayTeam || 'Gegner'}
-                  </div>
-                </div>
-                
-                {/* Score row */}
-                <div className="flex justify-center my-2">
-                  <div className="text-3xl font-bold text-center">
-                    {game.finalScore ? (
-                      <div>
-                        {(() => {
-                          const scoreParts = game.finalScore.split('-');
-                          if (scoreParts.length === 2) {
-                            const homeScore = scoreParts[0].trim();
-                            const awayScore = scoreParts[1].trim();
-                            return (
-                              <div className="flex items-center justify-center gap-2">
-                                <span className="md:hidden">{homeScore}</span>
-                                <span className="hidden md:inline-block w-16 text-right">{homeScore}</span>
-                                <span>:</span>
-                                <span className="md:hidden">{awayScore}</span>
-                                <span className="hidden md:inline-block w-16 text-left">{awayScore}</span>
-                              </div>
-                            );
-                          }
-                          return game.finalScore;
-                        })()}
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row md:gap-8">
+                  {/* Left side - Game details, teams, and top scorers */}
+                  <div className="flex-1 space-y-4">
+                    {/* Game details */}
+                    <div className="space-y-1">
+                      <div className="text-lg font-semibold text-gray-900">
+                        Spieltag {game.gameNumber}
                       </div>
-                    ) : (
-                      <div className="text-gray-400">vs</div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Desktop team names - hidden on mobile */}
-                <div className="hidden md:grid grid-cols-3 items-center">
-                  <div className="text-right pr-4">
-                    <div className="font-medium line-clamp-2">{game.homeTeam || 'Pitbulls'}</div>
-                    <div className="text-sm text-gray-500">Heim</div>
-                  </div>
-                  <div></div>
-                  <div className="pl-4">
-                    <div className="font-medium line-clamp-2">{game.awayTeam || 'Gegner'}</div>
-                    <div className="text-sm text-gray-500">Gast</div>
-                  </div>
-                </div>
+                      <div className="text-sm text-gray-600">
+                        {formatGameDate(game.date)}
+                      </div>
+                    </div>
+
+                    {/* Teams and score */}
+                    <div className="py-2">
+                      <div className="hidden md:grid grid-cols-12 items-center gap-4">
+                        <div className="col-span-5 text-right">
+                          <div className="font-medium text-base">{game.homeTeam || 'Pitbulls'}</div>
+                          <div className="text-sm text-gray-500">Heim</div>
+                        </div>
+                        
+                        <div className="col-span-2">
+                          {game.finalScore ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-3xl font-bold">
+                                {game.finalScore.split('-')[0].trim()}
+                              </span>
+                              <span className="text-xl">:</span>
+                              <span className="text-3xl font-bold">
+                                {game.finalScore.split('-')[1]?.trim()}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="text-2xl text-gray-400 text-center">vs</div>
+                          )}
+                        </div>
+                        
+                        <div className="col-span-5">
+                          <div className="font-medium text-base">{game.awayTeam || 'Gegner'}</div>
+                          <div className="text-sm text-gray-500">Gast</div>
+                        </div>
+                      </div>
+
+                      {/* Mobile view */}
+                      <div className="md:hidden space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium">{game.homeTeam || 'Pitbulls'}</div>
+                          <div className="text-sm text-gray-500">Heim</div>
+                        </div>
+                        
+                        <div className="text-center py-1">
+                          {game.finalScore ? (
+                            <div className="text-2xl font-bold">
+                              {game.finalScore}
+                            </div>
+                          ) : (
+                            <div className="text-xl text-gray-400">vs</div>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium">{game.awayTeam || 'Gegner'}</div>
+                          <div className="text-sm text-gray-500">Gast</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Top scorers - Desktop only */}
+                    <div className="hidden md:block pt-2">
+                      <div className="text-sm font-medium text-gray-700 mb-2">Topscorer</div>
+                      <div className="flex items-center space-x-4">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="flex flex-col items-center">
+                            <Avatar className="h-10 w-10 border-2 border-primary">
+                              <AvatarImage src={`/players/placeholder-player.png`} />
+                              <AvatarFallback>P{i}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs mt-1 text-center">
+                              <div className="font-medium">Spieler {i}</div>
+                              <div className="text-primary font-semibold">{Math.floor(Math.random() * 15) + 10} P</div>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                   
-                  {/* Chart - shown on right side on desktop, below scores on mobile */}
+                  {/* Right side - Chart */}
                   <div className="mt-4 md:mt-0 md:w-2/5 lg:w-1/3">
-                    <div className="h-64">
+                    <div className="h-48 md:h-full">
                       <ScoreProgressionChart game={game} />
                     </div>
                   </div>
