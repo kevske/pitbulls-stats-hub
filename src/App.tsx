@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { StatsProvider } from "@/contexts/StatsContext";
+import ScrollToTop from "@/components/ScrollToTop";
 import Home from "./pages/Home";
 import Stats from "./pages/Stats";
 import Players from "./pages/Players";
@@ -23,7 +24,10 @@ const App = () => {
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const redirect = params.get('redirect');
-    if (redirect) {
+    const currentPath = window.location.pathname.replace(/^\/pitbulls-stats-hub/, '');
+    
+    // Only redirect if we're on the root path and have a redirect parameter
+    if (redirect && currentPath === '/') {
       window.history.replaceState(null, '', redirect);
     }
   }, []);
@@ -34,6 +38,7 @@ const App = () => {
         <TooltipProvider>
           <StatsProvider>
             <BrowserRouter basename="/pitbulls-stats-hub">
+              <ScrollToTop />
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/stats" element={<Stats />} />
