@@ -1,41 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pitbulls Stats Hub</title>
-    <script>
-      // Single Page Apps for GitHub Pages
-      (function() {
-        var basePath = '/pitbulls-stats-hub';
-        var l = window.location;
-        
-        // If we're not at the root path, redirect to index.html with the path as a query parameter
-        if (l.pathname !== basePath + '/') {
-          var path = l.pathname.startsWith(basePath) 
-            ? l.pathname.substring(basePath.length) 
-            : l.pathname;
-            
-          // Store the original URL in sessionStorage for the app to handle
-          sessionStorage.redirect = path + l.search + l.hash;
-          
-          // Build the redirect URL
-          var search = l.search ? l.search + '&' : '?';
-          var redirect = basePath + '/index.html' + search + 'redirect=' + encodeURIComponent(path);
-          
-          // Redirect to index.html with the path as a query parameter
-          window.location.href = redirect;
-        }
-      })();
-    </script>
-  </head>
-  <body>
-    <p>Redirecting to the app...</p>
-    <script>
-      // If we get here, the redirect didn't work, so try a full page reload
-      setTimeout(function() {
-        window.location.href = window.location.origin + '/pitbulls-stats-hub/';
-      }, 1000);
-    </script>
-  </body>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Redirecting...</title>
+  <script>
+    // Single Page Apps for GitHub Pages
+    (function() {
+      // Get the current path and remove any base path
+      var basePath = '/pitbulls-stats-hub';
+      var path = window.location.pathname;
+      
+      // Remove base path if present
+      if (path.startsWith(basePath)) {
+        path = path.substring(basePath.length);
+      }
+      
+      // Store the original URL in sessionStorage for the app to handle
+      var redirectPath = path + window.location.search + window.location.hash;
+      sessionStorage.setItem('redirect', redirectPath);
+      
+      // Build the new URL with the base path
+      var newLocation = basePath + '/index.html';
+      
+      // Redirect to the main app with the original path as a query parameter
+      window.location.href = newLocation + '?redirect=' + encodeURIComponent(path) + window.location.search + window.location.hash;
+    })();
+  </script>
+</head>
+<body>
+  <p>Redirecting to the app... If you're not redirected, <a id="redirectLink" href="/pitbulls-stats-hub/">click here</a>.</p>
+  <script>
+    // Fallback in case the redirect doesn't work
+    setTimeout(function() {
+      document.getElementById('redirectLink').click();
+    }, 1000);
+  </script>
+</body>
 </html>

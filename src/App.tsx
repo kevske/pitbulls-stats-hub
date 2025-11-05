@@ -22,29 +22,40 @@ const queryClient = new QueryClient();
 const App = () => {
   // Handle redirects from 404 page or direct navigation
   React.useEffect(() => {
-    // Check for redirect in sessionStorage (from 404 page)
-    if (sessionStorage.redirect) {
-      const redirect = sessionStorage.redirect;
-      delete sessionStorage.redirect;
+    // First, check for redirect in URL parameters (from 404 page)
+    const params = new URLSearchParams(window.location.search);
+    const redirectParam = params.get('redirect');
+    
+    if (redirectParam) {
+      // Clean up the URL by removing the redirect parameter
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('redirect');
       
-      // Only redirect if we're not already on that path
-      if (window.location.pathname + window.location.search + (window.location.hash || '') !== redirect) {
-        window.history.replaceState(null, '', redirect);
-      }
-      return; // Skip the rest if we handled a session redirect
+      // Store the clean URL in sessionStorage
+      sessionStorage.setItem('redirect', redirectParam + window.location.hash);
+      
+      // Update the URL without reloading the page
+      window.history.replaceState({}, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
     }
     
-    // Handle GitHub Pages redirect parameter
-    const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect');
+    // Then check for redirect in sessionStorage (from 404 page or previous step)
+    const redirect = sessionStorage.getItem('redirect');
     
     if (redirect) {
-      // Remove the redirect parameter from the URL
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete('redirect');
+      // Remove the redirect from sessionStorage
+      sessionStorage.removeItem('redirect');
       
-      // Navigate to the intended path without causing a page reload
-      window.history.replaceState(null, '', redirect);
+      // Only redirect if we're not already on that path
+      const currentPath = window.location.pathname + window.location.search + (window.location.hash || '');
+      const basePath = '/pitbulls-stats-hub';
+      const normalizedRedirect = redirect.startsWith(basePath) 
+        ? redirect.substring(basePath.length) 
+        : redirect;
+      
+      if (currentPath !== normalizedRedirect) {
+        // Use the router to navigate to the target path
+        window.history.replaceState(null, '', normalizedRedirect);
+      }
     }
   }, []);
 
