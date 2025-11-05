@@ -96,10 +96,16 @@ const renderStats = () => (
     </div>
   );
 
+  // Handle navigation with base path
+  const handleCardClick = () => {
+    // Use absolute path with base path included
+    navigate(`/players/${player.id}`);
+  };
+
   return (
     <Card 
       className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border overflow-hidden"
-      onClick={() => navigate(`/players/${player.id}`)}
+      onClick={handleCardClick}
     >
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row">

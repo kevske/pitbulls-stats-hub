@@ -271,7 +271,7 @@ const Home = () => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate('/games')}
+              onClick={() => navigate('games')}
               className="text-muted-foreground hover:text-primary p-0 h-auto"
             >
               Alle Spiele →
