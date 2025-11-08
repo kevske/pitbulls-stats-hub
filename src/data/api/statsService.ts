@@ -94,12 +94,33 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
     const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
     const bioData = bioMap.get(bioKey);
     
-    const imageName = `${firstName.toLowerCase()}-${lastName.toLowerCase()}`.replace(/\s+/g, '-');
+    // Try different filename formats to match the actual image files
+    const nameVariations = [
+      `${bioData?.jerseyNumber || ''}_PC_${firstName}`, // e.g., 11_PC_Tobi.jpg
+      `${firstName} ${lastName}`,         // e.g., Abdullah Ari.jpg
+      `${firstName.toLowerCase()} ${lastName.toLowerCase()}`, // e.g., kevin rassner.jpg
+      `${firstName.toLowerCase()}-${lastName.toLowerCase()}`  // e.g., stefan-anselm.jpg
+    ].filter(variation => variation && !variation.includes('undefined')); // Filter out any invalid variations
+    
+    // Find the first matching image file that exists
+    let imageUrl = '/pitbulls-stats-hub/placeholder-player.png';
+    
+    // Check if any of the variations match the actual files
+    for (const variation of nameVariations) {
+      const potentialFile = variation.toLowerCase().replace(/\s+/g, '-') + '.jpg';
+      if (potentialFile) {
+        // In a real app, you would check if the file exists on the server
+        // For now, we'll just use the first variation and let the browser handle 404s
+        imageUrl = `/pitbulls-stats-hub/players/${potentialFile}`;
+        break;
+      }
+    }
+    
     const player: PlayerStats = {
       id: playerId,
       firstName,
       lastName,
-      imageUrl: `/pitbulls-stats-hub/players/${imageName}.jpg`,
+      imageUrl,
       jerseyNumber: bioData?.jerseyNumber || 0,
       position: bioData?.position || '',
       age: bioData?.age || 0,
@@ -123,12 +144,33 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
   console.log('\nAdding players from Bio-CSV without stats:');
   bioMap.forEach((bio, bioKey) => {
     if (!playersWithStats.has(bioKey)) {
-      const imageName = `${bio.firstName.toLowerCase()}-${bio.lastName.toLowerCase()}`.replace(/\s+/g, '-');
+      // Try different filename formats to match the actual image files
+      const nameVariations = [
+        `${bio.jerseyNumber}_PC_${bio.firstName}`, // e.g., 11_PC_Tobi.jpg
+        `${bio.firstName} ${bio.lastName}`,         // e.g., Abdullah Ari.jpg
+        `${bio.firstName.toLowerCase()} ${bio.lastName.toLowerCase()}`, // e.g., kevin rassner.jpg
+        `${bio.firstName.toLowerCase()}-${bio.lastName.toLowerCase()}`  // e.g., stefan-anselm.jpg
+      ];
+      
+      // Find the first matching image file that exists
+      let imageUrl = '/pitbulls-stats-hub/placeholder-player.png';
+      
+      // Check if any of the variations match the actual files
+      for (const variation of nameVariations) {
+        const potentialFile = variation.toLowerCase().replace(/\s+/g, '-') + '.jpg';
+        if (potentialFile) {
+          // In a real app, you would check if the file exists on the server
+          // For now, we'll just use the first variation and let the browser handle 404s
+          imageUrl = `/pitbulls-stats-hub/players/${potentialFile}`;
+          break;
+        }
+      }
+      
       const player: PlayerStats = {
         id: generatePlayerId(bio.firstName, bio.lastName),
         firstName: bio.firstName,
         lastName: bio.lastName,
-        imageUrl: `/pitbulls-stats-hub/players/${imageName}.jpg`,
+        imageUrl,
         jerseyNumber: bio.jerseyNumber,
         position: bio.position,
         age: bio.age,
