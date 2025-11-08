@@ -265,30 +265,32 @@ function transformGameData(rows: any[]): GameStats[] {
     .sort((a, b) => a.gameNumber - b.gameNumber);
 }
 
-// Helper function to generate consistent filenames
-function generateImageFilename(firstName: string, lastName: string = ''): string {
-  // Special cases mapping
-  const specialCases = {
-    'nino de bortoli': 'nino-de-bortoli.jpg',
-    'christoph mörsch': 'christoph-mrsch.jpg',
-    // Add other special cases here if needed
-  };
-
+// Helper function to generate consistent filenames that match the files in public/players
+export function generateImageFilename(firstName: string, lastName: string = ''): string {
+  // First, handle special cases explicitly
   const fullName = `${firstName} ${lastName}`.trim().toLowerCase();
   
-  // Return special case if it exists
-  if (specialCases[fullName]) {
-    return specialCases[fullName];
-  }
-
-  // Default filename generation
-  return `${firstName.toLowerCase()}${lastName ? '-' + lastName.toLowerCase() : ''}`
+  // Special cases based on actual filenames
+  if (fullName === 'nino de bortoli') return 'nino-de-bortoli.jpg';
+  if (fullName === 'christoph mörsch') return 'christoph-mrsch.jpg';
+  if (fullName === 'abdullah ari') return 'abdullah-ari.jpg';
+  if (fullName === 'kevin rassner') return 'kevin-rassner.jpg';
+  if (fullName === 'marius scholl') return 'marius-scholl.jpg';
+  
+  // For other names, generate the filename
+  let filename = `${firstName}${lastName ? ' ' + lastName : ''}`
     .toLowerCase()
+    .trim()
     .replace(/\s+/g, '-')        // Replace spaces with hyphens
     .replace(/[^a-z0-9-]/g, '')  // Remove special characters
     .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
     .replace(/^-+|-+$/g, '')     // Remove leading/trailing hyphens
     + '.jpg';
+    
+  // Log the generated filename for debugging
+  console.log(`Generated filename for ${firstName} ${lastName}:`, filename);
+  
+  return filename;
 }
 
 // Helper function to generate player ID
