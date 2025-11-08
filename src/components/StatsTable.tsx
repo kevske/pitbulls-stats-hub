@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { PlayerStats } from "@/types/stats";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,7 +16,7 @@ interface StatsTableProps {
   players: PlayerStats[];
 }
 
-type SortField = "name" | "games" | "points" | "threePointers" | "fouls" | "minutes";
+type SortField = "name" | "games" | "points" | "threePointers" | "fouls" | "minutes" | "freeThrowPercentage";
 type SortDirection = "asc" | "desc" | null;
 
 const StatsTable = ({ players }: StatsTableProps) => {
@@ -82,6 +83,10 @@ const StatsTable = ({ players }: StatsTableProps) => {
       } else if (sortField === "minutes") {
         aValue = a.minutesPerGame;
         bValue = b.minutesPerGame;
+      } else if (sortField === "freeThrowPercentage") {
+        // Convert percentage string to number for proper sorting
+        aValue = parseFloat(a.freeThrowPercentage) || 0;
+        bValue = parseFloat(b.freeThrowPercentage) || 0;
       } else {
         aValue = 0;
         bValue = 0;
@@ -160,8 +165,14 @@ const StatsTable = ({ players }: StatsTableProps) => {
                   {getSortIcon("minutes")}
                 </div>
               </TableHead>
-              <TableHead className="text-primary font-bold text-center">
-                FW-Quote
+              <TableHead 
+                className="text-primary font-bold cursor-pointer select-none text-center"
+                onClick={() => handleSort("freeThrowPercentage")}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  FW-Quote
+                  {getSortIcon("freeThrowPercentage")}
+                </div>
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -170,7 +181,12 @@ const StatsTable = ({ players }: StatsTableProps) => {
               <TableRow key={player.id} className="hover:bg-accent/50">
                 <TableCell className="font-medium text-foreground">
                   <div className="flex flex-col">
-                    <span>{player.firstName} {player.lastName}</span>
+                    <Link 
+                    to={`/players/${player.id}`}
+                    className="text-blue-600 hover:underline hover:text-blue-800 transition-colors"
+                  >
+                    {player.firstName} {player.lastName}
+                  </Link>
                     <span className="text-xs text-muted-foreground">{player.position || 'Position nicht angegeben'}</span>
                   </div>
                 </TableCell>
