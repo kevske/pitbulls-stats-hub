@@ -94,27 +94,17 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
     const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
     const bioData = bioMap.get(bioKey);
     
-    // Try different filename formats to match the actual image files
-    const nameVariations = [
-      `${bioData?.jerseyNumber || ''}_PC_${firstName}`, // e.g., 11_PC_Tobi.jpg
-      `${firstName} ${lastName}`,         // e.g., Abdullah Ari.jpg
-      `${firstName.toLowerCase()} ${lastName.toLowerCase()}`, // e.g., kevin rassner.jpg
-      `${firstName.toLowerCase()}-${lastName.toLowerCase()}`  // e.g., stefan-anselm.jpg
-    ].filter(variation => variation && !variation.includes('undefined')); // Filter out any invalid variations
+    // Generate the image filename in the format firstname-lastname.jpg
+    // All filenames are now in lowercase with hyphens and no special characters
+    const imageName = `${firstName.toLowerCase()}${lastName ? '-' + lastName.toLowerCase() : ''}`
+      .toLowerCase()
+      .replace(/\s+/g, '-')        // Replace spaces with hyphens
+      .replace(/[^a-z0-9-]/g, '')  // Remove special characters
+      .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
+      .replace(/^-+|-+$/g, '');    // Remove leading/trailing hyphens
     
-    // Find the first matching image file that exists
-    let imageUrl = '/pitbulls-stats-hub/placeholder-player.png';
-    
-    // Check if any of the variations match the actual files
-    for (const variation of nameVariations) {
-      const potentialFile = variation.toLowerCase().replace(/\s+/g, '-') + '.jpg';
-      if (potentialFile) {
-        // In a real app, you would check if the file exists on the server
-        // For now, we'll just use the first variation and let the browser handle 404s
-        imageUrl = `/pitbulls-stats-hub/players/${potentialFile}`;
-        break;
-      }
-    }
+    // Use the generated filename with .jpg extension
+    const imageUrl = `/pitbulls-stats-hub/players/${imageName}.jpg`;
     
     const player: PlayerStats = {
       id: playerId,
@@ -144,27 +134,17 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
   console.log('\nAdding players from Bio-CSV without stats:');
   bioMap.forEach((bio, bioKey) => {
     if (!playersWithStats.has(bioKey)) {
-      // Try different filename formats to match the actual image files
-      const nameVariations = [
-        `${bio.jerseyNumber}_PC_${bio.firstName}`, // e.g., 11_PC_Tobi.jpg
-        `${bio.firstName} ${bio.lastName}`,         // e.g., Abdullah Ari.jpg
-        `${bio.firstName.toLowerCase()} ${bio.lastName.toLowerCase()}`, // e.g., kevin rassner.jpg
-        `${bio.firstName.toLowerCase()}-${bio.lastName.toLowerCase()}`  // e.g., stefan-anselm.jpg
-      ];
+      // Generate the image filename in the format firstname-lastname.jpg
+      // All filenames are now in lowercase with hyphens and no special characters
+      const imageName = `${bio.firstName.toLowerCase()}${bio.lastName ? '-' + bio.lastName.toLowerCase() : ''}`
+        .toLowerCase()
+        .replace(/\s+/g, '-')        // Replace spaces with hyphens
+        .replace(/[^a-z0-9-]/g, '')  // Remove special characters
+        .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
+        .replace(/^-+|-+$/g, '');    // Remove leading/trailing hyphens
       
-      // Find the first matching image file that exists
-      let imageUrl = '/pitbulls-stats-hub/placeholder-player.png';
-      
-      // Check if any of the variations match the actual files
-      for (const variation of nameVariations) {
-        const potentialFile = variation.toLowerCase().replace(/\s+/g, '-') + '.jpg';
-        if (potentialFile) {
-          // In a real app, you would check if the file exists on the server
-          // For now, we'll just use the first variation and let the browser handle 404s
-          imageUrl = `/pitbulls-stats-hub/players/${potentialFile}`;
-          break;
-        }
-      }
+      // Use the generated filename with .jpg extension
+      const imageUrl = `/pitbulls-stats-hub/players/${imageName}.jpg`;
       
       const player: PlayerStats = {
         id: generatePlayerId(bio.firstName, bio.lastName),
