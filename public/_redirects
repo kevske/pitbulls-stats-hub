@@ -1,1 +1,17 @@
+# Handle client-side routing - return index.html for all routes
 /*    /index.html   200
+
+# Ensure direct access to /videos works
+/videos*    /index.html   200
+
+# Ensure direct access to /upload works
+/upload*    /index.html   200
+
+# Ensure direct access to /players works
+/players*    /index.html   200
+
+# Ensure direct access to /games works
+/games*    /index.html   200
+
+# Ensure direct access to /stats works
+/stats*    /index.html   200
