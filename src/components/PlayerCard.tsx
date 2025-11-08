@@ -6,6 +6,7 @@ import { PlayerGameLog, PlayerStats } from "@/types/stats";
 import { PlayerTrendIndicator } from "./PlayerTrendIndicator";
 import { useStats } from "@/contexts/StatsContext";
 import { useState, useMemo } from "react";
+import { generateImageFilename } from "@/data/api/statsService";
 
 interface PlayerCardProps {
   player: PlayerStats;
@@ -112,7 +113,7 @@ const renderStats = () => (
           {/* Left side - Player Image */}
           <div className="md:w-48 h-48 md:h-auto flex-shrink-0 relative bg-secondary">
             <img
-              src={`/pitbulls-stats-hub/players/${player.firstName.toLowerCase()}-${player.lastName?.toLowerCase() || ''}.jpg`}
+              src={`/pitbulls-stats-hub/players/${generateImageFilename(player.firstName, player.lastName)}`}
               alt={`${player.firstName} ${player.lastName}`}
               className="w-full h-full object-cover object-top"
               onError={(e) => {
