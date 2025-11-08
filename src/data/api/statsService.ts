@@ -94,17 +94,31 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
     const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
     const bioData = bioMap.get(bioKey);
     
-    // Generate the image filename in the format firstname-lastname.jpg
-    // All filenames are now in lowercase with hyphens and no special characters
-    const imageName = `${firstName.toLowerCase()}${lastName ? '-' + lastName.toLowerCase() : ''}`
-      .toLowerCase()
-      .replace(/\s+/g, '-')        // Replace spaces with hyphens
-      .replace(/[^a-z0-9-]/g, '')  // Remove special characters
-      .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
-      .replace(/^-+|-+$/g, '');    // Remove leading/trailing hyphens
+    // Generate the image filename based on the actual filenames we have
+    // For players with special characters or spaces, we need to match the actual filenames
+    const playerImages = {
+      'nino de bortoli': 'nino-de-bortoli.jpg',
+      'christoph mörsch': 'christoph-mrsch.jpg',
+      // Add other special cases here if needed
+    };
+
+    // First try to find a matching image in our known list
+    const fullName = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
+    let imageName = playerImages[fullName];
+
+    // If no special case, generate the filename
+    if (!imageName) {
+      imageName = `${firstName.toLowerCase()}${lastName ? '-' + lastName.toLowerCase() : ''}`
+        .toLowerCase()
+        .replace(/\s+/g, '-')        // Replace spaces with hyphens
+        .replace(/[^a-z0-9-]/g, '')  // Remove special characters
+        .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
+        .replace(/^-+|-+$/g, '')     // Remove leading/trailing hyphens
+        + '.jpg';
+    }
     
-    // Use the generated filename with .jpg extension
-    const imageUrl = `/pitbulls-stats-hub/players/${imageName}.jpg`;
+    // Use the generated filename with the correct path
+    const imageUrl = `/pitbulls-stats-hub/players/${imageName}`;
     
     const player: PlayerStats = {
       id: playerId,
@@ -134,17 +148,30 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
   console.log('\nAdding players from Bio-CSV without stats:');
   bioMap.forEach((bio, bioKey) => {
     if (!playersWithStats.has(bioKey)) {
-      // Generate the image filename in the format firstname-lastname.jpg
-      // All filenames are now in lowercase with hyphens and no special characters
-      const imageName = `${bio.firstName.toLowerCase()}${bio.lastName ? '-' + bio.lastName.toLowerCase() : ''}`
-        .toLowerCase()
-        .replace(/\s+/g, '-')        // Replace spaces with hyphens
-        .replace(/[^a-z0-9-]/g, '')  // Remove special characters
-        .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
-        .replace(/^-+|-+$/g, '');    // Remove leading/trailing hyphens
+      // Generate the image filename based on the actual filenames we have
+      const playerImages = {
+        'nino de bortoli': 'nino-de-bortoli.jpg',
+        'christoph mörsch': 'christoph-mrsch.jpg',
+        // Add other special cases here if needed
+      };
+
+      // First try to find a matching image in our known list
+      const fullName = `${bio.firstName.toLowerCase()} ${bio.lastName.toLowerCase()}`.trim();
+      let imageName = playerImages[fullName];
+
+      // If no special case, generate the filename
+      if (!imageName) {
+        imageName = `${bio.firstName.toLowerCase()}${bio.lastName ? '-' + bio.lastName.toLowerCase() : ''}`
+          .toLowerCase()
+          .replace(/\s+/g, '-')        // Replace spaces with hyphens
+          .replace(/[^a-z0-9-]/g, '')  // Remove special characters
+          .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
+          .replace(/^-+|-+$/g, '')     // Remove leading/trailing hyphens
+          + '.jpg';
+      }
       
-      // Use the generated filename with .jpg extension
-      const imageUrl = `/pitbulls-stats-hub/players/${imageName}.jpg`;
+      // Use the generated filename with the correct path
+      const imageUrl = `/pitbulls-stats-hub/players/${imageName}`;
       
       const player: PlayerStats = {
         id: generatePlayerId(bio.firstName, bio.lastName),
