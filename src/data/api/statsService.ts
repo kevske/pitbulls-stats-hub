@@ -265,20 +265,41 @@ function transformGameData(rows: any[]): GameStats[] {
     .sort((a, b) => a.gameNumber - b.gameNumber);
 }
 
-// Helper function to generate consistent filenames that match the files in public/players
+// Mapping of player names to their exact filenames
+const PLAYER_IMAGE_MAP: Record<string, string> = {
+  // Special cases with non-standard filenames
+  'nino de bortoli': 'nino-de-bortoli.jpg',
+  'christoph mörsch': 'christoph-mrsch.jpg',
+  'abdullah ari': 'abdullah-ari.jpg',
+  'kevin rassner': 'kevin-rassner.jpg',
+  'marius scholl': 'marius-scholl.jpg',
+  'jan crocoll': 'jan-crocoll.jpg',
+  'marcus hayes': 'marcus-hayes.jpg',
+  'tim krause': 'tim-krause.jpg',
+  'sven bader': 'sven-bader.jpg',
+  'stefan anselm': 'stefan-anselm.jpg',
+  'deny': 'deny.jpg',
+  'tobi': 'tobi.jpg',
+  'gregor arapidis': 'gregor-arapidis.jpg',
+  'david scheja': 'david-scheja.jpg',
+  'alexander rib': 'alexander-rib.jpg',
+  'jan strobel': 'jan-strobel.jpg'
+};
+
+/**
+ * Generates a consistent filename for player images based on their first and last names.
+ * Uses a predefined map of player names to filenames to handle special cases.
+ */
 export function generateImageFilename(firstName: string, lastName: string = ''): string {
-  // First, handle special cases explicitly
   const fullName = `${firstName} ${lastName}`.trim().toLowerCase();
   
-  // Special cases based on actual filenames
-  if (fullName === 'nino de bortoli') return 'nino-de-bortoli.jpg';
-  if (fullName === 'christoph mörsch') return 'christoph-mrsch.jpg';
-  if (fullName === 'abdullah ari') return 'abdullah-ari.jpg';
-  if (fullName === 'kevin rassner') return 'kevin-rassner.jpg';
-  if (fullName === 'marius scholl') return 'marius-scholl.jpg';
+  // First check if we have an exact match in our mapping
+  if (PLAYER_IMAGE_MAP[fullName]) {
+    return PLAYER_IMAGE_MAP[fullName];
+  }
   
-  // For other names, generate the filename
-  let filename = `${firstName}${lastName ? ' ' + lastName : ''}`
+  // For any names not in our mapping, generate a consistent filename
+  return `${firstName}${lastName ? ' ' + lastName : ''}`
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')        // Replace spaces with hyphens
@@ -286,11 +307,6 @@ export function generateImageFilename(firstName: string, lastName: string = ''):
     .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
     .replace(/^-+|-+$/g, '')     // Remove leading/trailing hyphens
     + '.jpg';
-    
-  // Log the generated filename for debugging
-  console.log(`Generated filename for ${firstName} ${lastName}:`, filename);
-  
-  return filename;
 }
 
 // Helper function to generate player ID
