@@ -56,9 +56,12 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
 
   return (
     <div className="max-w-md mx-auto p-8 bg-card border border-primary/20 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold text-primary mb-6 text-center">
+      <h2 className="text-2xl font-bold text-primary mb-2 text-center">
         Passwortgeschützter Bereich
       </h2>
+      <p className="text-sm text-muted-foreground mb-6 text-center">
+        Tipp: Spitzname unseres Abteilungsleiters
+      </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           type="password"
