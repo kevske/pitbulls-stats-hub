@@ -94,28 +94,8 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
     const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
     const bioData = bioMap.get(bioKey);
     
-    // Generate the image filename based on the actual filenames we have
-    // For players with special characters or spaces, we need to match the actual filenames
-    const playerImages = {
-      'nino de bortoli': 'nino-de-bortoli.jpg',
-      'christoph mörsch': 'christoph-mrsch.jpg',
-      // Add other special cases here if needed
-    };
-
-    // First try to find a matching image in our known list
-    const fullName = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
-    let imageName = playerImages[fullName];
-
-    // If no special case, generate the filename
-    if (!imageName) {
-      imageName = `${firstName.toLowerCase()}${lastName ? '-' + lastName.toLowerCase() : ''}`
-        .toLowerCase()
-        .replace(/\s+/g, '-')        // Replace spaces with hyphens
-        .replace(/[^a-z0-9-]/g, '')  // Remove special characters
-        .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
-        .replace(/^-+|-+$/g, '')     // Remove leading/trailing hyphens
-        + '.jpg';
-    }
+    // Generate the image filename using our helper function
+    const imageName = generateImageFilename(firstName, lastName);
     
     // Use the generated filename with the correct path
     const imageUrl = `/pitbulls-stats-hub/players/${imageName}`;
@@ -148,27 +128,8 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
   console.log('\nAdding players from Bio-CSV without stats:');
   bioMap.forEach((bio, bioKey) => {
     if (!playersWithStats.has(bioKey)) {
-      // Generate the image filename based on the actual filenames we have
-      const playerImages = {
-        'nino de bortoli': 'nino-de-bortoli.jpg',
-        'christoph mörsch': 'christoph-mrsch.jpg',
-        // Add other special cases here if needed
-      };
-
-      // First try to find a matching image in our known list
-      const fullName = `${bio.firstName.toLowerCase()} ${bio.lastName.toLowerCase()}`.trim();
-      let imageName = playerImages[fullName];
-
-      // If no special case, generate the filename
-      if (!imageName) {
-        imageName = `${bio.firstName.toLowerCase()}${bio.lastName ? '-' + bio.lastName.toLowerCase() : ''}`
-          .toLowerCase()
-          .replace(/\s+/g, '-')        // Replace spaces with hyphens
-          .replace(/[^a-z0-9-]/g, '')  // Remove special characters
-          .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
-          .replace(/^-+|-+$/g, '')     // Remove leading/trailing hyphens
-          + '.jpg';
-      }
+      // Generate the image filename using our helper function
+      const imageName = generateImageFilename(bio.firstName, bio.lastName);
       
       // Use the generated filename with the correct path
       const imageUrl = `/pitbulls-stats-hub/players/${imageName}`;
@@ -304,7 +265,33 @@ function transformGameData(rows: any[]): GameStats[] {
     .sort((a, b) => a.gameNumber - b.gameNumber);
 }
 
-const generatePlayerId = (firstName: string, lastName: string = ''): string => {
-  const name = `${firstName} ${lastName}`.trim().toLowerCase();
-  return name.replace(/\s+/g, '-');
-};
+// Helper function to generate consistent filenames
+function generateImageFilename(firstName: string, lastName: string = ''): string {
+  // Special cases mapping
+  const specialCases = {
+    'nino de bortoli': 'nino-de-bortoli.jpg',
+    'christoph mörsch': 'christoph-mrsch.jpg',
+    // Add other special cases here if needed
+  };
+
+  const fullName = `${firstName} ${lastName}`.trim().toLowerCase();
+  
+  // Return special case if it exists
+  if (specialCases[fullName]) {
+    return specialCases[fullName];
+  }
+
+  // Default filename generation
+  return `${firstName.toLowerCase()}${lastName ? '-' + lastName.toLowerCase() : ''}`
+    .toLowerCase()
+    .replace(/\s+/g, '-')        // Replace spaces with hyphens
+    .replace(/[^a-z0-9-]/g, '')  // Remove special characters
+    .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
+    .replace(/^-+|-+$/g, '')     // Remove leading/trailing hyphens
+    + '.jpg';
+}
+
+// Helper function to generate player ID
+function generatePlayerId(firstName: string, lastName: string = ''): string {
+  return `${firstName.toLowerCase()}${lastName ? '-' + lastName.toLowerCase() : ''}`.replace(/\s+/g, '-');
+}
