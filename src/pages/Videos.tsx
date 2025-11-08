@@ -11,7 +11,7 @@ const Videos = () => {
         <div className="container mx-auto max-w-4xl">
           <PasswordProtection
             onSuccess={() => setHasAccess(true)}
-            correctPassword="pitbulls2025"
+            correctPassword="Matze"
           />
         </div>
       </Layout>
