@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStats } from '@/contexts/StatsContext';
 import { format, parse } from 'date-fns';
@@ -38,9 +38,24 @@ const GameDetail: React.FC = () => {
     }
   };
 
-  const getPlayerName = (playerId: string) => {
+  const getPlayerName = (playerId: string, asLink: boolean = false) => {
     const player = players.find(p => p.id === playerId);
-    return player ? `${player.firstName} ${player.lastName}` : 'Unbekannter Spieler';
+    if (!player) return 'Unbekannter Spieler';
+    
+    const playerName = `${player.firstName} ${player.lastName}`;
+    
+    if (asLink) {
+      return (
+        <Link 
+          to={`/players/${player.id}`}
+          className="text-blue-600 hover:underline hover:text-blue-800 transition-colors"
+        >
+          {playerName}
+        </Link>
+      );
+    }
+    
+    return playerName;
   };
 
   const topPerformers = [...gamePlayersLogs]
@@ -99,7 +114,7 @@ const GameDetail: React.FC = () => {
                     <div className="flex items-center space-x-3">
                       <div className="text-2xl font-bold text-gray-400">#{index + 1}</div>
                       <div>
-                        <div className="font-medium">{getPlayerName(player.playerId)}</div>
+                        <div className="font-medium">{getPlayerName(player.playerId, true)}</div>
                         <div className="text-2xl font-bold">{player.points} Punkte</div>
                         <div className="text-sm text-gray-500">
                           {player.threePointers} 3P • {player.twoPointers} 2P • {player.freeThrowsMade}/{player.freeThrowAttempts} FT
@@ -137,7 +152,7 @@ const GameDetail: React.FC = () => {
                     .map((log) => (
                       <tr key={log.playerId} className="hover:bg-gray-50">
                         <td className="py-2 px-4 border">
-                          {getPlayerName(log.playerId)}
+                          {getPlayerName(log.playerId, true)}
                         </td>
                         <td className="py-2 px-4 border text-center">{log.minutesPlayed}</td>
                         <td className="py-2 px-4 border text-center font-medium">{log.points}</td>
