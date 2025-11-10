@@ -23,8 +23,5 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Make environment variables available in the client
-  define: {
-    'import.meta.env.VITE_ADMIN_PASSWORD': JSON.stringify(process.env.VITE_ADMIN_PASSWORD),
-  },
+  // VITE_ prefixed environment variables are automatically available to the client
 }));
