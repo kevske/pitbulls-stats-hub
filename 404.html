@@ -6,24 +6,28 @@
   <script>
     // Single Page Apps for GitHub Pages
     (function() {
-      // Get the current path and remove any base path
       var basePath = '/pitbulls-stats-hub';
       var path = window.location.pathname;
+      var search = window.location.search || '';
+      var hash = window.location.hash || '';
       
       // Remove base path if present
       if (path.startsWith(basePath)) {
         path = path.substring(basePath.length);
       }
       
-      // Store the original URL in sessionStorage for the app to handle
-      var redirectPath = path + window.location.search + window.location.hash;
-      sessionStorage.setItem('redirect', redirectPath);
+      // Store the original URL in sessionStorage
+      var redirectPath = path + search + hash;
       
-      // Build the new URL with the base path
-      var newLocation = basePath + '/index.html';
-      
-      // Redirect to the main app with the original path as a query parameter
-      window.location.href = newLocation + '?redirect=' + encodeURIComponent(path) + window.location.search + window.location.hash;
+      // For direct navigation to a route, use the index.html fallback
+      if (path !== '/' && !path.startsWith('/index.html')) {
+        // Store the full redirect path
+        sessionStorage.setItem('redirect', redirectPath);
+        
+        // Redirect to index.html with the base path
+        var newLocation = basePath + '/index.html';
+        window.location.href = newLocation;
+      }
     })();
   </script>
 </head>
@@ -32,7 +36,7 @@
   <script>
     // Fallback in case the redirect doesn't work
     setTimeout(function() {
-      document.getElementById('redirectLink').click();
+      window.location.href = '/pitbulls-stats-hub/';
     }, 1000);
   </script>
 </body>

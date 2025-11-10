@@ -24,8 +24,41 @@ const App = () => {
   React.useEffect(() => {
     const basePath = '/pitbulls-stats-hub';
     
-    // Function to ensure the URL has the correct base path
-    const ensureBasePath = () => {
+    // Function to handle redirects from 404 page
+    const handleRedirect = () => {
+      try {
+        // Check for redirect in sessionStorage (from 404 page)
+        const redirect = sessionStorage.getItem('redirect');
+        
+        if (redirect) {
+          // Remove the redirect from sessionStorage
+          sessionStorage.removeItem('redirect');
+          
+          // Normalize the redirect path
+          let targetPath = redirect.startsWith('/') ? redirect : `/${redirect}`;
+          
+          // Ensure the path starts with the base path
+          if (!targetPath.startsWith(basePath)) {
+            targetPath = `${basePath}${targetPath}`;
+          }
+          
+          // Only redirect if we're not already on that path
+          const currentPath = window.location.pathname + window.location.search + (window.location.hash || '');
+          
+          if (currentPath !== targetPath) {
+            console.log('Redirecting to:', targetPath);
+            window.history.replaceState({}, '', targetPath);
+            // Force a re-render with the new path
+            window.dispatchEvent(new Event('popstate'));
+          }
+        }
+      } catch (error) {
+        console.error('Error handling redirect:', error);
+      }
+    };
+    
+    // Handle initial page load
+    const handleInitialLoad = () => {
       const currentPath = window.location.pathname;
       
       // If we're not on the home page and the path doesn't start with the base path
@@ -34,63 +67,35 @@ const App = () => {
         const pathWithoutBase = currentPath.startsWith('/') ? currentPath.substring(1) : currentPath;
         const pathSegments = pathWithoutBase.split('/');
         
-        // If this looks like one of our routes (e.g., /games/4)
+        // If this looks like one of our routes
         if (pathSegments.length > 0 && ['games', 'players', 'videos', 'stats', 'upload-game'].includes(pathSegments[0])) {
           // Reconstruct the URL with the base path
           const newPath = `${basePath}${currentPath}`;
           window.history.replaceState({}, '', newPath);
-          
           // Force a reload to let the router handle the navigation
           window.location.reload();
           return;
         }
       }
       
-      // Handle redirect from 404 page if present
-      const params = new URLSearchParams(window.location.search);
-      const redirectParam = params.get('redirect');
-      
-      if (redirectParam) {
-        // Clean up the URL by removing the redirect parameter
-        const cleanUrl = new URL(window.location.href);
-        cleanUrl.searchParams.delete('redirect');
-        
-        // Store the clean URL in sessionStorage
-        sessionStorage.setItem('redirect', redirectParam + window.location.hash);
-        
-        // Update the URL without reloading the page
-        window.history.replaceState({}, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
-      }
-      
-      // Check for redirect in sessionStorage (from 404 page or previous step)
-      const redirect = sessionStorage.getItem('redirect');
-      
-      if (redirect) {
-        // Remove the redirect from sessionStorage
-        sessionStorage.removeItem('redirect');
-        
-        // Only redirect if we're not already on that path
-        const currentPath = window.location.pathname + window.location.search + (window.location.hash || '');
-        const normalizedRedirect = redirect.startsWith(basePath) 
-          ? redirect.substring(basePath.length) 
-          : redirect;
-        
-        if (currentPath !== normalizedRedirect) {
-          // Use the router to navigate to the target path
-          window.history.replaceState(null, '', normalizedRedirect);
-        }
-      }
+      // Handle any redirects
+      handleRedirect();
     };
     
     // Set up a history listener to handle back/forward navigation
-    const unlisten = window.addEventListener('popstate', ensureBasePath);
+    const handlePopState = () => {
+      handleRedirect();
+    };
     
-    // Initial check
-    ensureBasePath();
+    // Initial setup
+    handleInitialLoad();
     
-    // Clean up the event listener when the component unmounts
+    // Add event listeners
+    window.addEventListener('popstate', handlePopState);
+    
+    // Clean up event listeners when the component unmounts
     return () => {
-      window.removeEventListener('popstate', ensureBasePath as any);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 
