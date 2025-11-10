@@ -10,6 +10,8 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    // Make environment variables available in the client
+    target: 'esnext',
   },
   server: {
     host: "::",
@@ -20,5 +22,14 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  // Make environment variables available in the client
+  define: {
+    'process.env': {
+      ...process.env,
+      // Only include variables prefixed with VITE_ or REACT_APP_
+      VITE_: process.env.VITE_,
+      REACT_APP_: process.env.REACT_APP_,
+    }
   },
 }));
