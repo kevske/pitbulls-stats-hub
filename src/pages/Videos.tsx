@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Layout from "@/components/Layout";
 import PasswordProtection from "@/components/PasswordProtection";
-import { config } from "@/config";
 
 const Videos = () => {
   const [hasAccess, setHasAccess] = useState(false);
@@ -12,7 +11,7 @@ const Videos = () => {
         <div className="container mx-auto max-w-4xl">
           <PasswordProtection
             onSuccess={() => setHasAccess(true)}
-            correctPassword={config.auth.adminPassword}
+            correctPassword={import.meta.env.VITE_ADMIN_PASSWORD}
           />
         </div>
       </Layout>

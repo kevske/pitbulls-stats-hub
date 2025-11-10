@@ -25,11 +25,6 @@ export default defineConfig(({ mode }) => ({
   },
   // Make environment variables available in the client
   define: {
-    'process.env': {
-      ...process.env,
-      // Only include variables prefixed with VITE_ or REACT_APP_
-      VITE_: process.env.VITE_,
-      REACT_APP_: process.env.REACT_APP_,
-    }
+    'import.meta.env.VITE_ADMIN_PASSWORD': JSON.stringify(process.env.VITE_ADMIN_PASSWORD),
   },
 }));
