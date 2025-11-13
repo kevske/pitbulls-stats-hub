@@ -110,6 +110,11 @@ const PlayerDetail: React.FC = () => {
                       <span className="font-medium">Alter:</span> {player.age}
                     </span>
                   )}
+                  {player.height && (
+                    <span>
+                      <span className="font-medium">Größe:</span> {player.height}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
