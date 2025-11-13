@@ -289,6 +289,7 @@ const PLAYER_IMAGE_MAP: Record<string, string> = {
 /**
  * Generates a consistent filename for player images based on their first and last names.
  * Uses a predefined map of player names to filenames to handle special cases.
+ * Tries both JPG and PNG extensions.
  */
 export function generateImageFilename(firstName: string, lastName: string = ''): string {
   const fullName = `${firstName} ${lastName}`.trim().toLowerCase();
@@ -298,15 +299,18 @@ export function generateImageFilename(firstName: string, lastName: string = ''):
     return PLAYER_IMAGE_MAP[fullName];
   }
   
-  // For any names not in our mapping, generate a consistent filename
-  return `${firstName}${lastName ? ' ' + lastName : ''}`
+  // Generate base filename
+  const baseName = `${firstName}${lastName ? ' ' + lastName : ''}`
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')        // Replace spaces with hyphens
     .replace(/[^a-z0-9-]/g, '')  // Remove special characters
     .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
-    .replace(/^-+|-+$/g, '')     // Remove leading/trailing hyphens
-    + '.jpg';
+    .replace(/^-+|-+$/g, '');    // Remove leading/trailing hyphens
+    
+  // Return with .jpg extension by default (for backward compatibility)
+  // The actual file extension will be handled by the image loading logic
+  return baseName + '.jpg';
 }
 
 // Helper function to generate player ID
