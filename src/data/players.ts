@@ -192,5 +192,51 @@ export const players: Player[] = [
       blocks: 3
     },
     name: "Lukas Wagner" // For backward compatibility
+  },
+  {
+    id: "8",
+    firstName: "Alexander",
+    lastName: "Rib",
+    team: "Pitbulls Neuenstadt",
+    bio: "Erfahrener Spieler mit starker Präsenz auf beiden Seiten des Courts.",
+    image: "/players/alexander-rib.png",
+    height: "6'4\"",
+    weight: 200,
+    age: 28,
+    rating: 4.2,
+    status: "Active",
+    skills: ["Versatile", "Defender", "Team Player", "Experience"],
+    stats: {
+      games: 20,
+      points: 245,
+      assists: 85,
+      rebounds: 120,
+      steals: 30,
+      blocks: 15
+    },
+    name: "Alexander Rib"
+  },
+  {
+    id: "9",
+    firstName: "David",
+    lastName: "Scheja",
+    team: "Pitbulls Neuenstadt",
+    bio: "Athletischer Spieler mit starkem Drive zum Korb und guter Verteidigung.",
+    image: "/players/david-scheja.png",
+    height: "6'3\"",
+    weight: 195,
+    age: 26,
+    rating: 4.0,
+    status: "Active",
+    skills: ["Athletic", "Defender", "Finisher", "Hustle"],
+    stats: {
+      games: 18,
+      points: 210,
+      assists: 65,
+      rebounds: 95,
+      steals: 28,
+      blocks: 12
+    },
+    name: "David Scheja"
   }
 ];
