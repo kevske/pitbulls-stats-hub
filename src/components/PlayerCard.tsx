@@ -113,12 +113,18 @@ const renderStats = () => (
           {/* Left side - Player Image */}
           <div className="md:w-48 h-48 md:h-auto flex-shrink-0 relative bg-secondary">
             <img
-              src={`/pitbulls-stats-hub/players/${generateImageFilename(player.firstName, player.lastName)}`}
+              src={`/players/${generateImageFilename(player.firstName, player.lastName).replace(/\.jpg$/, '.png')}`}
               alt={`${player.firstName} ${player.lastName}`}
               className="w-full h-full object-cover object-top"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.src = '/pitbulls-stats-hub/placeholder-player.png';
+                // Try with .jpg if .png fails
+                if (target.src.endsWith('.png')) {
+                  target.src = `/players/${generateImageFilename(player.firstName, player.lastName)}`;
+                } else {
+                  // If both fail, use placeholder
+                  target.src = '/placeholder-player.png';
+                }
               }}
             />
             <div className="absolute bottom-3 left-3 bg-primary/90 text-primary-foreground rounded-full p-1.5">
