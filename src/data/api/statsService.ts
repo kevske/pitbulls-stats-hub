@@ -269,21 +269,21 @@ function transformGameData(rows: any[]): GameStats[] {
 const PLAYER_IMAGE_MAP: Record<string, string> = {
   // Special cases with non-standard filenames
   'nino de bortoli': 'nino-de-bortoli.jpg',
+  'tobias thury': 'tobi-thury.jpg',
+  'gregor arapidis': 'gregor-arapidis.jpg',
+  'david scheja': 'david-scheja.png',
+  'alexander rib': 'alexander-rib.png',
+  'jan strobel': 'jan-strobel.png',
+  'tim krause': 'tim-krause.jpg',
+  'sven bader': 'sven-bader.jpg',
+  'stefan anselm': 'stefan-anselm.jpg',
   'christoph mörsch': 'christoph-mrsch.jpg',
   'abdullah ari': 'abdullah-ari.jpg',
   'kevin rassner': 'kevin-rassner.jpg',
   'marius scholl': 'marius-scholl.jpg',
   'jan crocoll': 'jan-crocoll.jpg',
   'marcus hayes': 'marcus-hayes.jpg',
-  'tim krause': 'tim-krause.jpg',
-  'sven bader': 'sven-bader.jpg',
-  'stefan anselm': 'stefan-anselm.jpg',
-  'deny': 'deny.jpg',
-  'tobi': 'tobi.jpg',
-  'gregor arapidis': 'gregor-arapidis.jpg',
-  'david scheja': 'david-scheja.jpg',
-  'alexander rib': 'alexander-rib.jpg',
-  'jan strobel': 'jan-strobel.jpg'
+  'danny seitz': 'danny-seitz.jpg'
 };
 
 /**
