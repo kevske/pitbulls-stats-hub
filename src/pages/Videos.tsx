@@ -26,6 +26,21 @@ const Videos = () => {
         
         <div className="space-y-12">
           <div>
+            <h2 className="text-2xl font-semibold mb-4">Heimspiel vs. Ellwangen</h2>
+            <div className="aspect-video w-full bg-secondary rounded-lg overflow-hidden shadow-lg">
+              <iframe
+                className="w-full h-full"
+                src="https://www.youtube.com/embed/srrc7SEm9b4?si=tZVn9IyAOlZqwdOT"
+                title="Heimspiel vs. Ellwangen"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+          </div>
+          
+          <div>
             <h2 className="text-2xl font-semibold mb-4">Heimspiel vs Möhringen (Spieltag 3)</h2>
             <div className="aspect-video w-full bg-secondary rounded-lg overflow-hidden shadow-lg">
               <iframe
