@@ -4,6 +4,8 @@ import { usePlayerStats } from '@/hooks/usePlayerStats';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { useState } from 'react';
 
 import { PlayerStats, PlayerGameLog } from '@/types/stats';
 
@@ -16,8 +18,8 @@ const PlayerDetail: React.FC = () => {
     return (
       <Layout>
         <div className="container mx-auto p-4">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => navigate(-1)}
             className="mb-4"
           >
@@ -51,8 +53,8 @@ const PlayerDetail: React.FC = () => {
   // Calculate per game averages
   const ppg = totalGames > 0 ? (totalPoints / totalGames).toFixed(1) : '0.0';
   const threePointersPerGame = totalGames > 0 ? (totalThreePointers / totalGames).toFixed(1) : '0.0';
-  const freeThrowPercentage = totalFreeThrowAttempts > 0 
-    ? `${Math.round((totalFreeThrowsMade / totalFreeThrowAttempts) * 100)}%` 
+  const freeThrowPercentage = totalFreeThrowAttempts > 0
+    ? `${Math.round((totalFreeThrowsMade / totalFreeThrowAttempts) * 100)}%`
     : '0%';
   const fpg = totalGames > 0 ? (totalFouls / totalGames).toFixed(1) : '0.0';
 
@@ -60,14 +62,14 @@ const PlayerDetail: React.FC = () => {
   const totalMinutes = gameLogs.reduce((sum, game) => {
     return sum + (game.minutesPlayed || 0);
   }, 0);
-  
+
   const averageMinutes = totalGames > 0 ? (totalMinutes / totalGames).toFixed(1) : '0.0';
 
   return (
     <Layout>
       <div className="container mx-auto p-4 max-w-4xl">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => navigate(-1)}
           className="mb-6 px-0"
         >
@@ -126,17 +128,136 @@ const PlayerDetail: React.FC = () => {
               <p className="text-muted-foreground italic">"{player.bio}"</p>
             </div>
           )}
-          
+
           {/* Stats Grid */}
           <div className="p-6">
             <h3 className="text-lg font-semibold mb-4">Saisonstatistiken</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <StatCard label="Minuten/Spiel" value={averageMinutes} />
               <StatCard label="Punkte/Spiel" value={ppg} />
               <StatCard label="3-Punkte/Spiel" value={threePointersPerGame} />
               <StatCard label="Freiwurfquote" value={freeThrowPercentage} />
               <StatCard label="Fouls/Spiel" value={fpg} />
             </div>
+
+            {/* Stats Trend Charts */}
+            {gameLogs.length > 1 && (
+              <div className="space-y-8">
+                <h4 className="text-md font-semibold text-muted-foreground">Statistik-Trends</h4>
+
+                {/* Points Trend */}
+                <div>
+                  <h5 className="text-sm font-medium text-muted-foreground mb-3">Punkte pro Spiel</h5>
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={[...gameLogs].sort((a, b) => a.gameNumber - b.gameNumber)}
+                        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                        <XAxis
+                          dataKey="gameNumber"
+                          tick={{ fill: '#666', fontSize: 12 }}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(value) => `Sp. ${value}`}
+                        />
+                        <YAxis
+                          tick={{ fill: '#666', fontSize: 11 }}
+                          tickLine={false}
+                          axisLine={false}
+                          width={30}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            borderRadius: '8px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            border: '1px solid #e5e7eb',
+                            padding: '8px 12px'
+                          }}
+                          formatter={(value: number) => [value, 'Punkte']}
+                          labelFormatter={(label) => `Spieltag ${label}`}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="points"
+                          stroke="#3b82f6"
+                          strokeWidth={3}
+                          dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Combined Stats Chart */}
+                <div>
+                  <h5 className="text-sm font-medium text-muted-foreground mb-3">Weitere Statistiken</h5>
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={[...gameLogs].sort((a, b) => a.gameNumber - b.gameNumber)}
+                        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                        <XAxis
+                          dataKey="gameNumber"
+                          tick={{ fill: '#666', fontSize: 12 }}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(value) => `Sp. ${value}`}
+                        />
+                        <YAxis
+                          tick={{ fill: '#666', fontSize: 11 }}
+                          tickLine={false}
+                          axisLine={false}
+                          width={30}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            borderRadius: '8px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            border: '1px solid #e5e7eb',
+                            padding: '8px 12px'
+                          }}
+                        />
+                        <Legend
+                          wrapperStyle={{ paddingTop: '20px' }}
+                          iconType="line"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="threePointers"
+                          name="3-Punkte"
+                          stroke="#10b981"
+                          strokeWidth={2}
+                          dot={{ r: 3, fill: '#10b981' }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="fouls"
+                          name="Fouls"
+                          stroke="#ef4444"
+                          strokeWidth={2}
+                          dot={{ r: 3, fill: '#ef4444' }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="minutesPlayed"
+                          name="Minuten"
+                          stroke="#f59e0b"
+                          strokeWidth={2}
+                          dot={{ r: 3, fill: '#f59e0b' }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Game Log */}
