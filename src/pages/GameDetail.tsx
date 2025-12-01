@@ -41,12 +41,12 @@ const GameDetail: React.FC = () => {
   const getPlayerName = (playerId: string, asLink: boolean = false) => {
     const player = players.find(p => p.id === playerId);
     if (!player) return 'Unbekannter Spieler';
-    
+
     const playerName = `${player.firstName} ${player.lastName}`;
-    
+
     if (asLink) {
       return (
-        <Link 
+        <Link
           to={`/players/${player.id}`}
           className="text-blue-600 hover:underline hover:text-blue-800 transition-colors"
         >
@@ -54,7 +54,7 @@ const GameDetail: React.FC = () => {
         </Link>
       );
     }
-    
+
     return playerName;
   };
 
@@ -65,7 +65,7 @@ const GameDetail: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto p-4">
-        <button 
+        <button
           onClick={() => navigate(-1)}
           className="mb-4 text-blue-600 hover:underline flex items-center"
         >
@@ -125,6 +125,18 @@ const GameDetail: React.FC = () => {
                 ))}
               </div>
             </div>
+
+            {/* Video Link - if available */}
+            {game.youtubeLink && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => navigate('/videos')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  🎥 Video ansehen
+                </button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

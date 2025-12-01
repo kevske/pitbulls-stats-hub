@@ -49,7 +49,7 @@ const Games: React.FC = () => {
         <h1 className="text-3xl font-bold mb-6">Spiele</h1>
         <div className="space-y-4">
           {games.map((game) => (
-            <Card 
+            <Card
               key={game.gameNumber}
               className="hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden border border-gray-200"
               onClick={() => navigate(`/games/${game.gameNumber}`)}
@@ -75,7 +75,7 @@ const Games: React.FC = () => {
                           <div className="font-medium text-base">{game.homeTeam || 'Pitbulls'}</div>
                           <div className="text-sm text-gray-500">Heim</div>
                         </div>
-                        
+
                         <div className="col-span-2">
                           {game.finalScore ? (
                             <div className="flex items-center justify-center gap-2">
@@ -91,7 +91,7 @@ const Games: React.FC = () => {
                             <div className="text-2xl text-gray-400 text-center">vs</div>
                           )}
                         </div>
-                        
+
                         <div className="col-span-5">
                           <div className="font-medium text-base">{game.awayTeam || 'Gegner'}</div>
                           <div className="text-sm text-gray-500">Gast</div>
@@ -104,7 +104,7 @@ const Games: React.FC = () => {
                           <div className="text-sm font-medium">{game.homeTeam || 'Pitbulls'}</div>
                           <div className="text-sm text-gray-500">Heim</div>
                         </div>
-                        
+
                         <div className="text-center py-1">
                           {game.finalScore ? (
                             <div className="text-2xl font-bold">
@@ -114,7 +114,7 @@ const Games: React.FC = () => {
                             <div className="text-xl text-gray-400">vs</div>
                           )}
                         </div>
-                        
+
                         <div className="flex items-center justify-between">
                           <div className="text-sm font-medium">{game.awayTeam || 'Gegner'}</div>
                           <div className="text-sm text-gray-500">Gast</div>
@@ -134,7 +134,7 @@ const Games: React.FC = () => {
                             const playerData = players.find(p => p.id === player.playerId);
                             const playerName = playerData ? `${playerData.firstName} ${playerData.lastName}` : 'Unbekannt';
                             const avatarSrc = playerData?.imageUrl || '/players/placeholder-player.png';
-                            
+
                             return (
                               <div key={player.playerId} className="bg-gray-50 p-2 rounded-lg">
                                 <div className="flex items-center space-x-2">
@@ -154,8 +154,23 @@ const Games: React.FC = () => {
                           })}
                       </div>
                     </div>
+
+                    {/* Video Link - if available */}
+                    {game.youtubeLink && (
+                      <div className="pt-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate('/videos');
+                          }}
+                          className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                        >
+                          🎥 Video ansehen
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  
+
                   {/* Right side - Chart */}
                   <div className="mt-4 md:mt-0 md:w-2/5 lg:w-1/3">
                     <div className="h-48 md:h-full">
@@ -190,8 +205,8 @@ const ScoreProgressionChart: React.FC<ScoreProgressionChartProps> = ({ game }) =
       return { home: isNaN(home) ? 0 : home, away: isNaN(away) ? 0 : away };
     };
 
-    const isHomeGame = game.homeTeam?.toLowerCase().includes('neuenstadt') || 
-                      game.homeTeam?.toLowerCase().includes('pitbulls');
+    const isHomeGame = game.homeTeam?.toLowerCase().includes('neuenstadt') ||
+      game.homeTeam?.toLowerCase().includes('pitbulls');
 
     const q1 = parseScore(game.q1Score);
     const ht = parseScore(game.halfTimeScore);
@@ -199,22 +214,22 @@ const ScoreProgressionChart: React.FC<ScoreProgressionChartProps> = ({ game }) =
     const ft = parseScore(game.finalScore);
 
     return [
-      { 
-        period: 'Q1', 
+      {
+        period: 'Q1',
         'TSV Neuenstadt': isHomeGame ? q1.home : q1.away,
         'Gegner': isHomeGame ? q1.away : q1.home
       },
-      { 
+      {
         period: 'HT',
         'TSV Neuenstadt': isHomeGame ? ht.home : ht.away,
         'Gegner': isHomeGame ? ht.away : ht.home
       },
-      { 
+      {
         period: 'Q3',
         'TSV Neuenstadt': isHomeGame ? q3.home : q3.away,
         'Gegner': isHomeGame ? q3.away : q3.home
       },
-      { 
+      {
         period: 'FT',
         'TSV Neuenstadt': isHomeGame ? ft.home : ft.away,
         'Gegner': isHomeGame ? ft.away : ft.home
@@ -231,19 +246,19 @@ const ScoreProgressionChart: React.FC<ScoreProgressionChartProps> = ({ game }) =
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart 
+        <LineChart
           data={chartDataWithStart}
           margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-          <XAxis 
-            dataKey="period" 
+          <XAxis
+            dataKey="period"
             tick={{ fill: '#666', fontSize: 12 }}
             tickLine={false}
             axisLine={false}
             padding={{ left: 10, right: 10 }}
           />
-          <YAxis 
+          <YAxis
             domain={[0, (dataMax: number) => Math.max(50, dataMax + 5)]}
             tick={{ fill: '#666', fontSize: 11 }}
             tickLine={false}
@@ -252,7 +267,7 @@ const ScoreProgressionChart: React.FC<ScoreProgressionChartProps> = ({ game }) =
             tickCount={6}
             tickFormatter={(value) => Math.floor(value) === value ? value.toString() : ''}
           />
-          <Tooltip 
+          <Tooltip
             contentStyle={{
               backgroundColor: 'white',
               borderRadius: '4px',
@@ -263,18 +278,18 @@ const ScoreProgressionChart: React.FC<ScoreProgressionChartProps> = ({ game }) =
             labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
             formatter={(value: number) => [value, 'Punkte']}
           />
-          <Line 
-            type="monotone" 
-            dataKey="TSV Neuenstadt" 
-            stroke="#3b82f6" 
+          <Line
+            type="monotone"
+            dataKey="TSV Neuenstadt"
+            stroke="#3b82f6"
             strokeWidth={2}
             dot={{ r: 4 }}
             activeDot={{ r: 6 }}
           />
-          <Line 
-            type="monotone" 
-            dataKey="Gegner" 
-            stroke="#ef4444" 
+          <Line
+            type="monotone"
+            dataKey="Gegner"
+            stroke="#ef4444"
             strokeWidth={2}
             dot={{ r: 4 }}
             activeDot={{ r: 6 }}

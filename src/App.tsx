@@ -22,28 +22,28 @@ const App = () => {
   // Handle redirects and browser history with base path
   React.useEffect(() => {
     const basePath = '/pitbulls-stats-hub';
-    
+
     // Function to handle redirects from 404 page
     const handleRedirect = () => {
       try {
         // Check for redirect in sessionStorage (from 404 page)
         const redirect = sessionStorage.getItem('redirect');
-        
+
         if (redirect) {
           // Remove the redirect from sessionStorage
           sessionStorage.removeItem('redirect');
-          
+
           // Normalize the redirect path
           let targetPath = redirect.startsWith('/') ? redirect : `/${redirect}`;
-          
+
           // Ensure the path starts with the base path
           if (!targetPath.startsWith(basePath)) {
             targetPath = `${basePath}${targetPath}`;
           }
-          
+
           // Only redirect if we're not already on that path
           const currentPath = window.location.pathname + window.location.search + (window.location.hash || '');
-          
+
           if (currentPath !== targetPath) {
             console.log('Redirecting to:', targetPath);
             window.history.replaceState({}, '', targetPath);
@@ -55,17 +55,17 @@ const App = () => {
         console.error('Error handling redirect:', error);
       }
     };
-    
+
     // Handle initial page load
     const handleInitialLoad = () => {
       const currentPath = window.location.pathname;
-      
+
       // If we're not on the home page and the path doesn't start with the base path
       if (currentPath !== '/' && !currentPath.startsWith(basePath + '/')) {
         // Check if this is a direct link to a page (like /games/4)
         const pathWithoutBase = currentPath.startsWith('/') ? currentPath.substring(1) : currentPath;
         const pathSegments = pathWithoutBase.split('/');
-        
+
         // If this looks like one of our routes
         if (pathSegments.length > 0 && ['games', 'players', 'videos', 'stats', 'upload-game'].includes(pathSegments[0])) {
           // Reconstruct the URL with the base path
@@ -76,22 +76,22 @@ const App = () => {
           return;
         }
       }
-      
+
       // Handle any redirects
       handleRedirect();
     };
-    
+
     // Set up a history listener to handle back/forward navigation
     const handlePopState = () => {
       handleRedirect();
     };
-    
+
     // Initial setup
     handleInitialLoad();
-    
+
     // Add event listeners
     window.addEventListener('popstate', handlePopState);
-    
+
     // Clean up event listeners when the component unmounts
     return () => {
       window.removeEventListener('popstate', handlePopState);

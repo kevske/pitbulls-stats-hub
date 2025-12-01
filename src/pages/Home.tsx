@@ -16,43 +16,81 @@ const Home = () => {
     if (!games.length) return null;
     return [...games].sort((a, b) => b.gameNumber - a.gameNumber)[0];
   }, [games]);
-  
+
   // Parse the final score into home and away scores
   const { homeScore, awayScore, homeTeam, awayTeam } = useMemo(() => {
-    if (!lastGame) return { 
-      homeScore: '0', 
+    if (!lastGame) return {
+      homeScore: '0',
       awayScore: '0',
-      homeTeam: 'Pitbulls', 
-      awayTeam: 'Gegner' 
+      homeTeam: 'Pitbulls',
+      awayTeam: 'Gegner'
     };
-    
+
     // Get the team names
     const homeTeam = lastGame.homeTeam || 'Heimmannschaft';
     const awayTeam = lastGame.awayTeam || 'Gastmannschaft';
-    
+
     // Handle the score format (it might be like '81:75' or '81-75')
     let homeScore = '0';
     let awayScore = '0';
-    
+
     if (lastGame.finalScore) {
       const scoreParts = lastGame.finalScore.split(/[-:]/).map(s => s.trim());
       homeScore = scoreParts[0] || '0';
       awayScore = scoreParts[1] || '0';
     }
-    
+
     return { homeScore, awayScore, homeTeam, awayTeam };
   }, [lastGame]);
-  
+
   // Get the latest game number
   const latestGameNumber = useMemo(() => {
     if (!games.length) return 0;
     return Math.max(...games.map(g => g.gameNumber));
   }, [games]);
 
+  // Calculate Win/Loss Streak
+  const streak = useMemo(() => {
+    if (!games.length) return null;
+
+    // Sort games by date descending (latest first)
+    const sortedGames = [...games]
+      .filter(g => g.finalScore) // Only finished games
+      .sort((a, b) => b.gameNumber - a.gameNumber);
+
+    if (sortedGames.length === 0) return null;
+
+    let currentStreak = 0;
+    let type: 'win' | 'loss' | null = null;
+
+    for (const game of sortedGames) {
+      if (!game.finalScore) continue;
+
+      const [homeScore, awayScore] = game.finalScore.split(/[-:]/).map(s => parseInt(s.trim()));
+      const isHomeGame = game.homeTeam?.toLowerCase().includes('neuenstadt') ||
+        game.homeTeam?.toLowerCase().includes('pitbulls');
+
+      const isWin = isHomeGame
+        ? homeScore > awayScore
+        : awayScore > homeScore;
+
+      if (type === null) {
+        type = isWin ? 'win' : 'loss';
+        currentStreak = 1;
+      } else if ((type === 'win' && isWin) || (type === 'loss' && !isWin)) {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+
+    return { type, count: currentStreak };
+  }, [games]);
+
   // Get top trending players (most improvements)
   const risingStars = useMemo<PlayerTrendInfo[]>(() => {
     if (!players.length || !gameLogs.length || latestGameNumber < 2) return [];
-    
+
     return getTopTrendingPlayers(
       players.map(p => ({
         id: p.id,
@@ -69,29 +107,29 @@ const Home = () => {
   // Get top 3 performers from all games (sorted by points per game)
   const topPerformers = useMemo(() => {
     if (!players.length || !gameLogs.length) return [];
-    
+
     // Calculate stats for each player
     const playerStats = players.map(player => {
       // Skip non-player entries
       if (player.firstName === 'Gesamtsumme' || !player.firstName) return null;
-      
+
       const playerGames = gameLogs.filter(log => log.playerId === player.id);
       const totalPoints = playerGames.reduce((sum, game) => sum + (game.points || 0), 0);
       const gamesPlayed = playerGames.length;
-      
+
       // Use the player's average minutes directly from the player data
       const averageMinutes = player.minutesPerGame || 0;
-      
+
       // Calculate other stats
       const totalThreePointers = playerGames.reduce((sum, game) => sum + (game.threePointers || 0), 0);
       const threePointersPerGame = gamesPlayed > 0 ? totalThreePointers / gamesPlayed : 0;
-      
+
       const totalFreeThrowsMade = playerGames.reduce((sum, game) => sum + (game.freeThrowsMade || 0), 0);
       const totalFreeThrowAttempts = playerGames.reduce((sum, game) => sum + (game.freeThrowAttempts || 0), 0);
-      const freeThrowPercentage = totalFreeThrowAttempts > 0 
-        ? `${Math.round((totalFreeThrowsMade / totalFreeThrowAttempts) * 100)}%` 
+      const freeThrowPercentage = totalFreeThrowAttempts > 0
+        ? `${Math.round((totalFreeThrowsMade / totalFreeThrowAttempts) * 100)}%`
         : '0%';
-      
+
       return {
         ...player,
         pointsPerGame: gamesPlayed > 0 ? totalPoints / gamesPlayed : 0,
@@ -102,13 +140,13 @@ const Home = () => {
         gamesPlayed
       };
     }).filter(Boolean); // Remove null entries
-    
+
     // Sort by points per game and get top 3
     return [...playerStats]
       .sort((a, b) => b.pointsPerGame - a.pointsPerGame)
       .slice(0, 3);
   }, [players, gameLogs]);
-  
+
   if (loading) {
     return (
       <Layout>
@@ -165,7 +203,7 @@ const Home = () => {
       </Layout>
     );
   }
-  
+
   if (error) {
     return (
       <Layout>
@@ -177,7 +215,7 @@ const Home = () => {
       </Layout>
     );
   }
-  
+
   if (!lastGame) {
     return (
       <Layout>
@@ -196,6 +234,15 @@ const Home = () => {
           <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400">
             Pitbulls Stats Hub
           </h1>
+          {streak && (
+            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mt-4 ${streak.type === 'win'
+              ? 'bg-green-100 text-green-700 border border-green-200'
+              : 'bg-red-100 text-red-700 border border-red-200'
+              }`}>
+              {streak.type === 'win' ? '🔥' : '❄️'}
+              {streak.count} {streak.count === 1 ? 'Spiel' : 'Spiele'} {streak.type === 'win' ? 'Siegesserie' : 'Niederlagenserie'}
+            </div>
+          )}
         </div>
 
         {/* Last Game Result */}
@@ -217,28 +264,28 @@ const Home = () => {
                       {awayTeam}
                     </div>
                   </div>
-                  
+
                   {/* Score row */}
                   <div className="flex items-center justify-center gap-4 md:gap-8 my-2">
                     {/* Hidden on mobile - team name is shown in the row above */}
                     <div className="hidden md:block text-center flex-1">
                       <div className="text-2xl font-bold line-clamp-2">{homeTeam}</div>
                     </div>
-                    
+
                     <div className="text-center">
                       <div className="text-4xl md:text-5xl font-black text-primary">
                         {homeScore}
                       </div>
                     </div>
-                    
+
                     <div className="text-2xl font-bold">:</div>
-                    
+
                     <div className="text-center">
                       <div className="text-4xl md:text-5xl font-black">
                         {awayScore}
                       </div>
                     </div>
-                    
+
                     {/* Hidden on mobile - team name is shown in the row above */}
                     <div className="hidden md:block text-center flex-1">
                       <div className="text-2xl font-bold line-clamp-2">{awayTeam}</div>
@@ -247,7 +294,7 @@ const Home = () => {
                 </div>
                 {lastGame.finalScore && (lastGame.finalScore.includes('-') || lastGame.finalScore.includes(':')) ? (
                   <div className="text-xl font-bold">
-                    {homeTeam === 'TSV Neuenstadt' 
+                    {homeTeam === 'TSV Neuenstadt'
                       ? (Number(homeScore) > Number(awayScore) ? '🏆 Sieg' : '😞 Niederlage')
                       : (Number(awayScore) > Number(homeScore) ? '🏆 Sieg' : '😞 Niederlage')}
                   </div>
@@ -256,8 +303,8 @@ const Home = () => {
                     ⏳ Spiel steht noch aus
                   </div>
                 )}
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => navigate(`/games/${lastGame.gameNumber}`)}
                   className="mt-4"
                 >
@@ -266,11 +313,11 @@ const Home = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <div className="text-center mt-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => navigate('games')}
               className="text-muted-foreground hover:text-primary p-0 h-auto"
             >
@@ -281,49 +328,49 @@ const Home = () => {
           {/* Top 3 Performers */}
           <div className="space-y-4 mt-12">
             <h3 className="text-2xl font-bold text-center">Top 3 Performer</h3>
-          <div className="grid md:grid-cols-3 gap-4">
-            {topPerformers.map((performer, index) => (
-              <Card 
-                key={performer.id}
-                className="border-border shadow-elegant hover:shadow-elegant-lg transition-elegant cursor-pointer group"
-                onClick={() => navigate(`/players/${performer.id}`)}
-              >
-                <CardContent className="pt-6">
-                  <div className="text-center space-y-3">
-                    <div className="text-3xl font-bold text-primary group-hover:scale-110 transition-elegant">#{index + 1}</div>
-                    <div className="text-center">
-                      <div className="text-lg font-semibold">
-                        {performer.firstName} {performer.lastName || ''}
-                      </div>
-                      {performer.averageMinutes > 0 && (
-                        <div className="text-sm text-muted-foreground">
-                          ⏱️ {performer.averageMinutes.toFixed(1)} Min/Spiel
+            <div className="grid md:grid-cols-3 gap-4">
+              {topPerformers.map((performer, index) => (
+                <Card
+                  key={performer.id}
+                  className="border-border shadow-elegant hover:shadow-elegant-lg transition-elegant cursor-pointer group"
+                  onClick={() => navigate(`/players/${performer.id}`)}
+                >
+                  <CardContent className="pt-6">
+                    <div className="text-center space-y-3">
+                      <div className="text-3xl font-bold text-primary group-hover:scale-110 transition-elegant">#{index + 1}</div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold">
+                          {performer.firstName} {performer.lastName || ''}
                         </div>
-                      )}
+                        {performer.averageMinutes > 0 && (
+                          <div className="text-sm text-muted-foreground">
+                            ⏱️ {performer.averageMinutes.toFixed(1)} Min/Spiel
+                          </div>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm w-full">
+                        <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
+                          <div className="text-muted-foreground text-xs">Punkte/Spiel</div>
+                          <div className="text-lg font-bold text-primary">{performer.pointsPerGame.toFixed(1)}</div>
+                        </div>
+                        <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
+                          <div className="text-muted-foreground text-xs">Gesamtpunkte</div>
+                          <div className="text-lg font-bold">{performer.totalPoints}</div>
+                        </div>
+                        <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
+                          <div className="text-muted-foreground text-xs">3-Punkte/Spiel</div>
+                          <div className="text-lg font-bold">{performer.threePointersPerGame.toFixed(1)}</div>
+                        </div>
+                        <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
+                          <div className="text-muted-foreground text-xs">FW-Quote</div>
+                          <div className="text-lg font-bold">{performer.freeThrowPercentage}</div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm w-full">
-                      <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
-                        <div className="text-muted-foreground text-xs">Punkte/Spiel</div>
-                        <div className="text-lg font-bold text-primary">{performer.pointsPerGame.toFixed(1)}</div>
-                      </div>
-                      <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
-                        <div className="text-muted-foreground text-xs">Gesamtpunkte</div>
-                        <div className="text-lg font-bold">{performer.totalPoints}</div>
-                      </div>
-                      <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
-                        <div className="text-muted-foreground text-xs">3-Punkte/Spiel</div>
-                        <div className="text-lg font-bold">{performer.threePointersPerGame.toFixed(1)}</div>
-                      </div>
-                      <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
-                        <div className="text-muted-foreground text-xs">FW-Quote</div>
-                        <div className="text-lg font-bold">{performer.freeThrowPercentage}</div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
             <div className="text-center">
               <Button
                 variant="ghost"
@@ -346,10 +393,10 @@ const Home = () => {
                   <span>Verbesserungen im Vergleich zum letzten Spiel</span>
                 </div>
               </div>
-              
+
               <div className="grid md:grid-cols-3 gap-4">
                 {risingStars.map((player, index) => (
-                  <Card 
+                  <Card
                     key={player.playerId}
                     className="border-orange-100 shadow-elegant hover:shadow-elegant-lg transition-elegant cursor-pointer group"
                     onClick={() => navigate(`/players/${player.playerId}`)}
@@ -357,8 +404,8 @@ const Home = () => {
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-4 mb-4">
                         <div className="relative group-hover:scale-105 transition-elegant">
-                          <img 
-                            src={player.image} 
+                          <img
+                            src={player.image}
                             alt={`${player.firstName} ${player.lastName}`}
                             className="w-16 h-16 rounded-full object-cover border-2 border-orange-200"
                           />
@@ -376,7 +423,7 @@ const Home = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2 text-sm">
                         {player.improvements.slice(0, 3).map((improvement, i) => (
                           <div key={i} className="flex justify-between">
@@ -401,9 +448,9 @@ const Home = () => {
                 ))}
               </div>
               <div className="text-center mt-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => navigate('/players')}
                   className="text-muted-foreground hover:text-primary"
                 >
@@ -413,20 +460,20 @@ const Home = () => {
             </div>
           )}
 
-        {/* Quick Links */}
-        <div className="grid md:grid-cols-1 gap-4 pt-8">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => navigate("/videos")}
-            className="h-20 shadow-elegant hover:shadow-elegant-lg transition-elegant group"
-          >
-            <div className="text-center">
-              <div className="text-2xl mb-1 group-hover:scale-110 transition-elegant">🎥</div>
-              <div className="font-semibold">Videos</div>
-            </div>
-          </Button>
-        </div>
+          {/* Quick Links */}
+          <div className="grid md:grid-cols-1 gap-4 pt-8">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => navigate("/videos")}
+              className="h-20 shadow-elegant hover:shadow-elegant-lg transition-elegant group"
+            >
+              <div className="text-center">
+                <div className="text-2xl mb-1 group-hover:scale-110 transition-elegant">🎥</div>
+                <div className="font-semibold">Videos</div>
+              </div>
+            </Button>
+          </div>
         </div>
       </div>
     </Layout>

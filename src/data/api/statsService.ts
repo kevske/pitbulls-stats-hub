@@ -1,22 +1,16 @@
 import Papa from 'papaparse';
 import { PlayerStats, GameStats, PlayerGameLog, CachedData } from '@/types/stats';
+import { config } from '@/config';
 
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour cache
-const CSV_URLS = {
-  games: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Games',
-  playerGameLogs: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Spieler',
-  playerTotals: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Totals',
-  playerBios: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Bio'
-};
-
-interface PlayerBio {
-  firstName: string;
-  lastName: string;
-  jerseyNumber: number;
-  position: string;
-  age: number;
-  height: string;
-  bio: string;
+// Types for CSV Data
+interface PlayerBioRow {
+  Vorname: string;
+  Nachname: string;
+  'Trikot-Nummer': string;
+  Position: string;
+  Alter: string;
+  'Größe': string;
+  Bio: string;
 }
 
 interface PlayerTotalsRow {
@@ -50,56 +44,122 @@ interface PlayerGameLogRow {
   'Typ Spiel': string;
 }
 
-async function fetchPlayerBios(forceRefresh = false): Promise<Map<string, PlayerBio>> {
-  const bios = await fetchCSV<any>(CSV_URLS.playerBios, (rows) => 
-    rows.map(row => ({
-      firstName: (row.Vorname || '').trim(),
-      lastName: (row.Nachname || '').trim(),
-      jerseyNumber: parseInt(row['Trikot-Nummer']) || 0,
-      position: (row.Position || '').trim(),
-      age: parseInt(row.Alter) || 0,
-      height: (row['Größe'] || '').trim(),
-      bio: (row.Bio || '').trim()
-    }))
-  );
-  
-  const bioMap = new Map<string, PlayerBio>();
-  bios.forEach(bio => {
-    if (bio.firstName || bio.lastName) {
-      const key = `${bio.firstName.toLowerCase()} ${bio.lastName.toLowerCase()}`.trim();
-      bioMap.set(key, bio);
-    }
-  });
-  return bioMap;
+interface GameDataRow {
+  'Sp.tag': string;
+  Datum: string;
+  Heim: string;
+  Gast: string;
+  Endstand: string;
+  '1. Viertel': string;
+  Halbzeit: string;
+  '3. Viertel': string;
+  'Youtube-Link'?: string;
 }
 
-// Transform Totals CSV data into PlayerStats and include all players from Bio-CSV
-function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, PlayerBio>): PlayerStats[] {
-  console.log('Bio Map Contents:');
-  bioMap.forEach((bio, key) => {
-    console.log(`Bio: ${bio.firstName} ${bio.lastName} (${key})`);
-  });
-  
-  // First, process players with stats
-  const playersWithStats = new Map<string, PlayerStats>();
-  
-  console.log('Processing players with stats:');
+interface PlayerBio {
+  firstName: string;
+  lastName: string;
+  jerseyNumber: number;
+  position: string;
+  age: number;
+  height: string;
+  bio: string;
+}
+
+// Helper Functions
+const parseNumber = (value: string): number => {
+  if (!value) return 0;
+  return parseFloat(value.replace(',', '.')) || 0;
+};
+
+const parseInteger = (value: string): number => {
+  if (!value) return 0;
+  return parseInt(value) || 0;
+};
+
+// Mapping of player names to their exact filenames
+const PLAYER_IMAGE_MAP: Record<string, string> = {
+  'nino de bortoli': 'nino-de-bortoli.jpg',
+  'tobias thury': 'tobi-thury.jpg',
+  'gregor arapidis': 'gregor-arapidis.jpg',
+  'david scheja': 'david-scheja.png',
+  'alexander rib': 'alexander-rib.png',
+  'jan strobel': 'jan-strobel.png',
+  'tim krause': 'tim-krause.jpg',
+  'sven bader': 'sven-bader.jpg',
+  'stefan anselm': 'stefan-anselm.jpg',
+  'christoph mörsch': 'christoph-mrsch.jpg',
+  'abdullah ari': 'abdullah-ari.jpg',
+  'kevin rassner': 'kevin-rassner.jpg',
+  'marius scholl': 'marius-scholl.jpg',
+  'jan crocoll': 'jan-crocoll.jpg',
+  'marcus hayes': 'marcus-hayes.jpg',
+  'danny seitz': 'danny-seitz.jpg'
+};
+
+export function generateImageFilename(firstName: string, lastName: string = ''): string {
+  const fullName = `${firstName} ${lastName}`.trim().toLowerCase();
+
+  if (PLAYER_IMAGE_MAP[fullName]) {
+    return PLAYER_IMAGE_MAP[fullName];
+  }
+
+  const baseName = `${firstName}${lastName ? ' ' + lastName : ''}`
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return baseName + '.jpg';
+}
+
+function generatePlayerId(firstName: string, lastName: string = ''): string {
+  return `${firstName.toLowerCase()}${lastName ? '-' + lastName.toLowerCase() : ''}`.replace(/\s+/g, '-');
+}
+
+// Transformers
+function transformPlayerBios(rows: PlayerBioRow[]): Map<string, PlayerBio> {
+  const bioMap = new Map<string, PlayerBio>();
+
   rows.forEach(row => {
     const firstName = (row.Vorname || '').trim();
     const lastName = (row.Nachname || '').trim();
-    
+
+    if (firstName || lastName) {
+      const key = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
+      bioMap.set(key, {
+        firstName,
+        lastName,
+        jerseyNumber: parseInteger(row['Trikot-Nummer']),
+        position: (row.Position || '').trim(),
+        age: parseInteger(row.Alter),
+        height: (row['Größe'] || '').trim(),
+        bio: (row.Bio || '').trim()
+      });
+    }
+  });
+
+  return bioMap;
+}
+
+function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, PlayerBio>): PlayerStats[] {
+  const playersWithStats = new Map<string, PlayerStats>();
+
+  // Process players with stats
+  rows.forEach(row => {
+    const firstName = (row.Vorname || '').trim();
+    const lastName = (row.Nachname || '').trim();
+
     if (!firstName) return;
-    
+
     const playerId = generatePlayerId(firstName, lastName);
     const bioKey = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`.trim();
     const bioData = bioMap.get(bioKey);
-    
-    // Generate the image filename using our helper function
     const imageName = generateImageFilename(firstName, lastName);
-    
-    // Use the generated filename with the correct path
     const imageUrl = `/pitbulls-stats-hub/players/${imageName}`;
-    
+
     const player: PlayerStats = {
       id: playerId,
       firstName,
@@ -110,30 +170,25 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
       age: bioData?.age || 0,
       height: bioData?.height || '',
       bio: bioData?.bio || '',
-      gamesPlayed: parseInt(row.Spiele) || 0,
-      minutesPerGame: parseFloat((row['Minuten pS'] || '0').replace(',', '.')),
-      pointsPerGame: parseFloat((row['Punkte pS'] || '0').replace(',', '.')),
-      threePointersPerGame: parseFloat((row['3er pS'] || '0').replace(',', '.')),
-      foulsPerGame: parseFloat((row['Fouls pS'] || '0').replace(',', '.')),
-      freeThrowsMadePerGame: parseFloat((row['FWTreffer pS'] || '0').replace(',', '.')),
-      freeThrowAttemptsPerGame: parseFloat((row['FWVersuche pS'] || '0').replace(',', '.')),
+      gamesPlayed: parseInteger(row.Spiele),
+      minutesPerGame: parseNumber(row['Minuten pS']),
+      pointsPerGame: parseNumber(row['Punkte pS']),
+      threePointersPerGame: parseNumber(row['3er pS']),
+      foulsPerGame: parseNumber(row['Fouls pS']),
+      freeThrowsMadePerGame: parseNumber(row['FWTreffer pS']),
+      freeThrowAttemptsPerGame: parseNumber(row['FWVersuche pS']),
       freeThrowPercentage: row['FW-Quote'] || ''
     };
-    
+
     playersWithStats.set(bioKey, player);
-    console.log(`Added player with stats: ${player.firstName} ${player.lastName}`);
   });
-  
-  // Then add players from bio who don't have stats yet
-  console.log('\nAdding players from Bio-CSV without stats:');
+
+  // Add players from bio who don't have stats yet
   bioMap.forEach((bio, bioKey) => {
     if (!playersWithStats.has(bioKey)) {
-      // Generate the image filename using our helper function
       const imageName = generateImageFilename(bio.firstName, bio.lastName);
-      
-      // Use the generated filename with the correct path
       const imageUrl = `/pitbulls-stats-hub/players/${imageName}`;
-      
+
       const player: PlayerStats = {
         id: generatePlayerId(bio.firstName, bio.lastName),
         firstName: bio.firstName,
@@ -154,49 +209,67 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
         freeThrowPercentage: ''
       };
       playersWithStats.set(bioKey, player);
-      console.log(`Added player from Bio-CSV: ${player.firstName} ${player.lastName}`);
-    } else {
-      console.log(`Player already exists in stats: ${bio.firstName} ${bio.lastName}`);
     }
   });
-  
-  const result = Array.from(playersWithStats.values());
-  console.log('\nFinal player list:', result.map(p => `${p.firstName} ${p.lastName} (${p.gamesPlayed} games)`));
-  return result;
+
+  return Array.from(playersWithStats.values());
 }
 
-export async function fetchAllData(forceRefresh = false) {
-  const [games, playerGameLogs, totalsRows, bioMap] = await Promise.all([
-    fetchCSV<GameStats>(CSV_URLS.games, transformGameData, forceRefresh),
-    fetchCSV<PlayerGameLogRow>(CSV_URLS.playerGameLogs, (rows) => rows, forceRefresh),
-    fetchCSV<PlayerTotalsRow>(CSV_URLS.playerTotals, (rows) => rows, forceRefresh),
-    forceRefresh ? fetchPlayerBios(true) : fetchPlayerBios()
-  ]);
-  
-  // Transform totals with bio data
-  const playerTotals = transformPlayerTotals(totalsRows, bioMap);
-  
-  // Transform game logs
-  const playerStats = transformPlayerGameLogs(playerGameLogs);
-  
-  return { 
-    games, 
-    playerStats, 
-    playerTotals
-  };
+function transformPlayerGameLogs(rows: PlayerGameLogRow[]): PlayerGameLog[] {
+  return rows.map(row => {
+    const playerId = generatePlayerId(row.Vorname, row.Nachname);
+
+    return {
+      playerId,
+      gameNumber: parseInteger(row.Spieltag),
+      minutesPlayed: parseNumber(row.Minuten),
+      points: parseInteger(row.Punkte),
+      twoPointers: parseInteger(row['2er']),
+      threePointers: parseInteger(row['3er']),
+      freeThrowsMade: parseInteger(row.FWTreffer),
+      freeThrowAttempts: parseInteger(row.FWVersuche),
+      freeThrowPercentage: row['FW-Quote'] || '',
+      fouls: parseInteger(row.Fouls),
+      pointsPer40: parseNumber(row['Punkte/40']),
+      freeThrowAttemptsPer40: parseNumber(row['FWV/40']),
+      foulsPer40: parseNumber(row['Fouls/40']),
+      gameType: row['Typ Spiel'] || ''
+    };
+  });
 }
 
-async function fetchCSV<T>(url: string, transform: (data: any) => T[], forceRefresh = false): Promise<T[]> {
+function transformGameData(rows: GameDataRow[]): GameStats[] {
+  return rows
+    .filter(row => row['Sp.tag'] && row.Datum)
+    .map(row => ({
+      gameNumber: parseInteger(row['Sp.tag']),
+      date: row.Datum,
+      homeTeam: row.Heim,
+      awayTeam: row.Gast,
+      finalScore: row.Endstand,
+      q1Score: row['1. Viertel'],
+      halfTimeScore: row.Halbzeit,
+      q3Score: row['3. Viertel'],
+      youtubeLink: row['Youtube-Link']?.trim() || undefined
+    }))
+    .sort((a, b) => a.gameNumber - b.gameNumber);
+}
+
+// Data Fetching
+async function fetchCSV<T>(url: string, transform: (data: any[]) => T[], forceRefresh = false): Promise<T[]> {
   const cacheKey = `cache_${btoa(url)}`;
   const now = Date.now();
-  
-  // Only check cache if not forcing a refresh
+
   if (!forceRefresh) {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
-      const { data, timestamp } = JSON.parse(cached) as CachedData<T>;
-      if (now - timestamp < CACHE_DURATION) {
-        return data;
+      try {
+        const { data, timestamp } = JSON.parse(cached) as CachedData<T>;
+        if (now - timestamp < config.data.cacheDuration) {
+          return data;
+        }
+      } catch (e) {
+        console.warn('Failed to parse cached data', e);
       }
     }
   }
@@ -204,19 +277,26 @@ async function fetchCSV<T>(url: string, transform: (data: any) => T[], forceRefr
   try {
     const response = await fetch(url);
     const text = await response.text();
-    const result = await new Promise<any[]>((resolve) => {
+    const result = await new Promise<any[]>((resolve, reject) => {
       Papa.parse(text, {
         header: true,
         skipEmptyLines: true,
-        complete: (results) => resolve(results.data)
+        complete: (results) => resolve(results.data),
+        error: (error) => reject(error)
       });
     });
 
     const transformed = transform(result);
-    localStorage.setItem(cacheKey, JSON.stringify({
-      data: transformed,
-      timestamp: now
-    }));
+
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify({
+        data: transformed,
+        timestamp: now
+      }));
+    } catch (e) {
+      console.warn('Failed to cache data (likely quota exceeded)', e);
+    }
+
     return transformed;
   } catch (error) {
     console.error('Error fetching CSV:', error);
@@ -224,96 +304,26 @@ async function fetchCSV<T>(url: string, transform: (data: any) => T[], forceRefr
   }
 }
 
-// Transform Spieler CSV data into PlayerGameLog
-function transformPlayerGameLogs(rows: PlayerGameLogRow[]): PlayerGameLog[] {
-  return rows.map(row => {
-    const playerId = generatePlayerId(row.Vorname, row.Nachname);
-    const gameNumber = parseInt(row.Spieltag) || 0;
-    
+export async function fetchAllData(forceRefresh = false) {
+  try {
+    const [games, playerGameLogs, totalsRows, bioRows] = await Promise.all([
+      fetchCSV<GameStats>(config.data.csvUrls.games, transformGameData, forceRefresh),
+      fetchCSV<PlayerGameLogRow>(config.data.csvUrls.playerGameLogs, (rows) => rows as any[], forceRefresh),
+      fetchCSV<PlayerTotalsRow>(config.data.csvUrls.playerTotals, (rows) => rows as any[], forceRefresh),
+      fetchCSV<PlayerBioRow>(config.data.csvUrls.playerBios, (rows) => rows as any[], forceRefresh)
+    ]);
+
+    const bioMap = transformPlayerBios(bioRows);
+    const playerTotals = transformPlayerTotals(totalsRows, bioMap);
+    const playerStats = transformPlayerGameLogs(playerGameLogs);
+
     return {
-      playerId,
-      gameNumber,
-      minutesPlayed: parseFloat((row.Minuten || '0').replace(',', '.')),
-      points: parseInt(row.Punkte) || 0,
-      twoPointers: parseInt(row['2er']) || 0,
-      threePointers: parseInt(row['3er']) || 0,
-      freeThrowsMade: parseInt(row.FWTreffer) || 0,
-      freeThrowAttempts: parseInt(row.FWVersuche) || 0,
-      freeThrowPercentage: row['FW-Quote'] || '',
-      fouls: parseInt(row.Fouls) || 0,
-      pointsPer40: parseFloat((row['Punkte/40'] || '0').replace(',', '.')),
-      freeThrowAttemptsPer40: parseFloat((row['FWV/40'] || '0').replace(',', '.')),
-      foulsPer40: parseFloat((row['Fouls/40'] || '0').replace(',', '.')),
-      gameType: row['Typ Spiel'] || ''
+      games,
+      playerStats,
+      playerTotals
     };
-  });
-}
-
-function transformGameData(rows: any[]): GameStats[] {
-  return rows
-    .filter(row => row['Sp.tag'] && row.Datum)
-    .map(row => ({
-      gameNumber: parseInt(row['Sp.tag']),
-      date: row.Datum,
-      homeTeam: row.Heim,
-      awayTeam: row.Gast,
-      finalScore: row.Endstand,
-      q1Score: row['1. Viertel'],
-      halfTimeScore: row.Halbzeit,
-      q3Score: row['3. Viertel']
-    }))
-    .sort((a, b) => a.gameNumber - b.gameNumber);
-}
-
-// Mapping of player names to their exact filenames
-const PLAYER_IMAGE_MAP: Record<string, string> = {
-  // Special cases with non-standard filenames
-  'nino de bortoli': 'nino-de-bortoli.jpg',
-  'tobias thury': 'tobi-thury.jpg',
-  'gregor arapidis': 'gregor-arapidis.jpg',
-  'david scheja': 'david-scheja.png',
-  'alexander rib': 'alexander-rib.png',
-  'jan strobel': 'jan-strobel.png',
-  'tim krause': 'tim-krause.jpg',
-  'sven bader': 'sven-bader.jpg',
-  'stefan anselm': 'stefan-anselm.jpg',
-  'christoph mörsch': 'christoph-mrsch.jpg',
-  'abdullah ari': 'abdullah-ari.jpg',
-  'kevin rassner': 'kevin-rassner.jpg',
-  'marius scholl': 'marius-scholl.jpg',
-  'jan crocoll': 'jan-crocoll.jpg',
-  'marcus hayes': 'marcus-hayes.jpg',
-  'danny seitz': 'danny-seitz.jpg'
-};
-
-/**
- * Generates a consistent filename for player images based on their first and last names.
- * Uses a predefined map of player names to filenames to handle special cases.
- * Tries both JPG and PNG extensions.
- */
-export function generateImageFilename(firstName: string, lastName: string = ''): string {
-  const fullName = `${firstName} ${lastName}`.trim().toLowerCase();
-  
-  // First check if we have an exact match in our mapping
-  if (PLAYER_IMAGE_MAP[fullName]) {
-    return PLAYER_IMAGE_MAP[fullName];
+  } catch (error) {
+    console.error('Error fetching all data:', error);
+    throw error;
   }
-  
-  // Generate base filename
-  const baseName = `${firstName}${lastName ? ' ' + lastName : ''}`
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')        // Replace spaces with hyphens
-    .replace(/[^a-z0-9-]/g, '')  // Remove special characters
-    .replace(/-+/g, '-')         // Replace multiple hyphens with a single one
-    .replace(/^-+|-+$/g, '');    // Remove leading/trailing hyphens
-    
-  // Return with .jpg extension by default (for backward compatibility)
-  // The actual file extension will be handled by the image loading logic
-  return baseName + '.jpg';
-}
-
-// Helper function to generate player ID
-function generatePlayerId(firstName: string, lastName: string = ''): string {
-  return `${firstName.toLowerCase()}${lastName ? '-' + lastName.toLowerCase() : ''}`.replace(/\s+/g, '-');
 }

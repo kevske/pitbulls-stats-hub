@@ -9,7 +9,7 @@ export interface PlayerStats {
   age?: number;
   height?: string;
   bio?: string;
-  
+
   // Stats from Totals CSV (all games combined)
   gamesPlayed: number;
   minutesPerGame: number;
@@ -30,6 +30,7 @@ export interface GameStats {
   q1Score: string;
   halfTimeScore: string;
   q3Score: string;
+  youtubeLink?: string;
 }
 
 export interface PlayerGameLog {

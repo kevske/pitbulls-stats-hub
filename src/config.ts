@@ -8,7 +8,18 @@ export const config = {
     // This is just for demonstration purposes
     adminPassword: process.env.REACT_APP_ADMIN_PASSWORD || 'admin123',
   },
-  
+
+  // Data Sources
+  data: {
+    csvUrls: {
+      games: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Games',
+      playerGameLogs: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Spieler',
+      playerTotals: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Totals',
+      playerBios: 'https://docs.google.com/spreadsheets/d/1ZGAEy5VaCUuhGVPG3cB--n-2u7thwwPn-Rhsk-M-S7I/gviz/tq?tqx=out:csv&sheet=Bio'
+    },
+    cacheDuration: 60 * 60 * 1000, // 1 hour
+  },
+
   // Other configuration can be added here
 } as const;
 
