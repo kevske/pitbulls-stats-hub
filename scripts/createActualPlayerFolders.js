@@ -26,7 +26,7 @@ function formatPlayerName(slug) {
   return slug
     .split('-')
     .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .map(part => part.replace('Mrsch', 'Märsch'))
+    .map(part => part.replace('Mrsch', 'Mörsch'))
     .join(' ')
     .replace('De Bortoli', 'de Bortoli');
 }
@@ -56,18 +56,27 @@ async function createPlayerFolders() {
             console.log(`✅ Created folder for ${playerName}: ${playerDir}`);
             
             // Move the existing image to the player's folder
-            const imageExtensions = ['.jpg', '.jpeg', '.png'];
-            for (const ext of imageExtensions) {
-              const sourceFile = path.join(playersDir, `${slug}${ext}`);
+            const sourceFiles = await fs.readdir(playersDir);
+            const playerFiles = sourceFiles.filter(file => {
+              // Match files that start with the player's slug
+              const baseName = path.basename(file, path.extname(file));
+              return baseName.startsWith(slug);
+            });
+
+            for (const file of playerFiles) {
               try {
-                await fs.access(sourceFile);
+                const sourceFile = path.join(playersDir, file);
+                const ext = path.extname(file);
                 const destFile = path.join(playerDir, `profile${ext}`);
-                await fs.rename(sourceFile, destFile);
-                console.log(`   → Moved ${slug}${ext} to player's folder`);
-                break; // Stop after finding the first matching image
+                
+                // Check if source file exists and is a file (not a directory)
+                const stats = await fs.stat(sourceFile);
+                if (stats.isFile()) {
+                  await fs.rename(sourceFile, destFile);
+                  console.log(`   → Moved ${file} to player's folder as profile${ext}`);
+                }
               } catch (e) {
-                // File doesn't exist, try next extension
-                continue;
+                console.error(`   → Error moving file ${file}:`, e.message);
               }
             }
           } else {
