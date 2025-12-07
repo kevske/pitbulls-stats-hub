@@ -5,9 +5,8 @@ import { TrendingUp, Home, Plane } from "lucide-react";
 import { PlayerGameLog, PlayerStats } from "@/types/stats";
 import { PlayerTrendIndicator } from "./PlayerTrendIndicator";
 import { useStats } from "@/contexts/StatsContext";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { generateImageFilename } from "@/data/api/statsService";
-import playerImagesData from "@/data/playerImages.json";
 
 interface PlayerCardProps {
   player: PlayerStats;
@@ -19,57 +18,7 @@ interface PlayerCardProps {
 const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter = 'all' }: PlayerCardProps) => {
   const navigate = useNavigate();
   const [isBioExpanded, setIsBioExpanded] = useState(false);
-  const [currentBannerImageIndex, setCurrentBannerImageIndex] = useState(0);
   // Game filter is now controlled by parent component
-  
-  // Get player slug for gallery images
-  const getPlayerSlug = () => {
-    if (!player.imageUrl) {
-      console.log('No imageUrl for player:', player.firstName, player.lastName);
-      return '';
-    }
-    // Extract the filename and remove extension
-    const match = player.imageUrl.match(/players\/([^/]+)/);
-    if (!match) {
-      console.log('No match in imageUrl:', player.imageUrl);
-      return '';
-    }
-    const slug = match[1].replace(/\.(png|jpg|jpeg|gif|webp)$/i, '');
-    console.log('Player slug:', slug);
-    return slug;
-  };
-
-  // Get gallery images for this player
-  const getGalleryImages = () => {
-    const playerSlug = getPlayerSlug();
-    if (!playerSlug) return [];
-    
-    const playerImages = (playerImagesData as any)[playerSlug];
-    console.log('Gallery images for', playerSlug, ':', playerImages?.length || 0);
-    return playerImages || [];
-  };
-
-  // Get alternating banner image from gallery
-  const getBannerImage = () => {
-    const galleryImages = getGalleryImages();
-    if (galleryImages.length === 0) return null;
-    
-    // Use current index to cycle through images
-    const imageIndex = currentBannerImageIndex % galleryImages.length;
-    return galleryImages[imageIndex];
-  };
-
-  // Cycle through gallery images
-  useEffect(() => {
-    const galleryImages = getGalleryImages();
-    if (galleryImages.length > 0) {
-      const interval = setInterval(() => {
-        setCurrentBannerImageIndex(prev => prev + 1);
-      }, 3000); // Change image every 3 seconds
-      
-      return () => clearInterval(interval);
-    }
-  }, [player]);
   
   // Calculate filtered stats based on game type
   const filteredStats = useMemo(() => {
@@ -162,57 +111,25 @@ const renderStats = () => (
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row">
           {/* Left side - Player Image */}
-          <div className="md:w-48 h-48 md:h-auto flex-shrink-0 relative overflow-hidden group">
-            {(() => {
-              const bannerImage = getBannerImage();
-              if (bannerImage) {
-                // Remove /pitbulls-stats-hub/ prefix from image src
-                const imageSrc = bannerImage.src.replace('/pitbulls-stats-hub', '');
-                return (
-                  <>
-                    <img
-                      src={imageSrc}
-                      alt={bannerImage.alt}
-                      className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-110"
-                      onError={(e) => {
-                        console.error('Failed to load banner image:', imageSrc);
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="absolute bottom-3 left-3 bg-primary/90 text-primary-foreground rounded-full p-1.5 transform transition-transform duration-300 group-hover:scale-110">
-                      <TrendingUp size={20} />
-                    </div>
-                  </>
-                );
-              } else {
-                // Fallback to light blue background with player image
-                return (
-                  <>
-                    <div className="absolute inset-0 bg-secondary" />
-                    <img
-                      src={`/pitbulls-stats-hub/players/${generateImageFilename(player.firstName, player.lastName).replace(/\.jpg$/, '.png')}`}
-                      alt={`${player.firstName} ${player.lastName}`}
-                      className="w-full h-full object-cover object-top relative z-10"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        // If PNG fails, try JPG
-                        if (target.src.endsWith('.png')) {
-                          target.src = `/pitbulls-stats-hub/players/${generateImageFilename(player.firstName, player.lastName)}`;
-                        } else {
-                          // If both fail, use placeholder with base path
-                          target.src = '/pitbulls-stats-hub/placeholder-player.png';
-                        }
-                      }}
-                    />
-                    <div className="absolute bottom-3 left-3 bg-primary/90 text-primary-foreground rounded-full p-1.5 relative z-20">
-                      <TrendingUp size={20} />
-                    </div>
-                  </>
-                );
-              }
-            })()}
+          <div className="md:w-48 h-48 md:h-auto flex-shrink-0 relative bg-secondary">
+            <img
+              src={`/pitbulls-stats-hub/players/${generateImageFilename(player.firstName, player.lastName).replace(/\.jpg$/, '.png')}`}
+              alt={`${player.firstName} ${player.lastName}`}
+              className="w-full h-full object-cover object-top"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                // If PNG fails, try JPG
+                if (target.src.endsWith('.png')) {
+                  target.src = `/pitbulls-stats-hub/players/${generateImageFilename(player.firstName, player.lastName)}`;
+                } else {
+                  // If both fail, use placeholder with base path
+                  target.src = '/pitbulls-stats-hub/placeholder-player.png';
+                }
+              }}
+            />
+            <div className="absolute bottom-3 left-3 bg-primary/90 text-primary-foreground rounded-full p-1.5">
+              <TrendingUp size={20} />
+            </div>
           </div>
 
           {/* Right side - Player Info */}

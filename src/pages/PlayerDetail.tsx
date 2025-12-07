@@ -29,6 +29,7 @@ const PlayerDetail: React.FC = () => {
   const { player, gameLogs } = usePlayerStats(id) as { player: PlayerStats | null; gameLogs: PlayerGameLog[] };
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [currentBannerImageIndex, setCurrentBannerImageIndex] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,6 +73,24 @@ const PlayerDetail: React.FC = () => {
       setGalleryImages([]);
     }
   }, [player]);
+
+  // Cycle through banner images every 5 seconds
+  useEffect(() => {
+    if (galleryImages.length > 0) {
+      const interval = setInterval(() => {
+        setCurrentBannerImageIndex(prev => prev + 1);
+      }, 5000); // Change image every 5 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [galleryImages]);
+
+  // Get current banner image
+  const getBannerImage = () => {
+    if (galleryImages.length === 0) return null;
+    const imageIndex = currentBannerImageIndex % galleryImages.length;
+    return galleryImages[imageIndex];
+  };
 
   if (!player || !player.firstName) {
     return (
@@ -138,24 +157,51 @@ const PlayerDetail: React.FC = () => {
 
         <div className="bg-card rounded-lg shadow-elegant overflow-hidden">
           {/* Player Header */}
-          <div className="bg-accent p-6">
-            <div className="flex flex-col md:flex-row items-center">
-              <div className="w-32 h-32 md:w-40 md:h-40 bg-background rounded-full overflow-hidden border-4 border-background shadow-elegant mb-4 md:mb-0 md:mr-8">
-                <img
-                  src={player.imageUrl || '/pitbulls-stats-hub/placeholder-player.png'}
-                  alt={`${player.firstName} ${player.lastName}`}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/pitbulls-stats-hub/placeholder-player.png';
-                  }}
-                />
-              </div>
-              <div className="text-center md:text-left">
-                <h1 className="text-3xl font-bold">
+          <div className="relative h-64 md:h-80 overflow-hidden">
+            {(() => {
+              const bannerImage = getBannerImage();
+              if (bannerImage) {
+                // Remove /pitbulls-stats-hub/ prefix from image src
+                const imageSrc = bannerImage.src.replace('/pitbulls-stats-hub', '');
+                return (
+                  <>
+                    <img
+                      src={imageSrc}
+                      alt={bannerImage.alt}
+                      className="w-full h-full object-cover transition-opacity duration-1000"
+                      onError={(e) => {
+                        console.error('Failed to load banner image:', imageSrc);
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                  </>
+                );
+              } else {
+                // Fallback to light blue background
+                return <div className="absolute inset-0 bg-accent" />;
+              }
+            })()}
+            
+            {/* Player info overlay */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-white">
+                <div className="w-24 h-24 md:w-32 md:h-32 bg-background rounded-full overflow-hidden border-4 border-background shadow-elegant mx-auto mb-4">
+                  <img
+                    src={player.imageUrl || '/pitbulls-stats-hub/placeholder-player.png'}
+                    alt={`${player.firstName} ${player.lastName}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/pitbulls-stats-hub/placeholder-player.png';
+                    }}
+                  />
+                </div>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">
                   {player.firstName} <span className="text-primary">{player.lastName}</span>
                 </h1>
-                <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-2 text-muted-foreground">
+                <div className="flex flex-wrap justify-center gap-4 text-white/90">
                   {player.jerseyNumber && (
                     <span>
                       <span className="font-medium">#</span>{player.jerseyNumber}
