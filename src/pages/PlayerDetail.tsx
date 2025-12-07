@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { usePlayerStats } from '@/hooks/usePlayerStats';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ImageIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useState } from 'react';
 
