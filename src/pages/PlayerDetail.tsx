@@ -140,12 +140,12 @@ const PlayerDetail: React.FC = () => {
             <div className="flex flex-col md:flex-row items-center">
               <div className="w-32 h-32 md:w-40 md:h-40 bg-background rounded-full overflow-hidden border-4 border-background shadow-elegant mb-4 md:mb-0 md:mr-8">
                 <img
-                  src={player.imageUrl || '/placeholder-player.png'}
+                  src={player.imageUrl || '/pitbulls-stats-hub/placeholder-player.png'}
                   alt={`${player.firstName} ${player.lastName}`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = '/placeholder-player.png';
+                    target.src = '/pitbulls-stats-hub/placeholder-player.png';
                   }}
                 />
               </div>
@@ -394,7 +394,7 @@ const PlayerDetail: React.FC = () => {
                     {patterns.map((pattern, i) => (
                       <img
                         key={i}
-                        src={`/players/${playerSlug}/${pattern}`}
+                        src={`/pitbulls-stats-hub/players/${playerSlug}/${pattern}`}
                         alt={`${player.firstName} ${player.lastName} ${index + 1}`}
                         className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
                         onError={(e) => {
@@ -427,7 +427,7 @@ const PlayerDetail: React.FC = () => {
                       return (
                         <img
                           key={numIndex}
-                          src={`/players/${playerSlug}/${filename}`}
+                          src={`/pitbulls-stats-hub/players/${playerSlug}/${filename}`}
                           alt={`${player.firstName} ${player.lastName} - ${date}`}
                           className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
                           onError={(e) => {
