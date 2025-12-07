@@ -8,11 +8,20 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useState, useEffect } from 'react';
 
 import { PlayerStats, PlayerGameLog } from '@/types/stats';
+import playerImagesData from '@/data/playerImages.json';
 
 interface GalleryImage {
   src: string;
   alt: string;
   date?: string;
+}
+
+interface PlayerImagesData {
+  [playerSlug: string]: {
+    src: string;
+    alt: string;
+    filename: string;
+  }[];
 }
 
 const PlayerDetail: React.FC = () => {
@@ -49,26 +58,19 @@ const PlayerDetail: React.FC = () => {
 
     console.log('Loading gallery images for player:', playerSlug);
     
-    // In a production environment, you would fetch this from an API endpoint
-    // that reads the directory contents. For now, we'll use a placeholder
-    // and the actual images will be loaded based on their paths
+    // Use the pre-generated image data
+    const playerImages = (playerImagesData as PlayerImagesData)[playerSlug];
     
-    // The actual image paths will be determined by the files in the public/players/[player-slug] directory
-    // The images will be loaded with paths like: /players/[player-slug]/[filename]
-    
-    // We'll keep the galleryImages state but the actual loading will be handled by the browser
-    // when it encounters the img tags with the correct paths
-    
-    // We'll use the player's name as the base for the alt text
-    const playerName = `${player.firstName} ${player.lastName}`;
-    
-    // We'll use a placeholder that will be replaced by the actual images
-    // The actual image loading will be handled by the browser
-    setGalleryImages([{
-      src: `/players/${playerSlug}/`,  // This will be replaced by actual image paths
-      alt: playerName,
-      _loading: true
-    }]);
+    if (playerImages && playerImages.length > 0) {
+      console.log(`Found ${playerImages.length} images for ${playerSlug}`);
+      setGalleryImages(playerImages.map(img => ({
+        src: img.src,
+        alt: img.alt
+      })));
+    } else {
+      console.log(`No gallery images found for ${playerSlug}`);
+      setGalleryImages([]);
+    }
   }, [player]);
 
   if (!player || !player.firstName) {
@@ -366,94 +368,35 @@ const PlayerDetail: React.FC = () => {
           <h2 className="text-2xl font-bold mb-6">Galerie</h2>
           {player ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {/* This will automatically load all images from the player's folder */}
-              {/* The browser will try to load each image and only show the ones that exist */}
-              {Array.from({ length: 10 }).map((_, index) => {
-                // Try multiple naming patterns for images
-                const patterns = [
-                  `${index + 1}.jpg`,
-                  `${index + 1}.jpeg`,
-                  `${index + 1}.png`,
-                  `0${index + 1}.jpg`,
-                  `0${index + 1}.jpeg`,
-                  `0${index + 1}.png`,
-                  `img${index + 1}.jpg`,
-                  `img${index + 1}.jpeg`,
-                  `img${index + 1}.png`,
-                ];
-                
-                // Get player slug from imageUrl or generate from name
-                const playerSlug = player.imageUrl 
-                  ? player.imageUrl.split('/').pop()?.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '') || 
-                    `${player.firstName.toLowerCase()}-${player.lastName.toLowerCase()}`
-                  : `${player.firstName.toLowerCase()}-${player.lastName.toLowerCase()}`;
-                
-                // Try each pattern until one works
-                return (
+              {galleryImages.length > 0 ? (
+                galleryImages.map((image, index) => (
                   <div key={index} className="aspect-square">
-                    {patterns.map((pattern, i) => (
-                      <img
-                        key={i}
-                        src={`/pitbulls-stats-hub/players/${playerSlug}/${pattern}`}
-                        alt={`${player.firstName} ${player.lastName} ${index + 1}`}
-                        className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                        }}
-                        onLoad={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'block';
-                          target.onclick = () => setSelectedImage(target.src);
-                        }}
-                        style={{ display: 'none' }}
-                      />
-                    ))}
+                    <img
+                      src={image.src}
+                      alt={image.alt}
+                      className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
+                      onClick={() => setSelectedImage(image.src)}
+                      onError={(e) => {
+                        console.error(`Failed to load image: ${image.src}`);
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
                   </div>
-                );
-              })}
-              
-              {/* Also try to load any date-based patterns */}
-              {['2025-04-06'].map((date, dateIndex) => {
-                const playerSlug = player.imageUrl 
-                  ? player.imageUrl.split('/').pop()?.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '') || 
-                    `${player.firstName.toLowerCase()}-${player.lastName.toLowerCase()}`
-                  : `${player.firstName.toLowerCase()}-${player.lastName.toLowerCase()}`;
-                
-                return (
-                  <div key={`date-${dateIndex}`} className="aspect-square">
-                    {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'].map((num, numIndex) => {
-                      const filename = `${date}-${playerSlug}-${num}.jpeg`;
-                      return (
-                        <img
-                          key={numIndex}
-                          src={`/pitbulls-stats-hub/players/${playerSlug}/${filename}`}
-                          alt={`${player.firstName} ${player.lastName} - ${date}`}
-                          className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                          }}
-                          onLoad={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'block';
-                            target.onclick = () => setSelectedImage(target.src);
-                          }}
-                          style={{ display: 'none' }}
-                        />
-                      );
-                    })}
-                  </div>
-                );
-              })}
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8 bg-muted/50 rounded-lg">
+                  <ImageIcon className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">
+                    Keine Galeriebilder für diesen Spieler gefunden.
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-8 bg-muted/50 rounded-lg">
               <p className="text-muted-foreground">
-                {!player ? 'Lade Spielerdaten...' : 'Keine Bilder für diesen Spieler gefunden.'}
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Bitte überprüfen Sie die Browser-Konsole für weitere Informationen.
+                Lade Spielerdaten...
               </p>
             </div>
           )}
