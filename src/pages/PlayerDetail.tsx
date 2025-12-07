@@ -49,13 +49,13 @@ const PlayerDetail: React.FC = () => {
 
     console.log('Loading gallery images for player:', playerSlug);
     
-    // Gallery images are stored in the player's subfolder with pattern: YYYY-MM-DD-{slug}-##.ext
-    // For example: /players/alexander-rib/2024-09-30-alexander-rib-03.jpeg
+    // Gallery images are stored in the player's subfolder with pattern: YYYY-MM-DD-##.ext
+    // For example: /players/alexander-rib/2024-09-30-03.jpeg
     const galleryImages = [
-      `2024-09-30-${playerSlug}-03.jpeg`,
-      `2024-09-30-${playerSlug}-04.jpeg`,
-      `2024-09-30-${playerSlug}-05.jpeg`,
-      `2025-04-06-${playerSlug}-01.jpeg`
+      '2024-09-30-03.jpeg',
+      '2024-09-30-04.jpeg',
+      '2024-09-30-05.jpeg',
+      '2025-04-06-01.jpeg'
     ].map(file => ({
       src: `/players/${playerSlug}/${file}`,
       alt: `${player.firstName} ${player.lastName} - ${file.split('-').slice(0, 3).join('-')}`
