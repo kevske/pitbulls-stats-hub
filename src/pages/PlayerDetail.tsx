@@ -55,6 +55,7 @@ const PlayerDetail: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentBannerImageIndex, setCurrentBannerImageIndex] = useState(0);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
+  const [randomImageStream, setRandomImageStream] = useState<GalleryImage[]>([]);
   const navigate = useNavigate();
 
   // Scroll to gallery function
@@ -127,14 +128,26 @@ const PlayerDetail: React.FC = () => {
     }
   }, [player]);
 
-  // Cycle through banner images every 5 seconds
+  // Create random stream of images for banner
+  const createRandomImageStream = (images: GalleryImage[]) => {
+    if (images.length === 0) return [];
+    
+    // Create a shuffled array and repeat it multiple times for continuous scrolling
+    const shuffled = [...images].sort(() => Math.random() - 0.5);
+    const stream = [];
+    
+    // Repeat the shuffled array 3 times for seamless scrolling
+    for (let i = 0; i < 3; i++) {
+      stream.push(...shuffled);
+    }
+    
+    return stream;
+  };
+
+  // Update random stream when gallery images change
   useEffect(() => {
     if (galleryImages.length > 0) {
-      const interval = setInterval(() => {
-        setCurrentBannerImageIndex(prev => prev + 1);
-      }, 5000); // Change image every 5 seconds
-      
-      return () => clearInterval(interval);
+      setRandomImageStream(createRandomImageStream(galleryImages));
     }
   }, [galleryImages]);
 
@@ -211,43 +224,36 @@ const PlayerDetail: React.FC = () => {
         <div className="bg-card rounded-lg shadow-elegant overflow-hidden">
           {/* Player Header */}
           <div className="relative h-64 md:h-80 overflow-hidden cursor-pointer" onClick={scrollToGallery}>
-            {(() => {
-              const bannerImage = getBannerImage();
-              if (bannerImage) {
-                // Use the full path as provided in the JSON
-                const imageSrc = bannerImage.src;
-                return (
-                  <>
-                    <div className="absolute inset-0 flex">
-                      <div className="flex animate-scroll">
-                        {/* Create multiple copies for seamless scrolling */}
-                        {[...Array(3)].map((_, index) => (
-                          <img
-                            key={index}
-                            src={imageSrc}
-                            alt={bannerImage.alt}
-                            className="w-full h-full object-cover object-center flex-shrink-0"
-                            style={{ minWidth: '100%' }}
-                            onError={(e) => {
-                              console.error('Failed to load banner image:', imageSrc);
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                    <div className="absolute bottom-3 left-3 bg-white/20 backdrop-blur-sm text-white rounded-full p-2 text-sm font-medium">
-                      Click to view gallery
-                    </div>
-                  </>
-                );
-              } else {
-                // Fallback to light blue background
-                return <div className="absolute inset-0 bg-accent" />;
-              }
-            })()}
+            {randomImageStream.length > 0 ? (
+              <>
+                <div className="absolute inset-0 flex">
+                  <div className="flex animate-scroll">
+                    {/* Use the random stream of different images */}
+                    {randomImageStream.map((image, index) => (
+                      <img
+                        key={`${image.filename}-${index}`}
+                        src={image.src}
+                        alt={image.alt}
+                        className="w-full h-full object-cover object-center flex-shrink-0"
+                        style={{ minWidth: '100%' }}
+                        onError={(e) => {
+                          console.error('Failed to load banner image:', image.src);
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                <div className="absolute bottom-3 left-3 bg-white/20 backdrop-blur-sm text-white rounded-full p-2 text-sm font-medium">
+                  Click to view gallery
+                </div>
+              </>
+            ) : (
+              // Fallback to light blue background
+              <div className="absolute inset-0 bg-accent" />
+            )}
             
             {/* Player info overlay */}
             <div className="absolute inset-0 flex items-center justify-center">
