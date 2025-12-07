@@ -29,7 +29,7 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       if (!mobile) {
-        setIsOpen(false);
+        onToggle(false);
       }
     };
 

@@ -5,14 +5,51 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ImageIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { PlayerStats, PlayerGameLog } from '@/types/stats';
+
+interface GalleryImage {
+  src: string;
+  alt: string;
+  date?: string;
+}
 
 const PlayerDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { player, gameLogs } = usePlayerStats(id) as { player: PlayerStats | null; gameLogs: PlayerGameLog[] };
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!player) return;
+
+    // Get the player's folder name from their image URL
+    const getPlayerFolder = () => {
+      if (!player.imageUrl) return '';
+      const match = player.imageUrl.match(/players\/([^/]+)/);
+      return match ? match[1] : '';
+    };
+
+    const playerFolder = getPlayerFolder();
+    if (!playerFolder) return;
+
+    // In a real app, you would fetch this from an API endpoint
+    // For now, we'll use a placeholder approach
+    const mockImages = [
+      { src: `/players/${playerFolder}/2024-09-30-${playerFolder}-03.jpeg`, alt: `${player.firstName} in action` },
+      { src: `/players/${playerFolder}/2024-09-30-${playerFolder}-04.jpeg`, alt: `${player.firstName} during game` },
+      { src: `/players/${playerFolder}/2024-09-30-${playerFolder}-05.jpeg`, alt: `${player.firstName} shooting` },
+      { src: `/players/${playerFolder}/2025-04-06-${playerFolder}-01.jpeg`, alt: `${player.firstName} team photo` },
+    ].filter(img => {
+      // Filter out any placeholder images that don't exist
+      // In a real app, you would check if the file exists on the server
+      return !img.src.includes('undefined');
+    });
+
+    setGalleryImages(mockImages);
+  }, [player]);
 
   if (!player || !player.firstName) {
     return (
@@ -303,6 +340,60 @@ const PlayerDetail: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Photo Gallery Section */}
+        {galleryImages.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold mb-6">Galerie</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {galleryImages.map((img, index) => (
+                <div 
+                  key={index} 
+                  className="aspect-square overflow-hidden rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => setSelectedImage(img.src)}
+                >
+                  <img
+                    src={img.src}
+                    alt={img.alt}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/pitbulls-stats-hub/placeholder-player.png';
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Image Modal */}
+        {selectedImage && (
+          <div 
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-pointer"
+            onClick={() => setSelectedImage(null)}
+          >
+            <div className="max-w-4xl w-full max-h-[90vh] flex flex-col">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedImage(null);
+                }}
+                className="self-end text-white text-2xl mb-2 hover:text-primary transition-colors"
+                aria-label="Close"
+              >
+                &times;
+              </button>
+              <div className="flex-1 flex items-center justify-center">
+                <img 
+                  src={selectedImage} 
+                  alt="Enlarged view" 
+                  className="max-w-full max-h-[80vh] object-contain"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
