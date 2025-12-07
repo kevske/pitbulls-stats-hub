@@ -25,12 +25,18 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
   // Get player slug for gallery images
   const getPlayerSlug = () => {
     if (!player.imageUrl) {
+      console.log('No imageUrl for player:', player.firstName, player.lastName);
       return '';
     }
     // Extract the filename and remove extension
     const match = player.imageUrl.match(/players\/([^/]+)/);
-    if (!match) return '';
-    return match[1].replace(/\.(png|jpg|jpeg|gif|webp)$/i, '');
+    if (!match) {
+      console.log('No match in imageUrl:', player.imageUrl);
+      return '';
+    }
+    const slug = match[1].replace(/\.(png|jpg|jpeg|gif|webp)$/i, '');
+    console.log('Player slug:', slug);
+    return slug;
   };
 
   // Get gallery images for this player
@@ -39,6 +45,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
     if (!playerSlug) return [];
     
     const playerImages = (playerImagesData as any)[playerSlug];
+    console.log('Gallery images for', playerSlug, ':', playerImages?.length || 0);
     return playerImages || [];
   };
 
