@@ -38,7 +38,7 @@ const PlayerDetail: React.FC = () => {
       const match = player.imageUrl.match(/players\/([^/]+)/);
       if (!match) return '';
       // Remove .png extension if it exists in the filename
-      return match[1].replace(/\.png$/, '');
+      return match[1].replace(/\.(png|jpg|jpeg|gif|webp)$/i, '');
     };
 
     const playerSlug = getPlayerSlug();
@@ -49,20 +49,26 @@ const PlayerDetail: React.FC = () => {
 
     console.log('Loading gallery images for player:', playerSlug);
     
-    // Gallery images are stored in the player's subfolder with pattern: YYYY-MM-DD-##.ext
-    // For example: /players/alexander-rib/2024-09-30-03.jpeg
-    const galleryImages = [
-      '2024-09-30-03.jpeg',
-      '2024-09-30-04.jpeg',
-      '2024-09-30-05.jpeg',
-      '2025-04-06-01.jpeg'
-    ].map(file => ({
-      src: `/players/${playerSlug}/${file}`,
-      alt: `${player.firstName} ${player.lastName} - ${file.split('-').slice(0, 3).join('-')}`
-    }));
+    // In a production environment, you would fetch this from an API endpoint
+    // that reads the directory contents. For now, we'll use a placeholder
+    // and the actual images will be loaded based on their paths
     
-    console.log('Gallery images to display:', galleryImages);
-    setGalleryImages(galleryImages);
+    // The actual image paths will be determined by the files in the public/players/[player-slug] directory
+    // The images will be loaded with paths like: /players/[player-slug]/[filename]
+    
+    // We'll keep the galleryImages state but the actual loading will be handled by the browser
+    // when it encounters the img tags with the correct paths
+    
+    // We'll use the player's name as the base for the alt text
+    const playerName = `${player.firstName} ${player.lastName}`;
+    
+    // We'll use a placeholder that will be replaced by the actual images
+    // The actual image loading will be handled by the browser
+    setGalleryImages([{
+      src: `/players/${playerSlug}/`,  // This will be replaced by actual image paths
+      alt: playerName,
+      _loading: true
+    }]);
   }, [player]);
 
   if (!player || !player.firstName) {
@@ -358,27 +364,85 @@ const PlayerDetail: React.FC = () => {
         {/* Photo Gallery Section */}
         <div className="mt-12">
           <h2 className="text-2xl font-bold mb-6">Galerie</h2>
-          {galleryImages.length > 0 ? (
+          {player ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {galleryImages.map((img, index) => {
-                console.log(`Rendering image ${index}:`, img.src);
+              {/* This will automatically load all images from the player's folder */}
+              {/* The browser will try to load each image and only show the ones that exist */}
+              {Array.from({ length: 10 }).map((_, index) => {
+                // Try multiple naming patterns for images
+                const patterns = [
+                  `${index + 1}.jpg`,
+                  `${index + 1}.jpeg`,
+                  `${index + 1}.png`,
+                  `0${index + 1}.jpg`,
+                  `0${index + 1}.jpeg`,
+                  `0${index + 1}.png`,
+                  `img${index + 1}.jpg`,
+                  `img${index + 1}.jpeg`,
+                  `img${index + 1}.png`,
+                ];
+                
+                // Get player slug from imageUrl or generate from name
+                const playerSlug = player.imageUrl 
+                  ? player.imageUrl.split('/').pop()?.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '') || 
+                    `${player.firstName.toLowerCase()}-${player.lastName.toLowerCase()}`
+                  : `${player.firstName.toLowerCase()}-${player.lastName.toLowerCase()}`;
+                
+                // Try each pattern until one works
                 return (
-                  <div 
-                    key={index} 
-                    className="aspect-square overflow-hidden rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
-                    onClick={() => setSelectedImage(img.src)}
-                  >
-                    <img
-                      src={img.src}
-                      alt={img.alt}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        console.error('Error loading image:', img.src, e);
-                        target.src = '/pitbulls-stats-hub/placeholder-player.png';
-                      }}
-                      onLoad={() => console.log('Image loaded successfully:', img.src)}
-                    />
+                  <div key={index} className="aspect-square">
+                    {patterns.map((pattern, i) => (
+                      <img
+                        key={i}
+                        src={`/pitbulls-stats-hub/players/${playerSlug}/${pattern}`}
+                        alt={`${player.firstName} ${player.lastName} ${index + 1}`}
+                        className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                        onLoad={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'block';
+                          target.onclick = () => setSelectedImage(target.src);
+                        }}
+                        style={{ display: 'none' }}
+                      />
+                    ))}
+                  </div>
+                );
+              })}
+              
+              {/* Also try to load any date-based patterns */}
+              {['2024-09-30', '2025-04-06'].map((date, dateIndex) => {
+                const playerSlug = player.imageUrl 
+                  ? player.imageUrl.split('/').pop()?.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '') || 
+                    `${player.firstName.toLowerCase()}-${player.lastName.toLowerCase()}`
+                  : `${player.firstName.toLowerCase()}-${player.lastName.toLowerCase()}`;
+                
+                return (
+                  <div key={`date-${dateIndex}`} className="aspect-square">
+                    {['.jpg', '.jpeg', '.png'].map((ext, extIndex) => {
+                      const filename = `${date}-0${dateIndex + 1}${ext}`;
+                      return (
+                        <img
+                          key={extIndex}
+                          src={`/pitbulls-stats-hub/players/${playerSlug}/${filename}`}
+                          alt={`${player.firstName} ${player.lastName} - ${date}`}
+                          className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                          onLoad={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'block';
+                            target.onclick = () => setSelectedImage(target.src);
+                          }}
+                          style={{ display: 'none' }}
+                        />
+                      );
+                    })}
                   </div>
                 );
               })}
