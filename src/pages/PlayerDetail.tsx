@@ -23,32 +23,46 @@ const PlayerDetail: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!player) return;
+    if (!player) {
+      console.log('No player data yet');
+      return;
+    }
 
     // Get the player's folder name from their image URL
     const getPlayerFolder = () => {
-      if (!player.imageUrl) return '';
+      if (!player.imageUrl) {
+        console.log('No imageUrl for player:', player.firstName, player.lastName);
+        return '';
+      }
       const match = player.imageUrl.match(/players\/([^/]+)/);
-      return match ? match[1] : '';
+      const folder = match ? match[1] : '';
+      console.log('Player folder:', folder);
+      return folder;
     };
 
     const playerFolder = getPlayerFolder();
-    if (!playerFolder) return;
+    if (!playerFolder) {
+      console.log('No player folder found');
+      return;
+    }
 
-    // In a real app, you would fetch this from an API endpoint
-    // For now, we'll use a placeholder approach
-    const mockImages = [
-      { src: `/players/${playerFolder}/2024-09-30-${playerFolder}-03.jpeg`, alt: `${player.firstName} in action` },
-      { src: `/players/${playerFolder}/2024-09-30-${playerFolder}-04.jpeg`, alt: `${player.firstName} during game` },
-      { src: `/players/${playerFolder}/2024-09-30-${playerFolder}-05.jpeg`, alt: `${player.firstName} shooting` },
-      { src: `/players/${playerFolder}/2025-04-06-${playerFolder}-01.jpeg`, alt: `${player.firstName} team photo` },
-    ].filter(img => {
-      // Filter out any placeholder images that don't exist
-      // In a real app, you would check if the file exists on the server
-      return !img.src.includes('undefined');
-    });
-
-    setGalleryImages(mockImages);
+    console.log('Loading images for player folder:', playerFolder);
+    
+    // Create image paths that match the actual files in the public directory
+    const imageFiles = [
+      `2024-09-30-${playerFolder}-03.jpeg`,
+      `2024-09-30-${playerFolder}-04.jpeg`,
+      `2024-09-30-${playerFolder}-05.jpeg`,
+      `2025-04-06-${playerFolder}-01.jpeg`
+    ];
+    
+    const images = imageFiles.map(file => ({
+      src: `/players/${playerFolder}/${file}`,
+      alt: `${player.firstName} ${player.lastName} - ${file.split('-').slice(0, 3).join('-')}`
+    }));
+    
+    console.log('Images to display:', images);
+    setGalleryImages(images);
   }, [player]);
 
   if (!player || !player.firstName) {
@@ -342,30 +356,44 @@ const PlayerDetail: React.FC = () => {
         </div>
 
         {/* Photo Gallery Section */}
-        {galleryImages.length > 0 && (
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-6">Galerie</h2>
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-6">Galerie</h2>
+          {galleryImages.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {galleryImages.map((img, index) => (
-                <div 
-                  key={index} 
-                  className="aspect-square overflow-hidden rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => setSelectedImage(img.src)}
-                >
-                  <img
-                    src={img.src}
-                    alt={img.alt}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/pitbulls-stats-hub/placeholder-player.png';
-                    }}
-                  />
-                </div>
-              ))}
+              {galleryImages.map((img, index) => {
+                console.log(`Rendering image ${index}:`, img.src);
+                return (
+                  <div 
+                    key={index} 
+                    className="aspect-square overflow-hidden rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
+                    onClick={() => setSelectedImage(img.src)}
+                  >
+                    <img
+                      src={img.src}
+                      alt={img.alt}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        console.error('Error loading image:', img.src, e);
+                        target.src = '/pitbulls-stats-hub/placeholder-player.png';
+                      }}
+                      onLoad={() => console.log('Image loaded successfully:', img.src)}
+                    />
+                  </div>
+                );
+              })}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-8 bg-muted/50 rounded-lg">
+              <p className="text-muted-foreground">
+                {!player ? 'Lade Spielerdaten...' : 'Keine Bilder für diesen Spieler gefunden.'}
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Bitte überprüfen Sie die Browser-Konsole für weitere Informationen.
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Image Modal */}
         {selectedImage && (
