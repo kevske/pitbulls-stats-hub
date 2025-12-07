@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { usePlayerStats } from '@/hooks/usePlayerStats';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ImageIcon } from 'lucide-react';
+import { ArrowLeft, ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useState, useEffect } from 'react';
 
@@ -30,7 +30,36 @@ const PlayerDetail: React.FC = () => {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentBannerImageIndex, setCurrentBannerImageIndex] = useState(0);
+  const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
   const navigate = useNavigate();
+
+  // Scroll to gallery function
+  const scrollToGallery = () => {
+    const galleryElement = document.getElementById('photo-gallery');
+    if (galleryElement) {
+      galleryElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Gallery navigation functions
+  const openImageAtIndex = (index: number) => {
+    setCurrentGalleryIndex(index);
+    setSelectedImage(galleryImages[index].src);
+  };
+
+  const navigateImage = (direction: 'prev' | 'next') => {
+    if (galleryImages.length === 0) return;
+    
+    let newIndex;
+    if (direction === 'prev') {
+      newIndex = currentGalleryIndex === 0 ? galleryImages.length - 1 : currentGalleryIndex - 1;
+    } else {
+      newIndex = currentGalleryIndex === galleryImages.length - 1 ? 0 : currentGalleryIndex + 1;
+    }
+    
+    setCurrentGalleryIndex(newIndex);
+    setSelectedImage(galleryImages[newIndex].src);
+  };
 
   useEffect(() => {
     if (!player) {
@@ -157,7 +186,7 @@ const PlayerDetail: React.FC = () => {
 
         <div className="bg-card rounded-lg shadow-elegant overflow-hidden">
           {/* Player Header */}
-          <div className="relative h-64 md:h-80 overflow-hidden">
+          <div className="relative h-64 md:h-80 overflow-hidden cursor-pointer" onClick={scrollToGallery}>
             {(() => {
               const bannerImage = getBannerImage();
               if (bannerImage) {
@@ -176,6 +205,9 @@ const PlayerDetail: React.FC = () => {
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                    <div className="absolute bottom-3 left-3 bg-white/20 backdrop-blur-sm text-white rounded-full p-2 text-sm font-medium">
+                      Click to view gallery
+                    </div>
                   </>
                 );
               } else {
@@ -410,7 +442,7 @@ const PlayerDetail: React.FC = () => {
         </div>
 
         {/* Photo Gallery Section */}
-        <div className="mt-12">
+        <div id="photo-gallery" className="mt-12">
           <h2 className="text-2xl font-bold mb-6">Galerie</h2>
           {player ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -421,7 +453,7 @@ const PlayerDetail: React.FC = () => {
                       src={image.src}
                       alt={image.alt}
                       className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
-                      onClick={() => setSelectedImage(image.src)}
+                      onClick={() => openImageAtIndex(index)}
                       onError={(e) => {
                         console.error(`Failed to load image: ${image.src}`);
                         const target = e.target as HTMLImageElement;
@@ -451,9 +483,36 @@ const PlayerDetail: React.FC = () => {
         {/* Image Modal */}
         {selectedImage && (
           <div 
-            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-pointer"
-            onClick={() => setSelectedImage(null)}
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
           >
+            {/* Left Arrow */}
+            {galleryImages.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateImage('prev');
+                }}
+                className="absolute left-4 text-white bg-black/50 rounded-full p-3 hover:bg-black/70 transition-colors"
+                aria-label="Previous image"
+              >
+                <ChevronLeft size={24} />
+              </button>
+            )}
+            
+            {/* Right Arrow */}
+            {galleryImages.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateImage('next');
+                }}
+                className="absolute right-4 text-white bg-black/50 rounded-full p-3 hover:bg-black/70 transition-colors"
+                aria-label="Next image"
+              >
+                <ChevronRight size={24} />
+              </button>
+            )}
+            
             <div className="max-w-4xl w-full max-h-[90vh] flex flex-col">
               <button 
                 onClick={(e) => {
@@ -472,7 +531,18 @@ const PlayerDetail: React.FC = () => {
                   className="max-w-full max-h-[80vh] object-contain"
                 />
               </div>
+              {galleryImages.length > 1 && (
+                <div className="text-center text-white mt-2">
+                  {currentGalleryIndex + 1} / {galleryImages.length}
+                </div>
+              )}
             </div>
+            
+            {/* Background click to close */}
+            <div 
+              className="absolute inset-0 cursor-pointer" 
+              onClick={() => setSelectedImage(null)}
+            />
           </div>
         )}
       </div>
