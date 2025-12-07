@@ -28,41 +28,39 @@ const PlayerDetail: React.FC = () => {
       return;
     }
 
-    // Get the player's folder name from their image URL
-    const getPlayerFolder = () => {
+    // Get the player's slug from their image URL (e.g., 'alexander-rib' from 'alexander-rib.png')
+    const getPlayerSlug = () => {
       if (!player.imageUrl) {
         console.log('No imageUrl for player:', player.firstName, player.lastName);
         return '';
       }
-      const match = player.imageUrl.match(/players\/([^/]+)/);
-      const folder = match ? match[1] : '';
-      console.log('Player folder:', folder);
-      return folder;
+      // Extract the filename without extension
+      const match = player.imageUrl.match(/players\/([^/.]+)/);
+      return match ? match[1] : '';
     };
 
-    const playerFolder = getPlayerFolder();
-    if (!playerFolder) {
-      console.log('No player folder found');
+    const playerSlug = getPlayerSlug();
+    if (!playerSlug) {
+      console.log('No player slug found');
       return;
     }
 
-    console.log('Loading images for player folder:', playerFolder);
+    console.log('Loading gallery images for player:', playerSlug);
     
-    // Create image paths that match the actual files in the public directory
-    const imageFiles = [
-      `2024-09-30-${playerFolder}-03.jpeg`,
-      `2024-09-30-${playerFolder}-04.jpeg`,
-      `2024-09-30-${playerFolder}-05.jpeg`,
-      `2025-04-06-${playerFolder}-01.jpeg`
-    ];
-    
-    const images = imageFiles.map(file => ({
-      src: `/players/${playerFolder}/${file}`,
+    // Gallery images are stored in the player's subfolder with pattern: YYYY-MM-DD-{slug}-##.ext
+    // For example: /players/alexander-rib/2024-09-30-alexander-rib-03.jpeg
+    const galleryImages = [
+      `2024-09-30-${playerSlug}-03.jpeg`,
+      `2024-09-30-${playerSlug}-04.jpeg`,
+      `2024-09-30-${playerSlug}-05.jpeg`,
+      `2025-04-06-${playerSlug}-01.jpeg`
+    ].map(file => ({
+      src: `/players/${playerSlug}/${file}`,
       alt: `${player.firstName} ${player.lastName} - ${file.split('-').slice(0, 3).join('-')}`
     }));
     
-    console.log('Images to display:', images);
-    setGalleryImages(images);
+    console.log('Gallery images to display:', galleryImages);
+    setGalleryImages(galleryImages);
   }, [player]);
 
   if (!player || !player.firstName) {
