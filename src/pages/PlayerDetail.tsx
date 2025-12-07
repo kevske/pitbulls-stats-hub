@@ -34,9 +34,11 @@ const PlayerDetail: React.FC = () => {
         console.log('No imageUrl for player:', player.firstName, player.lastName);
         return '';
       }
-      // Extract the filename without extension
-      const match = player.imageUrl.match(/players\/([^/.]+)/);
-      return match ? match[1] : '';
+      // Extract the filename and remove .png extension if present
+      const match = player.imageUrl.match(/players\/([^/]+)/);
+      if (!match) return '';
+      // Remove .png extension if it exists in the filename
+      return match[1].replace(/\.png$/, '');
     };
 
     const playerSlug = getPlayerSlug();
