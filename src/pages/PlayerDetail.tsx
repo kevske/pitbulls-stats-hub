@@ -140,12 +140,12 @@ const PlayerDetail: React.FC = () => {
             <div className="flex flex-col md:flex-row items-center">
               <div className="w-32 h-32 md:w-40 md:h-40 bg-background rounded-full overflow-hidden border-4 border-background shadow-elegant mb-4 md:mb-0 md:mr-8">
                 <img
-                  src={player.imageUrl || '/pitbulls-stats-hub/placeholder-player.png'}
+                  src={player.imageUrl || '/placeholder-player.png'}
                   alt={`${player.firstName} ${player.lastName}`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = '/pitbulls-stats-hub/placeholder-player.png';
+                    target.src = '/placeholder-player.png';
                   }}
                 />
               </div>
@@ -394,7 +394,7 @@ const PlayerDetail: React.FC = () => {
                     {patterns.map((pattern, i) => (
                       <img
                         key={i}
-                        src={`/pitbulls-stats-hub/players/${playerSlug}/${pattern}`}
+                        src={`/players/${playerSlug}/${pattern}`}
                         alt={`${player.firstName} ${player.lastName} ${index + 1}`}
                         className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
                         onError={(e) => {
@@ -414,7 +414,7 @@ const PlayerDetail: React.FC = () => {
               })}
               
               {/* Also try to load any date-based patterns */}
-              {['2024-09-30', '2025-04-06'].map((date, dateIndex) => {
+              {['2025-04-06'].map((date, dateIndex) => {
                 const playerSlug = player.imageUrl 
                   ? player.imageUrl.split('/').pop()?.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '') || 
                     `${player.firstName.toLowerCase()}-${player.lastName.toLowerCase()}`
@@ -422,12 +422,12 @@ const PlayerDetail: React.FC = () => {
                 
                 return (
                   <div key={`date-${dateIndex}`} className="aspect-square">
-                    {['.jpg', '.jpeg', '.png'].map((ext, extIndex) => {
-                      const filename = `${date}-0${dateIndex + 1}${ext}`;
+                    {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'].map((num, numIndex) => {
+                      const filename = `${date}-${playerSlug}-${num}.jpeg`;
                       return (
                         <img
-                          key={extIndex}
-                          src={`/pitbulls-stats-hub/players/${playerSlug}/${filename}`}
+                          key={numIndex}
+                          src={`/players/${playerSlug}/${filename}`}
                           alt={`${player.firstName} ${player.lastName} - ${date}`}
                           className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
                           onError={(e) => {
