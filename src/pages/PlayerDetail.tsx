@@ -161,8 +161,8 @@ const PlayerDetail: React.FC = () => {
             {(() => {
               const bannerImage = getBannerImage();
               if (bannerImage) {
-                // Remove /pitbulls-stats-hub/ prefix from image src
-                const imageSrc = bannerImage.src.replace('/pitbulls-stats-hub', '');
+                // Use the full path as provided in the JSON
+                const imageSrc = bannerImage.src;
                 return (
                   <>
                     <img
