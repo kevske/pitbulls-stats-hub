@@ -10,6 +10,30 @@ import { useState, useEffect } from 'react';
 import { PlayerStats, PlayerGameLog } from '@/types/stats';
 import playerImagesData from '@/data/playerImages.json';
 
+// Add custom CSS for scrolling animation
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    33.33% {
+      transform: translateX(-33.33%);
+    }
+    66.66% {
+      transform: translateX(-66.66%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+  
+  .animate-scroll {
+    animation: scroll 15s linear infinite;
+  }
+`;
+document.head.appendChild(style);
+
 interface GalleryImage {
   src: string;
   alt: string;
@@ -194,16 +218,25 @@ const PlayerDetail: React.FC = () => {
                 const imageSrc = bannerImage.src;
                 return (
                   <>
-                    <img
-                      src={imageSrc}
-                      alt={bannerImage.alt}
-                      className="w-full h-full object-cover transition-opacity duration-1000"
-                      onError={(e) => {
-                        console.error('Failed to load banner image:', imageSrc);
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                    />
+                    <div className="absolute inset-0 flex">
+                      <div className="flex animate-scroll">
+                        {/* Create multiple copies for seamless scrolling */}
+                        {[...Array(3)].map((_, index) => (
+                          <img
+                            key={index}
+                            src={imageSrc}
+                            alt={bannerImage.alt}
+                            className="w-full h-full object-cover object-center flex-shrink-0"
+                            style={{ minWidth: '100%' }}
+                            onError={(e) => {
+                              console.error('Failed to load banner image:', imageSrc);
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                     <div className="absolute bottom-3 left-3 bg-white/20 backdrop-blur-sm text-white rounded-full p-2 text-sm font-medium">
                       Click to view gallery
@@ -484,15 +517,17 @@ const PlayerDetail: React.FC = () => {
         {selectedImage && (
           <div 
             className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            onClick={() => setSelectedImage(null)}
           >
             {/* Left Arrow */}
             {galleryImages.length > 1 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  e.preventDefault();
                   navigateImage('prev');
                 }}
-                className="absolute left-4 text-white bg-black/50 rounded-full p-3 hover:bg-black/70 transition-colors"
+                className="absolute left-4 text-white bg-black/50 rounded-full p-3 hover:bg-black/70 transition-colors z-10"
                 aria-label="Previous image"
               >
                 <ChevronLeft size={24} />
@@ -504,16 +539,20 @@ const PlayerDetail: React.FC = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  e.preventDefault();
                   navigateImage('next');
                 }}
-                className="absolute right-4 text-white bg-black/50 rounded-full p-3 hover:bg-black/70 transition-colors"
+                className="absolute right-4 text-white bg-black/50 rounded-full p-3 hover:bg-black/70 transition-colors z-10"
                 aria-label="Next image"
               >
                 <ChevronRight size={24} />
               </button>
             )}
             
-            <div className="max-w-4xl w-full max-h-[90vh] flex flex-col">
+            <div 
+              className="max-w-4xl w-full max-h-[90vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
@@ -537,12 +576,6 @@ const PlayerDetail: React.FC = () => {
                 </div>
               )}
             </div>
-            
-            {/* Background click to close */}
-            <div 
-              className="absolute inset-0 cursor-pointer" 
-              onClick={() => setSelectedImage(null)}
-            />
           </div>
         )}
       </div>
