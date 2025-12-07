@@ -166,13 +166,16 @@ const renderStats = () => (
             {(() => {
               const bannerImage = getBannerImage();
               if (bannerImage) {
+                // Remove /pitbulls-stats-hub/ prefix from image src
+                const imageSrc = bannerImage.src.replace('/pitbulls-stats-hub', '');
                 return (
                   <>
                     <img
-                      src={bannerImage.src}
+                      src={imageSrc}
                       alt={bannerImage.alt}
                       className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-110"
                       onError={(e) => {
+                        console.error('Failed to load banner image:', imageSrc);
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                       }}
