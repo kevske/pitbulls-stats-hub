@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 import Stats from "./pages/Stats";
 import Players from "./pages/Players";
 import PlayerDetail from "./pages/PlayerDetail";
+import PlayerProfile from "./pages/PlayerProfile";
 import Games from "./pages/Games";
 import GameDetail from "./pages/GameDetail";
 import Videos from "./pages/Videos";
@@ -110,6 +111,7 @@ const App = () => {
                 <Route path="/stats" element={<Stats />} />
                 <Route path="/players" element={<Players />} />
                 <Route path="/players/:id" element={<PlayerDetail />} />
+                <Route path="/player/:playerName" element={<PlayerProfile />} />
                 <Route path="/games" element={<Games />} />
                 <Route path="/games/:id" element={<GameDetail />} />
                 <Route path="/videos" element={<Videos />} />
