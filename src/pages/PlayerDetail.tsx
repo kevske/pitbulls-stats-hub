@@ -10,23 +10,7 @@ import { useState, useEffect } from 'react';
 import { PlayerStats, PlayerGameLog } from '@/types/stats';
 import playerImagesData from '@/data/playerImages.json';
 
-// Add custom CSS for scrolling animation
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes scroll {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-66.66%);
-    }
-  }
-  
-  .animate-scroll {
-    animation: scroll 20s linear infinite;
-  }
-`;
-document.head.appendChild(style);
+// Custom CSS for scrolling animation is now in index.css
 
 interface GalleryImage {
   src: string;
@@ -67,14 +51,14 @@ const PlayerDetail: React.FC = () => {
 
   const navigateImage = (direction: 'prev' | 'next') => {
     if (galleryImages.length === 0) return;
-    
+
     let newIndex;
     if (direction === 'prev') {
       newIndex = currentGalleryIndex === 0 ? galleryImages.length - 1 : currentGalleryIndex - 1;
     } else {
       newIndex = currentGalleryIndex === galleryImages.length - 1 ? 0 : currentGalleryIndex + 1;
     }
-    
+
     setCurrentGalleryIndex(newIndex);
     setSelectedImage(galleryImages[newIndex].src);
   };
@@ -105,10 +89,10 @@ const PlayerDetail: React.FC = () => {
     }
 
     console.log('Loading gallery images for player:', playerSlug);
-    
+
     // Use the pre-generated image data
     const playerImages = (playerImagesData as PlayerImagesData)[playerSlug];
-    
+
     if (playerImages && playerImages.length > 0) {
       console.log(`Found ${playerImages.length} images for ${playerSlug}`);
       setGalleryImages(playerImages.map(img => ({
@@ -124,16 +108,16 @@ const PlayerDetail: React.FC = () => {
   // Create random stream of images for banner
   const createRandomImageStream = (images: GalleryImage[]) => {
     if (images.length === 0) return [];
-    
+
     // Create a shuffled array and repeat it multiple times for continuous scrolling
     const shuffled = [...images].sort(() => Math.random() - 0.5);
     const stream = [];
-    
-    // Repeat the shuffled array 3 times for seamless scrolling
-    for (let i = 0; i < 3; i++) {
+
+    // Repeat the shuffled array 2 times for seamless scrolling
+    for (let i = 0; i < 2; i++) {
       stream.push(...shuffled);
     }
-    
+
     return stream;
   };
 
@@ -213,15 +197,19 @@ const PlayerDetail: React.FC = () => {
             {randomImageStream.length > 0 ? (
               <>
                 <div className="absolute inset-0 flex">
-                  <div className="flex animate-scroll">
+                  <div
+                    className="flex animate-scroll hover:pause"
+                    style={{
+                      animationDuration: `${galleryImages.length * 10}s`
+                    }}
+                  >
                     {/* Use the random stream of different images */}
                     {randomImageStream.map((image, index) => (
                       <img
-                        key={`${image.filename}-${index}`}
+                        key={`${image.src}-${index}`}
                         src={image.src}
                         alt={image.alt}
-                        className="w-full h-full object-cover object-center flex-shrink-0"
-                        style={{ minWidth: '100%' }}
+                        className="h-full w-auto max-w-none object-cover flex-shrink-0"
                         onError={(e) => {
                           console.error('Failed to load banner image:', image.src);
                           const target = e.target as HTMLImageElement;
@@ -240,7 +228,7 @@ const PlayerDetail: React.FC = () => {
               // Fallback to light blue background
               <div className="absolute inset-0 bg-accent" />
             )}
-            
+
             {/* Player info overlay */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center text-white">
@@ -507,7 +495,7 @@ const PlayerDetail: React.FC = () => {
 
         {/* Image Modal */}
         {selectedImage && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
             onClick={() => setSelectedImage(null)}
           >
@@ -525,7 +513,7 @@ const PlayerDetail: React.FC = () => {
                 <ChevronLeft size={24} />
               </button>
             )}
-            
+
             {/* Right Arrow */}
             {galleryImages.length > 1 && (
               <button
@@ -540,12 +528,12 @@ const PlayerDetail: React.FC = () => {
                 <ChevronRight size={24} />
               </button>
             )}
-            
-            <div 
+
+            <div
               className="max-w-4xl w-full max-h-[90vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedImage(null);
@@ -556,9 +544,9 @@ const PlayerDetail: React.FC = () => {
                 &times;
               </button>
               <div className="flex-1 flex items-center justify-center">
-                <img 
-                  src={selectedImage} 
-                  alt="Enlarged view" 
+                <img
+                  src={selectedImage}
+                  alt="Enlarged view"
                   className="max-w-full max-h-[80vh] object-contain"
                 />
               </div>

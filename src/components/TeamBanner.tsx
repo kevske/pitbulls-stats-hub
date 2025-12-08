@@ -71,7 +71,12 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
       {randomImageStream.length > 0 ? (
         <>
           <div className="absolute inset-0 flex">
-            <div className="flex animate-scroll hover:pause">
+            <div
+              className="flex animate-scroll hover:pause"
+              style={{
+                animationDuration: `${teamImages.length * 10}s`
+              }}
+            >
               {/* Use the random stream of different images */}
               {randomImageStream.map((image, index) => (
                 <img
