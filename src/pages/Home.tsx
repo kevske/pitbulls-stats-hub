@@ -9,23 +9,7 @@ import { Flame } from "lucide-react";
 import TeamBanner from "@/components/TeamBanner";
 import TeamGallery from "@/components/TeamGallery";
 
-// Add custom CSS for scrolling animation
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes scroll {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-66.66%);
-    }
-  }
-  
-  .animate-scroll {
-    animation: scroll 20s linear infinite;
-  }
-`;
-document.head.appendChild(style);
+// Custom CSS for scrolling animation moved to index.css
 
 const Home = () => {
   const navigate = useNavigate();
@@ -254,7 +238,7 @@ const Home = () => {
           <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400">
             Pitbulls Stats Hub
           </h1>
-        
+
         </div>
 
         {/* Team Banner */}
