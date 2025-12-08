@@ -16,7 +16,7 @@ interface StatsTableProps {
   players: PlayerStats[];
 }
 
-type SortField = "name" | "games" | "points" | "threePointers" | "fouls" | "minutes" | "freeThrowPercentage";
+type SortField = "name" | "games" | "points" | "threePointers" | "fouls" | "minutes" | "freeThrowPercentage" | "pointsPer40" | "threePointersPer40" | "foulsPer40";
 type SortDirection = "asc" | "desc" | null;
 
 const StatsTable = ({ players }: StatsTableProps) => {
@@ -55,9 +55,9 @@ const StatsTable = ({ players }: StatsTableProps) => {
   const sortedPlayers = [...playersWithStats]
     .filter((player) => {
       const fullName = `${player.firstName} ${player.lastName}`.toLowerCase();
-      return fullName.includes(search.toLowerCase()) || 
-             player.firstName.toLowerCase().includes(search.toLowerCase()) ||
-             player.lastName.toLowerCase().includes(search.toLowerCase());
+      return fullName.includes(search.toLowerCase()) ||
+        player.firstName.toLowerCase().includes(search.toLowerCase()) ||
+        player.lastName.toLowerCase().includes(search.toLowerCase());
     })
     .sort((a, b) => {
       if (!sortField || !sortDirection) return 0;
@@ -87,6 +87,15 @@ const StatsTable = ({ players }: StatsTableProps) => {
         // Convert percentage string to number for proper sorting
         aValue = parseFloat(a.freeThrowPercentage) || 0;
         bValue = parseFloat(b.freeThrowPercentage) || 0;
+      } else if (sortField === "pointsPer40") {
+        aValue = a.pointsPer40;
+        bValue = b.pointsPer40;
+      } else if (sortField === "threePointersPer40") {
+        aValue = a.threePointersPer40;
+        bValue = b.threePointersPer40;
+      } else if (sortField === "foulsPer40") {
+        aValue = a.foulsPer40;
+        bValue = b.foulsPer40;
       } else {
         aValue = 0;
         bValue = 0;
@@ -111,7 +120,7 @@ const StatsTable = ({ players }: StatsTableProps) => {
         <Table>
           <TableHeader>
             <TableRow className="bg-secondary hover:bg-secondary">
-              <TableHead 
+              <TableHead
                 className="text-primary font-bold cursor-pointer select-none"
                 onClick={() => handleSort("name")}
               >
@@ -120,7 +129,7 @@ const StatsTable = ({ players }: StatsTableProps) => {
                   {getSortIcon("name")}
                 </div>
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="text-primary font-bold cursor-pointer select-none text-center"
                 onClick={() => handleSort("games")}
               >
@@ -129,7 +138,7 @@ const StatsTable = ({ players }: StatsTableProps) => {
                   {getSortIcon("games")}
                 </div>
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="text-primary font-bold cursor-pointer select-none text-center"
                 onClick={() => handleSort("points")}
               >
@@ -138,7 +147,7 @@ const StatsTable = ({ players }: StatsTableProps) => {
                   {getSortIcon("points")}
                 </div>
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="text-primary font-bold cursor-pointer select-none text-center"
                 onClick={() => handleSort("threePointers")}
               >
@@ -147,7 +156,7 @@ const StatsTable = ({ players }: StatsTableProps) => {
                   {getSortIcon("threePointers")}
                 </div>
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="text-primary font-bold cursor-pointer select-none text-center"
                 onClick={() => handleSort("fouls")}
               >
@@ -156,7 +165,7 @@ const StatsTable = ({ players }: StatsTableProps) => {
                   {getSortIcon("fouls")}
                 </div>
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="text-primary font-bold cursor-pointer select-none text-center"
                 onClick={() => handleSort("minutes")}
               >
@@ -165,13 +174,40 @@ const StatsTable = ({ players }: StatsTableProps) => {
                   {getSortIcon("minutes")}
                 </div>
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="text-primary font-bold cursor-pointer select-none text-center"
                 onClick={() => handleSort("freeThrowPercentage")}
               >
                 <div className="flex items-center justify-center gap-2">
                   FW-Quote
                   {getSortIcon("freeThrowPercentage")}
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-primary font-bold cursor-pointer select-none text-center"
+                onClick={() => handleSort("pointsPer40")}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  Pkt/40
+                  {getSortIcon("pointsPer40")}
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-primary font-bold cursor-pointer select-none text-center"
+                onClick={() => handleSort("threePointersPer40")}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  3er/40
+                  {getSortIcon("threePointersPer40")}
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-primary font-bold cursor-pointer select-none text-center"
+                onClick={() => handleSort("foulsPer40")}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  Fouls/40
+                  {getSortIcon("foulsPer40")}
                 </div>
               </TableHead>
             </TableRow>
@@ -181,12 +217,12 @@ const StatsTable = ({ players }: StatsTableProps) => {
               <TableRow key={player.id} className="hover:bg-accent/50">
                 <TableCell className="font-medium text-foreground">
                   <div className="flex flex-col">
-                    <Link 
-                    to={`/players/${player.id}`}
-                    className="text-blue-600 hover:underline hover:text-blue-800 transition-colors"
-                  >
-                    {player.firstName} {player.lastName}
-                  </Link>
+                    <Link
+                      to={`/players/${player.id}`}
+                      className="text-blue-600 hover:underline hover:text-blue-800 transition-colors"
+                    >
+                      {player.firstName} {player.lastName}
+                    </Link>
                     <span className="text-xs text-muted-foreground">{player.position || 'Position nicht angegeben'}</span>
                   </div>
                 </TableCell>
@@ -196,6 +232,9 @@ const StatsTable = ({ players }: StatsTableProps) => {
                 <TableCell className="text-center">{player.foulsPerGame.toFixed(1)}</TableCell>
                 <TableCell className="text-center">{player.minutesPerGame.toFixed(1)}</TableCell>
                 <TableCell className="text-center">{player.freeThrowPercentage || '-'}</TableCell>
+                <TableCell className="text-center">{player.pointsPer40?.toFixed(1) || '-'}</TableCell>
+                <TableCell className="text-center">{player.threePointersPer40?.toFixed(1) || '-'}</TableCell>
+                <TableCell className="text-center">{player.foulsPer40?.toFixed(1) || '-'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

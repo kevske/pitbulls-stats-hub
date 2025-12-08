@@ -178,7 +178,10 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
       foulsPerGame: parseNumber(row['Fouls pS']),
       freeThrowsMadePerGame: parseNumber(row['FWTreffer pS']),
       freeThrowAttemptsPerGame: parseNumber(row['FWVersuche pS']),
-      freeThrowPercentage: row['FW-Quote'] || ''
+      freeThrowPercentage: row['FW-Quote'] || '',
+      pointsPer40: parseNumber(row['Minuten pS']) > 0 ? (parseNumber(row['Punkte pS']) / parseNumber(row['Minuten pS'])) * 40 : 0,
+      threePointersPer40: parseNumber(row['Minuten pS']) > 0 ? (parseNumber(row['3er pS']) / parseNumber(row['Minuten pS'])) * 40 : 0,
+      foulsPer40: parseNumber(row['Minuten pS']) > 0 ? (parseNumber(row['Fouls pS']) / parseNumber(row['Minuten pS'])) * 40 : 0
     };
 
     playersWithStats.set(bioKey, player);
@@ -207,7 +210,10 @@ function transformPlayerTotals(rows: PlayerTotalsRow[], bioMap: Map<string, Play
         foulsPerGame: 0,
         freeThrowsMadePerGame: 0,
         freeThrowAttemptsPerGame: 0,
-        freeThrowPercentage: ''
+        freeThrowPercentage: '',
+        pointsPer40: 0,
+        threePointersPer40: 0,
+        foulsPer40: 0
       };
       playersWithStats.set(bioKey, player);
     }
