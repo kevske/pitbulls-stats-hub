@@ -5,7 +5,7 @@ import { TrendingUp, Home, Plane } from "lucide-react";
 import { PlayerGameLog, PlayerStats } from "@/types/stats";
 import { PlayerTrendIndicator } from "./PlayerTrendIndicator";
 import { useStats } from "@/contexts/StatsContext";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { generateImageFilename } from "@/data/api/statsService";
 
 interface PlayerCardProps {
@@ -16,10 +16,25 @@ interface PlayerCardProps {
 }
 
 const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter = 'all' }: PlayerCardProps) => {
+
   const navigate = useNavigate();
   const [isBioExpanded, setIsBioExpanded] = useState(false);
+  const [showExpandButton, setShowExpandButton] = useState(false);
+  const bioRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (bioRef.current) {
+        setShowExpandButton(bioRef.current.scrollHeight > bioRef.current.clientHeight);
+      }
+    };
+
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [player.bio]);
   // Game filter is now controlled by parent component
-  
+
   // Calculate filtered stats based on game type
   const filteredStats = useMemo(() => {
     const filter = gameFilter || 'all';
@@ -34,13 +49,13 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
         freeThrowPercentage: player.freeThrowPercentage
       };
     }
-    
+
     // Filter game logs by type
-    const playerGameLogs = gameLogs.filter(log => 
-      log.playerId === player.id && 
+    const playerGameLogs = gameLogs.filter(log =>
+      log.playerId === player.id &&
       (filter === 'home' ? log.gameType === 'Heim' : log.gameType === 'Auswärts')
     );
-    
+
     if (playerGameLogs.length === 0) {
       return {
         points: 0,
@@ -52,7 +67,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
         freeThrowPercentage: ''
       };
     }
-    
+
     const totalPoints = playerGameLogs.reduce((sum, log) => sum + log.points, 0);
     const totalThreePointers = playerGameLogs.reduce((sum, log) => sum + log.threePointers, 0);
     const totalFreeThrowsMade = playerGameLogs.reduce((sum, log) => sum + log.freeThrowsMade, 0);
@@ -60,7 +75,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
     const totalFouls = playerGameLogs.reduce((sum, log) => sum + log.fouls, 0);
     const totalMinutes = playerGameLogs.reduce((sum, log) => sum + log.minutesPlayed, 0);
     const games = playerGameLogs.length;
-    
+
     return {
       points: parseFloat((totalPoints / games).toFixed(1)),
       threePointers: parseFloat((totalThreePointers / games).toFixed(1)),
@@ -68,13 +83,13 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
       fouls: parseFloat((totalFouls / games).toFixed(1)),
       minutesPlayed: parseFloat((totalMinutes / games).toFixed(1)),
       gamesPlayed: games,
-      freeThrowPercentage: totalFreeThrowAttempts > 0 
-        ? `${Math.round((totalFreeThrowsMade / totalFreeThrowAttempts) * 100)}%` 
+      freeThrowPercentage: totalFreeThrowAttempts > 0
+        ? `${Math.round((totalFreeThrowsMade / totalFreeThrowAttempts) * 100)}%`
         : ''
     };
   }, [player, gameLogs, gameFilter]);
 
-const renderStats = () => (
+  const renderStats = () => (
     <div className="grid grid-cols-4 gap-3 text-center">
       <div>
         <p className="text-xl font-bold text-primary">{filteredStats.points}</p>
@@ -104,7 +119,7 @@ const renderStats = () => (
   };
 
   return (
-    <Card 
+    <Card
       className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border overflow-hidden"
       onClick={handleCardClick}
     >
@@ -141,7 +156,7 @@ const renderStats = () => (
                   <h3 className="text-2xl font-bold text-foreground">
                     {player.firstName} {player.lastName}
                     {currentGameNumber > 1 && gameLogs.length > 1 && (
-                      <PlayerTrendIndicator 
+                      <PlayerTrendIndicator
                         playerId={player.id}
                         currentGameNumber={currentGameNumber}
                         allGameLogs={gameLogs}
@@ -153,8 +168,8 @@ const renderStats = () => (
                 <p className="text-sm text-muted-foreground">{player.position || 'Position nicht angegeben'}</p>
               </div>
               {player.jerseyNumber && player.jerseyNumber > 0 && (
-                <Badge 
-                  variant="outline" 
+                <Badge
+                  variant="outline"
                   className="bg-blue-50 text-blue-600 border-blue-200 text-lg font-bold"
                 >
                   #{player.jerseyNumber}
@@ -162,7 +177,7 @@ const renderStats = () => (
               )}
             </div>
 
-{/* Physical Stats */}
+            {/* Physical Stats */}
             <div className="flex gap-6 mb-4">
               {player.height && (
                 <div>
@@ -181,11 +196,14 @@ const renderStats = () => (
             {/* Bio */}
             {player.bio && (
               <div className="mb-4">
-                <p className={`text-sm text-muted-foreground ${!isBioExpanded ? 'line-clamp-3' : ''}`}>
+                <p
+                  ref={bioRef}
+                  className={`text-sm text-muted-foreground ${!isBioExpanded ? 'line-clamp-3' : ''}`}
+                >
                   {player.bio}
                 </p>
-                {player.bio.length > 150 && (
-                  <button 
+                {showExpandButton && (
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsBioExpanded(!isBioExpanded);

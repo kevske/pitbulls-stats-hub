@@ -19,6 +19,9 @@ export interface PlayerStats {
   freeThrowsMadePerGame: number;
   freeThrowAttemptsPerGame: number;
   freeThrowPercentage: string;
+  pointsPer40: number;
+  threePointersPer40: number;
+  foulsPer40: number;
 }
 
 export interface GameStats {
