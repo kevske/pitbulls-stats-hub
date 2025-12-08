@@ -33,16 +33,16 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
   // Create random stream of images for banner
   const createRandomImageStream = (images: TeamImage[]) => {
     if (images.length === 0) return [];
-    
+
     // Create a shuffled array and repeat it multiple times for continuous scrolling
     const shuffled = [...images].sort(() => Math.random() - 0.5);
     const stream = [];
-    
-    // Repeat the shuffled array 3 times for seamless scrolling
-    for (let i = 0; i < 3; i++) {
+
+    // Repeat the shuffled array 2 times for seamless scrolling with 50% translateX
+    for (let i = 0; i < 2; i++) {
       stream.push(...shuffled);
     }
-    
+
     return stream;
   };
 
@@ -55,14 +55,14 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
 
   const navigateImage = (direction: 'prev' | 'next') => {
     if (teamImages.length === 0) return;
-    
+
     let newIndex;
     if (direction === 'prev') {
       newIndex = currentImageIndex === 0 ? teamImages.length - 1 : currentImageIndex - 1;
     } else {
       newIndex = currentImageIndex === teamImages.length - 1 ? 0 : currentImageIndex + 1;
     }
-    
+
     setCurrentImageIndex(newIndex);
   };
 
@@ -71,15 +71,14 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
       {randomImageStream.length > 0 ? (
         <>
           <div className="absolute inset-0 flex">
-            <div className="flex animate-scroll">
+            <div className="flex animate-scroll hover:pause">
               {/* Use the random stream of different images */}
               {randomImageStream.map((image, index) => (
                 <img
                   key={`${image.filename}-${index}`}
                   src={image.src}
                   alt={image.alt}
-                  className="w-full h-full object-cover object-center flex-shrink-0"
-                  style={{ minWidth: '100%' }}
+                  className="h-full w-auto max-w-none object-cover flex-shrink-0"
                   onError={(e) => {
                     console.error('Failed to load banner image:', image.src);
                     const target = e.target as HTMLImageElement;
@@ -89,7 +88,7 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
               ))}
             </div>
           </div>
-          
+
           {/* Navigation arrows */}
           <button
             onClick={(e) => {
@@ -101,7 +100,7 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
           >
             <ChevronLeft size={20} />
           </button>
-          
+
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -112,14 +111,14 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
           >
             <ChevronRight size={20} />
           </button>
-          
+
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
         </>
       ) : (
         // Fallback to light blue background
         <div className="absolute inset-0 bg-accent" />
       )}
-      
+
       {/* Team info overlay */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center text-white">
@@ -136,7 +135,7 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
           </div>
         </div>
       </div>
-      
+
       {/* Win/Loss Streak Counter - Top Right */}
       {streak && (
         <div className="absolute top-4 right-4 z-20">
