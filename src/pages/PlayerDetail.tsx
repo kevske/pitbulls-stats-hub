@@ -47,7 +47,6 @@ const PlayerDetail: React.FC = () => {
   const { player, gameLogs } = usePlayerStats(id) as { player: PlayerStats | null; gameLogs: PlayerGameLog[] };
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [currentBannerImageIndex, setCurrentBannerImageIndex] = useState(0);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
   const [randomImageStream, setRandomImageStream] = useState<GalleryImage[]>([]);
   const navigate = useNavigate();
@@ -144,13 +143,6 @@ const PlayerDetail: React.FC = () => {
       setRandomImageStream(createRandomImageStream(galleryImages));
     }
   }, [galleryImages]);
-
-  // Get current banner image
-  const getBannerImage = () => {
-    if (galleryImages.length === 0) return null;
-    const imageIndex = currentBannerImageIndex % galleryImages.length;
-    return galleryImages[imageIndex];
-  };
 
   if (!player || !player.firstName) {
     return (
