@@ -47,6 +47,7 @@ export interface PlayerGameLog {
   pointsPer40: number;
   freeThrowAttemptsPer40: number;
   foulsPer40: number;
+  threePointersPer40: number;
   gameType: string; // "Heim" or "Auswärts"
 }
 
