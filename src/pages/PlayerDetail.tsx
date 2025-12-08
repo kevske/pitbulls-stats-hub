@@ -17,19 +17,13 @@ style.textContent = `
     0% {
       transform: translateX(0);
     }
-    33.33% {
-      transform: translateX(-33.33%);
-    }
-    66.66% {
-      transform: translateX(-66.66%);
-    }
     100% {
-      transform: translateX(0);
+      transform: translateX(-66.66%);
     }
   }
   
   .animate-scroll {
-    animation: scroll 15s linear infinite;
+    animation: scroll 20s linear infinite;
   }
 `;
 document.head.appendChild(style);
