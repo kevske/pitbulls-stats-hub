@@ -254,19 +254,11 @@ const Home = () => {
           <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400">
             Pitbulls Stats Hub
           </h1>
-          {streak && (
-            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mt-4 ${streak.type === 'win'
-              ? 'bg-green-100 text-green-700 border border-green-200'
-              : 'bg-red-100 text-red-700 border border-red-200'
-              }`}>
-              {streak.type === 'win' ? '🔥' : '❄️'}
-              {streak.count} {streak.count === 1 ? 'Spiel' : 'Spiele'} {streak.type === 'win' ? 'Siegesserie' : 'Niederlagenserie'}
-            </div>
-          )}
+        
         </div>
 
         {/* Team Banner */}
-        <TeamBanner />
+        <TeamBanner streak={streak} />
 
         {/* Last Game Result */}
         <div className="space-y-4">
