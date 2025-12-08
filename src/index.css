@@ -52,7 +52,7 @@ All colors MUST be HSL.
     --shadow-md: 0 4px 6px -1px hsl(207 30% 10% / 0.1);
     --shadow-lg: 0 10px 15px -3px hsl(207 30% 10% / 0.1);
     --shadow-xl: 0 20px 25px -5px hsl(207 30% 10% / 0.1);
-    
+
     --transition-base: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -116,24 +116,27 @@ All colors MUST be HSL.
   .shadow-elegant {
     box-shadow: var(--shadow-md);
   }
-  
+
   .shadow-elegant-lg {
     box-shadow: var(--shadow-lg);
   }
-  
+
   .transition-elegant {
     transition: var(--transition-smooth);
   }
-  
+
   .skeleton-pulse {
     animation: skeleton-pulse 1.5s ease-in-out infinite;
   }
 }
 
 @keyframes skeleton-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -143,11 +146,18 @@ All colors MUST be HSL.
   0% {
     transform: translateX(0);
   }
+
   100% {
     transform: translateX(-50%);
   }
 }
 
 .animate-scroll {
-  animation: scroll 60s linear infinite;
+  animation: scroll var(--scroll-duration, 60s) linear infinite;
+}
+
+@media (max-width: 768px) {
+  .animate-scroll {
+    animation-duration: calc(var(--scroll-duration, 60s) * 2);
+  }
 }
