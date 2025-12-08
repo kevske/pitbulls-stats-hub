@@ -6,6 +6,26 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useStats } from "@/contexts/StatsContext";
 import { PlayerTrendInfo, getTopTrendingPlayers } from "@/utils/statsTrends";
 import { Flame } from "lucide-react";
+import TeamBanner from "@/components/TeamBanner";
+import TeamGallery from "@/components/TeamGallery";
+
+// Add custom CSS for scrolling animation
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-66.66%);
+    }
+  }
+  
+  .animate-scroll {
+    animation: scroll 20s linear infinite;
+  }
+`;
+document.head.appendChild(style);
 
 const Home = () => {
   const navigate = useNavigate();
@@ -245,6 +265,9 @@ const Home = () => {
           )}
         </div>
 
+        {/* Team Banner */}
+        <TeamBanner />
+
         {/* Last Game Result */}
         <div className="space-y-4">
           <h3 className="text-2xl font-bold text-center">Letztes Spiel</h3>
@@ -474,6 +497,9 @@ const Home = () => {
               </div>
             </Button>
           </div>
+
+          {/* Team Gallery */}
+          <TeamGallery />
         </div>
       </div>
     </Layout>
