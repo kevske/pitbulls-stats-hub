@@ -7,7 +7,11 @@ interface TeamImage {
   filename: string;
 }
 
-const TeamBanner: React.FC = () => {
+interface TeamBannerProps {
+  streak?: { type: 'win' | 'loss'; count: number } | null;
+}
+
+const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
   const [teamImages, setTeamImages] = useState<TeamImage[]>([]);
   const [randomImageStream, setRandomImageStream] = useState<TeamImage[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -63,7 +67,7 @@ const TeamBanner: React.FC = () => {
   };
 
   return (
-    <div className="relative h-64 md:h-80 overflow-hidden">
+    <div className="relative h-96 md:h-[28rem] overflow-hidden">
       {randomImageStream.length > 0 ? (
         <>
           <div className="absolute inset-0 flex">
@@ -119,7 +123,7 @@ const TeamBanner: React.FC = () => {
       {/* Team info overlay */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center text-white">
-          <div className="w-24 h-24 md:w-32 md:h-32 bg-background rounded-full overflow-hidden border-4 border-background shadow-elegant mx-auto mb-4">
+          <div className="w-24 h-24 md:w-32 md:h-32 bg-background rounded-full overflow-hidden border-4 border-background shadow-elegant mx-auto">
             <img
               src="/pitbulls-stats-hub/photos/profile.jpg"
               alt="Team Profile"
@@ -130,15 +134,21 @@ const TeamBanner: React.FC = () => {
               }}
             />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">
-            Pitbulls <span className="text-primary">Blaufelden</span>
-          </h1>
-          <div className="flex flex-wrap justify-center gap-4 text-white/90">
-            <span className="font-medium">Basketball Team</span>
-            <span className="font-medium">2024/2025 Season</span>
-          </div>
         </div>
       </div>
+      
+      {/* Win/Loss Streak Counter - Top Right */}
+      {streak && (
+        <div className="absolute top-4 right-4 z-20">
+          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold ${streak.type === 'win'
+            ? 'bg-green-100 text-green-700 border border-green-200'
+            : 'bg-red-100 text-red-700 border border-red-200'
+            }`}>
+            {streak.type === 'win' ? '🔥' : '❄️'}
+            {streak.count} {streak.count === 1 ? 'Spiel' : 'Spiele'} {streak.type === 'win' ? 'Siegesserie' : 'Niederlagenserie'}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
