@@ -40,6 +40,7 @@ interface PlayerGameLogRow {
   Fouls: string;
   'Punkte/40': string;
   'FWV/40': string;
+  '3er/40': string;
   'Fouls/40': string;
   'Typ Spiel': string;
 }
@@ -232,6 +233,7 @@ function transformPlayerGameLogs(rows: PlayerGameLogRow[]): PlayerGameLog[] {
       fouls: parseInteger(row.Fouls),
       pointsPer40: parseNumber(row['Punkte/40']),
       freeThrowAttemptsPer40: parseNumber(row['FWV/40']),
+      threePointersPer40: parseNumber(row['3er/40']),
       foulsPer40: parseNumber(row['Fouls/40']),
       gameType: row['Typ Spiel'] || ''
     };

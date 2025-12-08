@@ -179,6 +179,11 @@ const PlayerDetail: React.FC = () => {
 
   const averageMinutes = totalGames > 0 ? (totalMinutes / totalGames).toFixed(1) : '0.0';
 
+  // Calculate per 40 min stats
+  const pointsPer40 = totalMinutes > 0 ? ((totalPoints / totalMinutes) * 40).toFixed(1) : '0.0';
+  const threePointersPer40 = totalMinutes > 0 ? ((totalThreePointers / totalMinutes) * 40).toFixed(1) : '0.0';
+  const foulsPer40 = totalMinutes > 0 ? ((totalFouls / totalMinutes) * 40).toFixed(1) : '0.0';
+
   return (
     <Layout>
       <div className="container mx-auto p-4 max-w-4xl">
@@ -288,6 +293,9 @@ const PlayerDetail: React.FC = () => {
               <StatCard label="3-Punkte/Spiel" value={threePointersPerGame} />
               <StatCard label="Freiwurfquote" value={freeThrowPercentage} />
               <StatCard label="Fouls/Spiel" value={fpg} />
+              <StatCard label="Punkte/40 Min" value={pointsPer40} className="bg-primary/10 hover:bg-primary/20" />
+              <StatCard label="3er/40 Min" value={threePointersPer40} className="bg-primary/10 hover:bg-primary/20" />
+              <StatCard label="Fouls/40 Min" value={foulsPer40} className="bg-primary/10 hover:bg-primary/20" />
             </div>
 
             {/* Stats Trend Charts */}
@@ -423,6 +431,9 @@ const PlayerDetail: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">3P</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">FW</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Fouls</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Pkt/40</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">3er/40</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Fouls/40</th>
                   </tr>
                 </thead>
                 <tbody className="bg-card divide-y divide-border">
@@ -445,6 +456,15 @@ const PlayerDetail: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {game.fouls || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                        {game.pointsPer40?.toFixed(1) || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                        {game.threePointersPer40?.toFixed(1) || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                        {game.foulsPer40?.toFixed(1) || '-'}
                       </td>
                     </tr>
                   ))}
@@ -563,8 +583,8 @@ const PlayerDetail: React.FC = () => {
   );
 };
 
-const StatCard = ({ label, value }: { label: string; value: string }) => (
-  <div className="bg-accent p-4 rounded-lg text-center transition-elegant hover:bg-accent/70">
+const StatCard = ({ label, value, className }: { label: string; value: string; className?: string }) => (
+  <div className={`bg-accent p-4 rounded-lg text-center transition-elegant hover:bg-accent/70 ${className || ''}`}>
     <div className="text-sm text-muted-foreground mb-1">{label}</div>
     <div className="text-2xl font-bold">{value}</div>
   </div>
