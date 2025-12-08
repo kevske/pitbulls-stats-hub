@@ -200,7 +200,7 @@ const PlayerDetail: React.FC = () => {
                   <div
                     className="flex animate-scroll hover:pause"
                     style={{
-                      animationDuration: `${galleryImages.length * 10}s`
+                      animationDuration: `${galleryImages.length * 15}s`
                     }}
                   >
                     {/* Use the random stream of different images */}

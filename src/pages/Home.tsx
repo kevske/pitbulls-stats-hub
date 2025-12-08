@@ -242,7 +242,15 @@ const Home = () => {
         </div>
 
         {/* Team Banner */}
-        <TeamBanner streak={streak} />
+        <TeamBanner
+          streak={streak}
+          onBannerClick={() => {
+            const galleryElement = document.getElementById('team-gallery');
+            if (galleryElement) {
+              galleryElement.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
+        />
 
         {/* Last Game Result */}
         <div className="space-y-4">
@@ -475,7 +483,9 @@ const Home = () => {
           </div>
 
           {/* Team Gallery */}
-          <TeamGallery />
+          <div id="team-gallery">
+            <TeamGallery />
+          </div>
         </div>
       </div>
     </Layout>

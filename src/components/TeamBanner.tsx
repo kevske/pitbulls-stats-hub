@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface TeamImage {
   src: string;
@@ -9,9 +8,10 @@ interface TeamImage {
 
 interface TeamBannerProps {
   streak?: { type: 'win' | 'loss'; count: number } | null;
+  onBannerClick?: () => void;
 }
 
-const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
+const TeamBanner: React.FC<TeamBannerProps> = ({ streak, onBannerClick }) => {
   const [teamImages, setTeamImages] = useState<TeamImage[]>([]);
   const [randomImageStream, setRandomImageStream] = useState<TeamImage[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -67,14 +67,17 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
   };
 
   return (
-    <div className="relative h-96 md:h-[28rem] overflow-hidden">
+    <div
+      className={`relative h-96 md:h-[28rem] overflow-hidden ${onBannerClick ? 'cursor-pointer' : ''}`}
+      onClick={onBannerClick}
+    >
       {randomImageStream.length > 0 ? (
         <>
           <div className="absolute inset-0 flex">
             <div
               className="flex animate-scroll hover:pause"
               style={{
-                animationDuration: `${teamImages.length * 10}s`
+                animationDuration: `${teamImages.length * 15}s`
               }}
             >
               {/* Use the random stream of different images */}
@@ -94,30 +97,13 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
             </div>
           </div>
 
-          {/* Navigation arrows */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigateImage('prev');
-            }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors z-10"
-            aria-label="Previous image"
-          >
-            <ChevronLeft size={20} />
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigateImage('next');
-            }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors z-10"
-            aria-label="Next image"
-          >
-            <ChevronRight size={20} />
-          </button>
-
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
+          {onBannerClick && (
+            <div className="absolute bottom-3 left-3 bg-white/20 backdrop-blur-sm text-white rounded-full p-2 text-sm font-medium z-10">
+              Click to view gallery
+            </div>
+          )}
         </>
       ) : (
         // Fallback to light blue background
@@ -125,7 +111,7 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak }) => {
       )}
 
       {/* Team info overlay */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="text-center text-white">
           <div className="w-24 h-24 md:w-32 md:h-32 bg-background rounded-full overflow-hidden border-4 border-background shadow-elegant mx-auto">
             <img
