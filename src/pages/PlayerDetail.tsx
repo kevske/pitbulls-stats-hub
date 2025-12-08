@@ -221,7 +221,7 @@ const PlayerDetail: React.FC = () => {
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                 <div className="absolute bottom-3 left-3 bg-white/20 backdrop-blur-sm text-white rounded-full p-2 text-sm font-medium">
-                  Click to view gallery
+                  Zur Galerie
                 </div>
               </>
             ) : (

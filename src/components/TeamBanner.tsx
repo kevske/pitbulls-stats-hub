@@ -101,7 +101,7 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak, onBannerClick }) => {
 
           {onBannerClick && (
             <div className="absolute bottom-3 left-3 bg-white/20 backdrop-blur-sm text-white rounded-full p-2 text-sm font-medium z-10">
-              Click to view gallery
+              Zur Galerie
             </div>
           )}
         </>
