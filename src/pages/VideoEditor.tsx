@@ -195,17 +195,22 @@ const VideoEditor = () => {
         try {
           console.log('Updating MasterBin index...');
           const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null || { games: {} };
+          console.log('Current MasterBin before update:', masterBinData);
           
           // Use string keys to match MasterBin structure
           const gameNum = gameNumber;
           const videoNum = (currentPlaylistIndex + 1).toString();
           
+          console.log(`Adding game ${gameNum}, video ${videoNum} with bin ID: ${binId}`);
+          
           // Initialize nested objects if they don't exist
           if (!masterBinData.games) masterBinData.games = {};
           if (!masterBinData.games[gameNum]) masterBinData.games[gameNum] = {};
           
-          // Set the bin ID for this game/video
+          // Set the bin ID for this game/video (this adds or updates the specific video)
           masterBinData.games[gameNum][videoNum] = binId;
+          
+          console.log('MasterBin after update:', masterBinData);
           
           // Save back to MasterBin
           const updateSuccess = await jsonbinStorage.updateBin('693897a8ae596e708f8ea7c2', masterBinData);
