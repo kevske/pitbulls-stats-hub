@@ -88,15 +88,15 @@ const VideoEditor = () => {
             
             try {
               // Load the MasterBin index
-              const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2');
+              const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
               console.log('MasterBin data loaded:', masterBinData);
               console.log('Looking for game:', gameNumber, 'video:', currentPlaylistIndex + 1);
               console.log('Game number type:', typeof gameNumber);
               console.log('Video index type:', typeof (currentPlaylistIndex + 1));
               
-              // Convert to numbers for proper matching
-              const gameNum = parseInt(gameNumber);
-              const videoNum = currentPlaylistIndex + 1;
+              // Use string keys to match MasterBin structure
+              const gameNum = gameNumber;
+              const videoNum = (currentPlaylistIndex + 1).toString();
               
               if (masterBinData?.games?.[gameNum]?.[videoNum]) {
                 const foundBinId = masterBinData.games[gameNum][videoNum];
@@ -178,7 +178,9 @@ const VideoEditor = () => {
       let binId;
       if (existingBinId) {
         // Update existing bin
-        const success = await saveGameData(existingBinId, saveData);
+        // Set the current bin ID in the hook, then save
+        await loadGameData(existingBinId); // This sets the internal binId
+        const success = await saveGameData(saveData);
         binId = success ? existingBinId : null;
       } else {
         // Create new bin
@@ -192,11 +194,11 @@ const VideoEditor = () => {
         // Update the MasterBin index
         try {
           console.log('Updating MasterBin index...');
-          const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') || { games: {} };
+          const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null || { games: {} };
           
-          // Convert to numbers for consistency
-          const gameNum = parseInt(gameNumber);
-          const videoNum = currentPlaylistIndex + 1;
+          // Use string keys to match MasterBin structure
+          const gameNum = gameNumber;
+          const videoNum = (currentPlaylistIndex + 1).toString();
           
           // Initialize nested objects if they don't exist
           if (!masterBinData.games) masterBinData.games = {};
