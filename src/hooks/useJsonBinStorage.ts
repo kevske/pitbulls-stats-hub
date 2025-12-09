@@ -91,8 +91,10 @@ export function useJsonBinStorage<T = any>(
       const result = await jsonbinStorage.createBin(newData, name);
       if (result) {
         setData(newData);
-        setBinId(result.record.id);
-        return result.record.id;
+        // The bin ID is in metadata.id, not record.id
+        const binId = result.metadata?.id || result.record?.id;
+        setBinId(binId);
+        return binId;
       }
       return null;
     } catch (err) {

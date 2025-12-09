@@ -9,6 +9,7 @@ export interface JsonBinRecord {
 
 export interface JsonBinResponse<T> {
   record: JsonBinRecord;
+  metadata: JsonBinRecord;
   data: T;
 }
 
