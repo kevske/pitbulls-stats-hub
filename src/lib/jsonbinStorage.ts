@@ -29,7 +29,7 @@ export class JsonBinStorage {
     };
 
     if (this.apiKey) {
-      headers['X-Access-Key'] = this.apiKey;
+      headers['X-Master-Key'] = this.apiKey;
     }
 
     return headers;
@@ -49,7 +49,8 @@ export class JsonBinStorage {
       console.log('Headers:', this.getHeaders());
       console.log('API Key being used:', this.apiKey ? `${this.apiKey.substring(0, 8)}... (length: ${this.apiKey.length})` : 'NOT SET');
       console.log('Full API Key (for debugging):', this.apiKey);
-      console.log('Using Access Key for all operations (X-Access-Key)');
+      console.log('Using Master Key for all operations (X-Master-Key)');
+      console.log('Name parameter:', name);
 
       const response = await fetch(`${this.baseUrl}/b`, {
         method: 'POST',
