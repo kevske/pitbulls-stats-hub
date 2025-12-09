@@ -38,21 +38,33 @@ export class JsonBinStorage {
     }
 
     try {
+      const payload = {
+        data,
+        name: name || 'pitbulls-data',
+        versioning: true
+      };
+      
+      console.log('Creating JSONBin with payload:', payload);
+      console.log('API URL:', `${this.baseUrl}/b`);
+      console.log('Headers:', this.getHeaders());
+
       const response = await fetch(`${this.baseUrl}/b`, {
         method: 'POST',
         headers: this.getHeaders(),
-        body: JSON.stringify({
-          data,
-          name: name || 'pitbulls-data',
-          versioning: true
-        })
+        body: JSON.stringify(payload)
       });
 
+      console.log('Response status:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error(`Failed to create bin: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to create bin: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log('JSONBin created successfully:', result);
+      return result;
     } catch (error) {
       console.error('Error creating bin:', error);
       return null;

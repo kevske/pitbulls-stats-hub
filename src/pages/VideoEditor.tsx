@@ -112,6 +112,15 @@ const VideoEditor = () => {
     }
 
     try {
+      // Check if API key is available
+      const apiKey = import.meta.env.VITE_JSONBIN_API_KEY;
+      console.log('JSONBin API Key available:', !!apiKey);
+      
+      if (!apiKey) {
+        toast.error('JSONBin API key not configured. Add VITE_JSONBIN_API_KEY to .env file');
+        return;
+      }
+
       const saveData = {
         gameNumber: parseInt(gameNumber),
         videoIndex: currentPlaylistIndex + 1,
@@ -122,6 +131,8 @@ const VideoEditor = () => {
         timestamp: new Date().toISOString()
       };
 
+      console.log('Saving data:', saveData);
+      
       const binId = await createGameDataBin(saveData, `game-${gameNumber}-video-${currentPlaylistIndex + 1}`);
       
       if (binId) {
@@ -140,11 +151,11 @@ const VideoEditor = () => {
           }
         });
       } else {
-        toast.error('Failed to save to JSONBin');
+        toast.error('Failed to save to JSONBin - check console for details');
       }
     } catch (error) {
       console.error('Error saving:', error);
-      toast.error('Failed to save data');
+      toast.error(`Failed to save data: ${(error as Error).message}`);
     }
   };
 
