@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { Player, TaggedEvent, DEFAULT_PLAYERS, Position, generateEventDescription, formatTime } from '@/types/basketball';
+import { Player, TaggedEvent, DEFAULT_PLAYERS, Position, PositionType, generateEventDescription, formatTime } from '@/types/basketball';
 import { YouTubePlayer, YouTubePlayerRef } from '@/components/video/YouTubePlayer';
 import { VideoInput } from '@/components/video/VideoInput';
 import { VideoControls } from '@/components/video/VideoControls';
@@ -16,19 +16,23 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, List, Upload, FileText, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, List, Upload, FileText, Plus, Save } from 'lucide-react';
 import { SaveData } from '@/lib/saveLoad';
 import { loadSaveFile } from '@/lib/saveLoad';
 import { toast } from 'sonner';
 import Layout from '@/components/Layout';
-import { GitHubStorageService } from '@/lib/githubStorage';
+import { useJsonBinStorage } from '@/hooks/useJsonBinStorage';
 import { useSearchParams } from 'react-router-dom';
 
 const VideoEditor = () => {
   const [searchParams] = useSearchParams();
   const gameNumber = searchParams.get('game');
   const videoUrl = searchParams.get('video');
-  const githubService = new GitHubStorageService();
+  
+  // JSONBin storage for game data
+  const { data: savedGameData, save: saveGameData, load: loadGameData, create: createGameDataBin } = useJsonBinStorage<any>({
+    autoLoad: false
+  });
   
   const [videoId, setVideoId] = useState('');
   const [playlistId, setPlaylistId] = useState<string | undefined>();
@@ -56,63 +60,93 @@ const VideoEditor = () => {
   useEffect(() => {
     const initializeFromParams = async () => {
       if (videoUrl) {
-        // Extract video ID from embed URL
-        const videoIdMatch = videoUrl.match(/embed\/([^?]+)/);
-        if (videoIdMatch) {
-          setVideoId(videoIdMatch[1]);
+        // Check if it's a playlist embed URL
+        const playlistMatch = videoUrl.match(/embed\/videoseries\?list=([^&]+)/);
+        if (playlistMatch) {
+          setPlaylistId(playlistMatch[1]);
+        } else {
+          // Extract video ID from embed URL
+          const videoIdMatch = videoUrl.match(/embed\/([^?]+)/);
+          if (videoIdMatch) {
+            setVideoId(videoIdMatch[1]);
+          }
         }
       }
 
       if (gameNumber) {
         try {
-          // For playlists, load events for the current video index
-          const currentVideoIndex = currentPlaylistIndex + 1; // Convert 0-based to 1-based
-          const existingEvents = await githubService.loadGameLog(parseInt(gameNumber), currentVideoIndex);
+          // Try to load from JSONBin using game number as bin ID pattern
+          const binId = `game-${gameNumber}-video-${currentPlaylistIndex + 1}`;
+          await loadGameData(binId);
           
-          if (existingEvents.length > 0) {
-            setEvents(existingEvents);
-            toast.info(`Loaded ${existingEvents.length} existing events from video ${currentVideoIndex}`);
+          if (savedGameData && savedGameData.events) {
+            setEvents(savedGameData.events);
+            setLastSavedData({
+              version: '1.0.0',
+              timestamp: new Date().toISOString(),
+              videoId,
+              playlistId,
+              players: savedGameData.players || DEFAULT_PLAYERS,
+              events: savedGameData.events,
+              metadata: {
+                totalEvents: savedGameData.events.length,
+                totalTimeSpan: Math.max(...savedGameData.events.map(e => e.timestamp)),
+                exportFormat: 'youtube-timestamps'
+              }
+            });
           }
         } catch (error) {
-          console.error('Error loading game data:', error);
+          console.log('No saved data found for this game, starting fresh');
         }
       }
     };
 
     initializeFromParams();
-  }, [gameNumber, videoUrl, currentPlaylistIndex]);
+  }, [gameNumber, videoUrl, currentPlaylistIndex, loadGameData]);
 
-  // Auto-save to GitHub when events change
-  useEffect(() => {
-    if (gameNumber && events.length > 0) {
-      const saveToGitHub = async () => {
-        try {
-          // For playlists, save to the specific video file
-          const currentVideoIndex = currentPlaylistIndex + 1; // Convert 0-based to 1-based
-          
-          const success = await githubService.saveGameLog(
-            parseInt(gameNumber), 
-            currentVideoIndex, 
-            events, 
-            videoId
-          );
-          
-          if (success) {
-            toast.success(`Auto-saved video ${currentVideoIndex} to GitHub`);
-          } else {
-            toast.error('Failed to save to GitHub');
-          }
-        } catch (error) {
-          console.error('Error auto-saving to GitHub:', error);
-          toast.error('Failed to save to GitHub');
-        }
+  // Manual save function
+  const handleSaveToStorage = async () => {
+    if (!gameNumber) {
+      toast.error('No game number specified');
+      return;
+    }
+
+    try {
+      const saveData = {
+        gameNumber: parseInt(gameNumber),
+        videoIndex: currentPlaylistIndex + 1,
+        events,
+        players,
+        videoId,
+        playlistId,
+        timestamp: new Date().toISOString()
       };
 
-      // Debounce auto-save
-      const timeoutId = setTimeout(saveToGitHub, 2000);
-      return () => clearTimeout(timeoutId);
+      const binId = await createGameDataBin(saveData, `game-${gameNumber}-video-${currentPlaylistIndex + 1}`);
+      
+      if (binId) {
+        toast.success(`Saved to JSONBin: ${binId}`);
+        setLastSavedData({
+          version: '1.0.0',
+          timestamp: new Date().toISOString(),
+          videoId,
+          playlistId,
+          players,
+          events,
+          metadata: {
+            totalEvents: events.length,
+            totalTimeSpan: events.length > 0 ? Math.max(...events.map(e => e.timestamp)) : 0,
+            exportFormat: 'youtube-timestamps'
+          }
+        });
+      } else {
+        toast.error('Failed to save to JSONBin');
+      }
+    } catch (error) {
+      console.error('Error saving:', error);
+      toast.error('Failed to save data');
     }
-  }, [events, gameNumber, currentPlaylistIndex, videoId]);
+  };
 
   // Exit protection
   useEffect(() => {
@@ -309,7 +343,7 @@ const VideoEditor = () => {
     }
   }, [currentPlaylistIndex, handleSelectPlaylistVideo]);
 
-  const handleAddPlayer = (name: string, jerseyNumber: number, position: Position) => {
+  const handleAddPlayer = (name: string, jerseyNumber: number, position: PositionType) => {
     setPlayers((prev) => [...prev, { id: crypto.randomUUID(), name, jerseyNumber, position }]);
   };
 
@@ -544,6 +578,12 @@ const VideoEditor = () => {
                     </Button>
                   </div>
                 )}
+
+                {/* Save Button */}
+                <Button onClick={handleSaveToStorage} className="w-full gap-2">
+                  <Save className="w-4 h-4" />
+                  Save to Cloud Storage
+                </Button>
 
                 {/* Export Panel */}
                 <ExportPanel 
