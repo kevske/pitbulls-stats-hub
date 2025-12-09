@@ -1,0 +1,180 @@
+export interface JsonBinRecord {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  versioning: boolean;
+  name?: string;
+  metadata?: any;
+}
+
+export interface JsonBinResponse<T> {
+  record: JsonBinRecord;
+  data: T;
+}
+
+export class JsonBinStorage {
+  private apiKey: string;
+  private baseUrl = 'https://api.jsonbin.io/v3';
+
+  constructor(apiKey?: string) {
+    this.apiKey = apiKey || import.meta.env.VITE_JSONBIN_API_KEY;
+    if (!this.apiKey) {
+      console.warn('JSONBin API key not configured');
+    }
+  }
+
+  private getHeaders(): Record<string, string> {
+    return {
+      'Content-Type': 'application/json',
+      'X-Master-Key': this.apiKey
+    };
+  }
+
+  // Create new bin
+  async createBin<T>(data: T, name?: string): Promise<JsonBinResponse<T> | null> {
+    if (!this.apiKey) {
+      console.error('JSONBin API key not configured');
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/b`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({
+          data,
+          name: name || 'pitbulls-data',
+          versioning: true
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create bin: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating bin:', error);
+      return null;
+    }
+  }
+
+  // Read bin by ID
+  async readBin<T>(binId: string): Promise<T | null> {
+    if (!this.apiKey) {
+      console.error('JSONBin API key not configured');
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/b/${binId}/latest`, {
+        headers: this.getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to read bin: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      return result.data;
+    } catch (error) {
+      console.error('Error reading bin:', error);
+      return null;
+    }
+  }
+
+  // Update existing bin
+  async updateBin<T>(binId: string, data: T): Promise<JsonBinResponse<T> | null> {
+    if (!this.apiKey) {
+      console.error('JSONBin API key not configured');
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/b/${binId}`, {
+        method: 'PUT',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ data })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update bin: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating bin:', error);
+      return null;
+    }
+  }
+
+  // Delete bin
+  async deleteBin(binId: string): Promise<boolean> {
+    if (!this.apiKey) {
+      console.error('JSONBin API key not configured');
+      return false;
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/b/${binId}`, {
+        method: 'DELETE',
+        headers: this.getHeaders()
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error deleting bin:', error);
+      return false;
+    }
+  }
+
+  // List all bins
+  async listBins(): Promise<JsonBinRecord[]> {
+    if (!this.apiKey) {
+      console.error('JSONBin API key not configured');
+      return [];
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/b`, {
+        headers: this.getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to list bins: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      return result.records || [];
+    } catch (error) {
+      console.error('Error listing bins:', error);
+      return [];
+    }
+  }
+
+  // Get bin metadata
+  async getBinMetadata(binId: string): Promise<JsonBinRecord | null> {
+    if (!this.apiKey) {
+      console.error('JSONBin API key not configured');
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/b/${binId}/meta`, {
+        headers: this.getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get metadata: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting metadata:', error);
+      return null;
+    }
+  }
+}
+
+// Export singleton instance
+export const jsonbinStorage = new JsonBinStorage();

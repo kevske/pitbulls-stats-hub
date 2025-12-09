@@ -21,8 +21,15 @@ import { SaveData } from '@/lib/saveLoad';
 import { loadSaveFile } from '@/lib/saveLoad';
 import { toast } from 'sonner';
 import Layout from '@/components/Layout';
+import { GitHubStorageService } from '@/lib/githubStorage';
+import { useSearchParams } from 'react-router-dom';
 
 const VideoEditor = () => {
+  const [searchParams] = useSearchParams();
+  const gameNumber = searchParams.get('game');
+  const videoUrl = searchParams.get('video');
+  const githubService = new GitHubStorageService();
+  
   const [videoId, setVideoId] = useState('');
   const [playlistId, setPlaylistId] = useState<string | undefined>();
   const [players, setPlayers] = useState<Player[]>(DEFAULT_PLAYERS);
@@ -44,6 +51,68 @@ const VideoEditor = () => {
   const [isQueueMode, setIsQueueMode] = useState(false);
   const [currentPlayersOnCourt, setCurrentPlayersOnCourt] = useState<Player[]>([]);
   const [shouldResetPlayers, setShouldResetPlayers] = useState(false);
+
+  // Handle URL parameters and load game data
+  useEffect(() => {
+    const initializeFromParams = async () => {
+      if (videoUrl) {
+        // Extract video ID from embed URL
+        const videoIdMatch = videoUrl.match(/embed\/([^?]+)/);
+        if (videoIdMatch) {
+          setVideoId(videoIdMatch[1]);
+        }
+      }
+
+      if (gameNumber) {
+        try {
+          // For playlists, load events for the current video index
+          const currentVideoIndex = currentPlaylistIndex + 1; // Convert 0-based to 1-based
+          const existingEvents = await githubService.loadGameLog(parseInt(gameNumber), currentVideoIndex);
+          
+          if (existingEvents.length > 0) {
+            setEvents(existingEvents);
+            toast.info(`Loaded ${existingEvents.length} existing events from video ${currentVideoIndex}`);
+          }
+        } catch (error) {
+          console.error('Error loading game data:', error);
+        }
+      }
+    };
+
+    initializeFromParams();
+  }, [gameNumber, videoUrl, currentPlaylistIndex]);
+
+  // Auto-save to GitHub when events change
+  useEffect(() => {
+    if (gameNumber && events.length > 0) {
+      const saveToGitHub = async () => {
+        try {
+          // For playlists, save to the specific video file
+          const currentVideoIndex = currentPlaylistIndex + 1; // Convert 0-based to 1-based
+          
+          const success = await githubService.saveGameLog(
+            parseInt(gameNumber), 
+            currentVideoIndex, 
+            events, 
+            videoId
+          );
+          
+          if (success) {
+            toast.success(`Auto-saved video ${currentVideoIndex} to GitHub`);
+          } else {
+            toast.error('Failed to save to GitHub');
+          }
+        } catch (error) {
+          console.error('Error auto-saving to GitHub:', error);
+          toast.error('Failed to save to GitHub');
+        }
+      };
+
+      // Debounce auto-save
+      const timeoutId = setTimeout(saveToGitHub, 2000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [events, gameNumber, currentPlaylistIndex, videoId]);
 
   // Exit protection
   useEffect(() => {

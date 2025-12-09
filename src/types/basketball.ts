@@ -1,10 +1,21 @@
-export type Position = 'Guard' | 'Forward' | 'Center';
+export type PositionType = 'Guard' | 'Forward' | 'Center';
+
+export interface Position {
+  x: number;
+  y: number;
+}
+
+export interface PlaylistVideo {
+  videoId: string;
+  index: number;
+  isCompleted: boolean;
+}
 
 export interface Player {
   id: string;
   name: string;
   jerseyNumber: number;
-  position: Position;
+  position: PositionType;
 }
 
 export interface TaggedEvent {
