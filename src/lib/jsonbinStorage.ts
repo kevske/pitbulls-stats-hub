@@ -156,7 +156,9 @@ export class JsonBinStorage {
       }
 
       const result = await response.json();
-      return result.data;
+      console.log('ReadBin response structure:', result);
+      // The actual data is in result.record, not result.data
+      return result.record;
     } catch (error) {
       console.error('Error reading bin:', error);
       return null;
