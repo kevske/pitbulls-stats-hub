@@ -419,25 +419,15 @@ const VideoEditor = () => {
   const handleSelectPlaylistVideo = useCallback((index: number) => {
     console.log('handleSelectPlaylistVideo called:', { index, isQueueMode, playlistVideosLength: playlistVideos.length });
     
-    if (isQueueMode && playlistVideos[index]) {
-      // In queue mode, we need to switch to the video directly
-      console.log('Queue mode: switching to video', playlistVideos[index].videoId);
-      setVideoId(playlistVideos[index].videoId);
-      setCurrentPlaylistIndex(index);
-    } else if (playlistVideos[index]) {
-      // In playlist mode, get the specific video ID and create a new player instance
-      const targetVideoId = playlistVideos[index].videoId;
-      console.log('Playlist mode: switching to video ID', targetVideoId, 'at index', index);
-      
-      // Clear playlist mode and switch to single video mode
-      setPlaylistId(undefined);
-      setVideoId(targetVideoId);
+    if (playlistVideos[index]) {
+      // Use playVideoAt to switch to the specific video in the playlist
+      console.log('Switching to video at index:', index, 'videoId:', playlistVideos[index].videoId);
       setCurrentPlaylistIndex(index);
       
-      // Store the original playlist for later if needed
-      // This effectively switches from playlist mode to single video mode
+      // Use the YouTube player's playVideoAt method
+      youtubePlayerRef.current?.playVideoAt(index);
     }
-  }, [isQueueMode, playlistVideos]);
+  }, [playlistVideos]);
 
   const handleMarkVideoComplete = useCallback(() => {
     if (playlistVideos.length > 0) {
