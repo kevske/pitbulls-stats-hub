@@ -89,9 +89,17 @@ const VideoEditor = () => {
             try {
               // Load the MasterBin index
               const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2');
+              console.log('MasterBin data loaded:', masterBinData);
+              console.log('Looking for game:', gameNumber, 'video:', currentPlaylistIndex + 1);
+              console.log('Game number type:', typeof gameNumber);
+              console.log('Video index type:', typeof (currentPlaylistIndex + 1));
               
-              if (masterBinData?.games?.[gameNumber]?.[currentPlaylistIndex + 1]) {
-                const foundBinId = masterBinData.games[gameNumber][currentPlaylistIndex + 1];
+              // Convert to numbers for proper matching
+              const gameNum = parseInt(gameNumber);
+              const videoNum = currentPlaylistIndex + 1;
+              
+              if (masterBinData?.games?.[gameNum]?.[videoNum]) {
+                const foundBinId = masterBinData.games[gameNum][videoNum];
                 console.log('Found bin ID in MasterBin:', foundBinId);
                 
                 // Save to localStorage for future use
@@ -99,6 +107,10 @@ const VideoEditor = () => {
                 await loadGameData(foundBinId);
               } else {
                 console.log('No saved bin found for this game/video in MasterBin');
+                console.log('Available games:', Object.keys(masterBinData?.games || {}));
+                if (masterBinData?.games?.[gameNum]) {
+                  console.log('Available videos for game', gameNum, ':', Object.keys(masterBinData.games[gameNum]));
+                }
               }
             } catch (error) {
               console.error('Failed to load MasterBin index:', error);
@@ -182,12 +194,16 @@ const VideoEditor = () => {
           console.log('Updating MasterBin index...');
           const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') || { games: {} };
           
+          // Convert to numbers for consistency
+          const gameNum = parseInt(gameNumber);
+          const videoNum = currentPlaylistIndex + 1;
+          
           // Initialize nested objects if they don't exist
           if (!masterBinData.games) masterBinData.games = {};
-          if (!masterBinData.games[gameNumber]) masterBinData.games[gameNumber] = {};
+          if (!masterBinData.games[gameNum]) masterBinData.games[gameNum] = {};
           
           // Set the bin ID for this game/video
-          masterBinData.games[gameNumber][currentPlaylistIndex + 1] = binId;
+          masterBinData.games[gameNum][videoNum] = binId;
           
           // Save back to MasterBin
           const updateSuccess = await jsonbinStorage.updateBin('693897a8ae596e708f8ea7c2', masterBinData);
