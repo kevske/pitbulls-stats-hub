@@ -194,7 +194,16 @@ const VideoEditor = () => {
         // Update the MasterBin index
         try {
           console.log('Updating MasterBin index...');
-          const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null || { games: {} };
+          
+          // First try to read the MasterBin
+          let masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
+          
+          // If the read fails or returns empty data, reinitialize
+          if (!masterBinData || !masterBinData.games) {
+            console.log('MasterBin is empty or corrupted, reinitializing...');
+            masterBinData = { games: {} };
+          }
+          
           console.log('Current MasterBin before update:', masterBinData);
           console.log('Current MasterBin games:', masterBinData.games);
           console.log('Current game 8 data:', masterBinData.games?.['8']);
