@@ -207,10 +207,17 @@ const VideoEditor = () => {
           if (!masterBinData.games) masterBinData.games = {};
           if (!masterBinData.games[gameNum]) masterBinData.games[gameNum] = {};
           
-          // Set the bin ID for this game/video (this adds or updates the specific video)
+          // Check if we're overwriting an existing video
+          if (masterBinData.games[gameNum][videoNum] && masterBinData.games[gameNum][videoNum] !== binId) {
+            console.log(`Warning: Overwriting existing bin ID for game ${gameNum}, video ${videoNum}`);
+            console.log(`Old: ${masterBinData.games[gameNum][videoNum]}, New: ${binId}`);
+          }
+          
+          // Set the bin ID for this game/video
           masterBinData.games[gameNum][videoNum] = binId;
           
           console.log('MasterBin after update:', masterBinData);
+          console.log('All videos for game', gameNum, ':', masterBinData.games[gameNum]);
           
           // Save back to MasterBin
           const updateSuccess = await jsonbinStorage.updateBin('693897a8ae596e708f8ea7c2', masterBinData);
