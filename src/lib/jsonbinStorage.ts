@@ -82,22 +82,47 @@ export class JsonBinStorage {
         console.log('Conditions met, proceeding to set name...');
         try {
           console.log('Setting bin name to:', name);
-          const metadataResponse = await fetch(`${this.baseUrl}/b/${binId}/meta`, {
-            method: 'PATCH',
+          
+          // Try updating the bin with name included in the data
+          const updateResponse = await fetch(`${this.baseUrl}/b/${binId}`, {
+            method: 'PUT',
             headers: this.getHeaders(),
-            body: JSON.stringify({ name })
+            body: JSON.stringify({
+              ...result.record, // original data
+              name: name // add name property
+            })
           });
           
-          console.log('Metadata response status:', metadataResponse.status);
+          console.log('Update response status:', updateResponse.status);
           
-          if (metadataResponse.ok) {
-            console.log('Bin name set successfully');
+          if (updateResponse.ok) {
+            console.log('Bin name set successfully via PUT');
             if (result.record) {
               result.record.name = name;
             }
           } else {
-            const errorText = await metadataResponse.text();
-            console.warn('Failed to set bin name:', errorText);
+            const errorText = await updateResponse.text();
+            console.warn('Failed to set bin name via PUT:', errorText);
+            
+            // Fallback: try the metadata endpoint
+            console.log('Trying metadata endpoint as fallback...');
+            const metadataResponse = await fetch(`${this.baseUrl}/b/${binId}/meta`, {
+              method: 'PATCH',
+              headers: this.getHeaders(),
+              body: JSON.stringify({ name })
+            });
+            
+            console.log('Metadata response status:', metadataResponse.status);
+            
+            if (metadataResponse.ok) {
+              console.log('Bin name set successfully via metadata');
+              if (result.record) {
+                result.record.name = name;
+              }
+            } else {
+              const fallbackErrorText = await metadataResponse.text();
+              console.warn('Failed to set bin name via metadata too:', fallbackErrorText);
+            }
           }
         } catch (error) {
           console.warn('Failed to set bin name:', error);
