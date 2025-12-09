@@ -22,6 +22,7 @@ import { loadSaveFile } from '@/lib/saveLoad';
 import { toast } from 'sonner';
 import Layout from '@/components/Layout';
 import { useJsonBinStorage } from '@/hooks/useJsonBinStorage';
+import { jsonbinStorage } from '@/lib/jsonbinStorage';
 import { useSearchParams } from 'react-router-dom';
 
 const VideoEditor = () => {
@@ -82,7 +83,22 @@ const VideoEditor = () => {
           if (actualBinId) {
             await loadGameData(actualBinId);
           } else {
-            console.log('No saved bin found for this game/video');
+            // No local storage entry - try to find existing bin by searching all bins
+            console.log('No local bin found, searching for existing bin...');
+            const targetName = `game-${gameNumber}-video-${currentPlaylistIndex + 1}`;
+            
+            // List all bins and find matching one by name
+            const allBins = await jsonbinStorage.listBins();
+            const matchingBin = allBins.find(bin => bin.name === targetName);
+            
+            if (matchingBin) {
+              console.log('Found matching bin:', matchingBin.id);
+              // Save to localStorage for future use
+              localStorage.setItem(storageKey, matchingBin.id);
+              await loadGameData(matchingBin.id);
+            } else {
+              console.log('No saved bin found for this game/video');
+            }
           }
           
           if (savedGameData && savedGameData.events) {
