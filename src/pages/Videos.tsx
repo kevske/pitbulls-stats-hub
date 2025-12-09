@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import PasswordProtection from "@/components/PasswordProtection";
 import { useStats } from "@/contexts/StatsContext";
+import { Button } from "@/components/ui/button";
+import { Edit } from "lucide-react";
 
 // Helper function to convert YouTube URL to embed format
 const getEmbedUrl = (url: string): string => {
@@ -60,8 +63,18 @@ const Videos = () => {
   return (
     <Layout>
       <div className="container mx-auto max-w-4xl p-4">
-        <h1 className="text-4xl font-bold text-primary mb-2">Letzte Spiele</h1>
-        <div className="w-20 h-1 bg-primary mb-8"></div>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-4xl font-bold text-primary mb-2">Letzte Spiele</h1>
+            <div className="w-20 h-1 bg-primary"></div>
+          </div>
+          <Link to="/video-editor">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Edit className="w-4 h-4" />
+              Video im Stats-Logger öffnen
+            </Button>
+          </Link>
+        </div>
 
         {loading ? (
           <div className="text-center py-8">Lade Videos...</div>
