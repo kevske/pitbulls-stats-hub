@@ -68,11 +68,23 @@ export class JsonBinStorage {
       const result = await response.json();
       console.log('JSONBin created successfully:', result);
       
-      // If name is provided, update the bin with the name
+      // If name is provided, update the bin metadata with the name
       if (name && result.record?.id) {
         try {
-          await this.updateBinMetadata(result.record.id, { name });
-          result.record.name = name;
+          console.log('Setting bin name to:', name);
+          const metadataResponse = await fetch(`${this.baseUrl}/b/${result.record.id}/meta`, {
+            method: 'PATCH',
+            headers: this.getHeaders(),
+            body: JSON.stringify({ name })
+          });
+          
+          if (metadataResponse.ok) {
+            console.log('Bin name set successfully');
+            result.record.name = name;
+          } else {
+            const errorText = await metadataResponse.text();
+            console.warn('Failed to set bin name:', errorText);
+          }
         } catch (error) {
           console.warn('Failed to set bin name:', error);
         }
