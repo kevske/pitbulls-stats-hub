@@ -196,6 +196,8 @@ const VideoEditor = () => {
           console.log('Updating MasterBin index...');
           const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null || { games: {} };
           console.log('Current MasterBin before update:', masterBinData);
+          console.log('Current MasterBin games:', masterBinData.games);
+          console.log('Current game 8 data:', masterBinData.games?.['8']);
           
           // Use string keys to match MasterBin structure
           const gameNum = gameNumber;
@@ -217,7 +219,7 @@ const VideoEditor = () => {
           masterBinData.games[gameNum][videoNum] = binId;
           
           console.log('MasterBin after update:', masterBinData);
-          console.log('All videos for game', gameNum, ':', masterBinData.games[gameNum]);
+          console.log('Game 8 data after update:', masterBinData.games?.['8']);
           
           // Save back to MasterBin
           const updateSuccess = await jsonbinStorage.updateBin('693897a8ae596e708f8ea7c2', masterBinData);
