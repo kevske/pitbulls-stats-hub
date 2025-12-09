@@ -52,7 +52,7 @@ export function BasketballCourt({ players, onPlayerSelect, selectedPlayerId, dis
         <div className="relative w-full aspect-[2/1] rounded-lg overflow-hidden">
           {/* Basketball Court Background Image */}
           <img 
-            src="/half-court.png"
+            src="/pitbulls-stats-hub/half-court.png"
             alt="Basketball Court"
             className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => {
