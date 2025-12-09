@@ -52,11 +52,11 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
       setIsSelectingStartingFive(true);
       onCurrentPlayersChange?.([]);
       justLoadedRef.current = true;
-      // Clear the flag after a delay to allow normal operation
+      // Clear the flag after a longer delay to ensure all useEffect cycles complete
       setTimeout(() => {
         justLoadedRef.current = false;
         console.log('Clearing justLoadedRef');
-      }, 200);
+      }, 1000); // Increased from 200ms to 1000ms
     }
   }, [resetOnLoad, onCurrentPlayersChange]);
 
@@ -64,8 +64,14 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
   useEffect(() => {
     console.log('Substitution useEffect triggered:', { resetOnLoad, eventsLength: events.length, justLoaded: justLoadedRef.current });
     // Don't process substitutions if we just loaded a file - user will select manually
-    if (justLoadedRef.current) {
-      console.log('Skipping substitution processing - file was just loaded');
+    if (justLoadedRef.current || resetOnLoad) {
+      console.log('Skipping substitution processing - file was just loaded or reset triggered');
+      return;
+    }
+    
+    // Also skip if we're in starting five selection mode
+    if (isSelectingStartingFive) {
+      console.log('Skipping substitution processing - in starting five selection mode');
       return;
     }
     
@@ -120,7 +126,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
     
     // Notify parent component of current players change
     onCurrentPlayersChange?.(updatedCurrentPlayers.map(cp => cp.player));
-  }, [events, players, justLoadedRef.current]);
+  }, [events, players, justLoadedRef.current, resetOnLoad, isSelectingStartingFive]);
 
   const handlePlayerSelect = (player: Player) => {
     if (isSelectingStartingFive) {

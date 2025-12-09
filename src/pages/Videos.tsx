@@ -63,17 +63,11 @@ const Videos = () => {
   return (
     <Layout>
       <div className="container mx-auto max-w-4xl p-4">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <div>
             <h1 className="text-4xl font-bold text-primary mb-2">Letzte Spiele</h1>
             <div className="w-20 h-1 bg-primary"></div>
           </div>
-          <Link to="/video-editor">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Edit className="w-4 h-4" />
-              Video im Stats-Logger öffnen
-            </Button>
-          </Link>
         </div>
 
         {loading ? (
