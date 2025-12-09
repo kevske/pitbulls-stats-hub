@@ -24,10 +24,16 @@ export class JsonBinStorage {
   }
 
   private getHeaders(): Record<string, string> {
-    return {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'X-Master-Key': this.apiKey
+      'Accept': 'application/vnd.github.v3+json'
     };
+
+    if (this.apiKey) {
+      headers['X-Master-Key'] = this.apiKey;
+    }
+
+    return headers;
   }
 
   // Create new bin
