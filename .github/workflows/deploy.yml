@@ -33,6 +33,7 @@ jobs:
       - name: Build
         env:
           VITE_ADMIN_PASSWORD: ${{ secrets.VITE_ADMIN_PASSWORD }}
+          VITE_JSONBIN_API_KEY: ${{ secrets.VITE_JSONBIN_API_KEY }}
         run: |
           npm run build
           # Ensure .nojekyll is copied to the build output
