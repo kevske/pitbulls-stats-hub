@@ -68,16 +68,21 @@ export class JsonBinStorage {
 
       const result = await response.json();
       console.log('JSONBin created successfully:', result);
+      console.log('Full response structure:', result);
       console.log('Result record:', result.record);
-      console.log('Result record ID:', result.record?.id);
+      console.log('Result metadata:', result.metadata);
+      
+      // Try to get the bin ID from different possible locations
+      const binId = result.record?.id || result.metadata?.id || result.id;
+      console.log('Extracted bin ID:', binId);
       console.log('Name parameter exists:', !!name);
       
-      // If name is provided, update the bin metadata with the name
-      if (name && result.record?.id) {
+      // If name is provided and we have a bin ID, update the bin metadata
+      if (name && binId) {
         console.log('Conditions met, proceeding to set name...');
         try {
           console.log('Setting bin name to:', name);
-          const metadataResponse = await fetch(`${this.baseUrl}/b/${result.record.id}/meta`, {
+          const metadataResponse = await fetch(`${this.baseUrl}/b/${binId}/meta`, {
             method: 'PATCH',
             headers: this.getHeaders(),
             body: JSON.stringify({ name })
@@ -87,7 +92,9 @@ export class JsonBinStorage {
           
           if (metadataResponse.ok) {
             console.log('Bin name set successfully');
-            result.record.name = name;
+            if (result.record) {
+              result.record.name = name;
+            }
           } else {
             const errorText = await metadataResponse.text();
             console.warn('Failed to set bin name:', errorText);
@@ -95,6 +102,8 @@ export class JsonBinStorage {
         } catch (error) {
           console.warn('Failed to set bin name:', error);
         }
+      } else {
+        console.log('Cannot set name - missing bin ID or name parameter');
       }
       
       return result;
