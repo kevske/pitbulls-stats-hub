@@ -80,19 +80,6 @@ export function PlaylistSideMenu({
 
   return (
     <>
-      {/* Toggle Button */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onToggle}
-        className="fixed top-20 right-4 z-50 gap-2 bg-background/95 backdrop-blur-sm border-border/50"
-      >
-        <Menu className="h-4 w-4" />
-        {isOpen ? 'Hide' : 'Show'} Queue
-        <Badge variant="secondary" className="text-xs">
-          {videos.length}
-        </Badge>
-      </Button>
 
       {/* Side Menu */}
       <div className={`fixed top-0 right-0 h-full bg-background/95 backdrop-blur-sm border-l border-border/50 transition-transform duration-300 z-40 ${
