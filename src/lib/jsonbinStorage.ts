@@ -174,7 +174,7 @@ export class JsonBinStorage {
       const response = await fetch(`${this.baseUrl}/b/${binId}`, {
         method: 'PUT',
         headers: this.getHeaders(),
-        body: JSON.stringify({ data })
+        body: JSON.stringify(data)
       });
 
       if (!response.ok) {
