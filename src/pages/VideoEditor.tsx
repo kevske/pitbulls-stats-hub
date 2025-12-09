@@ -75,9 +75,15 @@ const VideoEditor = () => {
 
       if (gameNumber) {
         try {
-          // Try to load from JSONBin using game number as bin ID pattern
-          const binId = `game-${gameNumber}-video-${currentPlaylistIndex + 1}`;
-          await loadGameData(binId);
+          // Try to load from JSONBin using stored bin ID
+          const storageKey = `binId_game-${gameNumber}-video-${currentPlaylistIndex + 1}`;
+          const actualBinId = localStorage.getItem(storageKey);
+          
+          if (actualBinId) {
+            await loadGameData(actualBinId);
+          } else {
+            console.log('No saved bin found for this game/video');
+          }
           
           if (savedGameData && savedGameData.events) {
             setEvents(savedGameData.events);
@@ -136,6 +142,9 @@ const VideoEditor = () => {
       const binId = await createGameDataBin(saveData, `game-${gameNumber}-video-${currentPlaylistIndex + 1}`);
       
       if (binId) {
+        // Store the actual bin ID for this game/video combination
+        const storageKey = `binId_game-${gameNumber}-video-${currentPlaylistIndex + 1}`;
+        localStorage.setItem(storageKey, binId);
         toast.success(`Saved to JSONBin: ${binId}`);
         setLastSavedData({
           version: '1.0.0',
