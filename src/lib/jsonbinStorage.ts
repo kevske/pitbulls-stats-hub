@@ -67,6 +67,17 @@ export class JsonBinStorage {
 
       const result = await response.json();
       console.log('JSONBin created successfully:', result);
+      
+      // If name is provided, update the bin with the name
+      if (name && result.record?.id) {
+        try {
+          await this.updateBinMetadata(result.record.id, { name });
+          result.record.name = name;
+        } catch (error) {
+          console.warn('Failed to set bin name:', error);
+        }
+      }
+      
       return result;
     } catch (error) {
       console.error('Error creating bin:', error);
@@ -187,6 +198,27 @@ export class JsonBinStorage {
     } catch (error) {
       console.error('Error getting metadata:', error);
       return null;
+    }
+  }
+
+  // Update bin metadata
+  async updateBinMetadata(binId: string, metadata: { name?: string }): Promise<boolean> {
+    if (!this.apiKey) {
+      console.error('JSONBin API key not configured');
+      return false;
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/b/${binId}/meta`, {
+        method: 'PATCH',
+        headers: this.getHeaders(),
+        body: JSON.stringify(metadata)
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error updating metadata:', error);
+      return false;
     }
   }
 }
