@@ -25,12 +25,11 @@ export class JsonBinStorage {
 
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/vnd.github.v3+json'
+      'Content-Type': 'application/json'
     };
 
     if (this.apiKey) {
-      headers['X-Master-Key'] = this.apiKey;
+      headers['X-Access-Key'] = this.apiKey;
     }
 
     return headers;
@@ -44,20 +43,18 @@ export class JsonBinStorage {
     }
 
     try {
-      const payload = {
-        data,
-        name: name || 'pitbulls-data',
-        versioning: true
-      };
-      
-      console.log('Creating JSONBin with payload:', payload);
+      // JSONBin API expects the data directly, not wrapped in a 'data' property
+      console.log('Creating JSONBin with data:', data);
       console.log('API URL:', `${this.baseUrl}/b`);
       console.log('Headers:', this.getHeaders());
+      console.log('API Key being used:', this.apiKey ? `${this.apiKey.substring(0, 8)}... (length: ${this.apiKey.length})` : 'NOT SET');
+      console.log('Full API Key (for debugging):', this.apiKey);
+      console.log('Using Access Key for all operations (X-Access-Key)');
 
       const response = await fetch(`${this.baseUrl}/b`, {
         method: 'POST',
         headers: this.getHeaders(),
-        body: JSON.stringify(payload)
+        body: JSON.stringify(data)
       });
 
       console.log('Response status:', response.status, response.statusText);
