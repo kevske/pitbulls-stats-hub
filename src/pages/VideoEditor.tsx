@@ -296,9 +296,10 @@ const VideoEditor = () => {
     setVideoId(saveData.videoId || '');
     setPlaylistId(saveData.playlistId);
     setLastSavedData(saveData);
-    // Trigger reset of current players on court
+    // Reset current players on court - user will select manually in edit mode
     console.log('Setting shouldResetPlayers to true');
     setShouldResetPlayers(true);
+    setCurrentPlayersOnCourt([]); // Clear current players
     // Reset the trigger after a short delay
     setTimeout(() => {
       console.log('Setting shouldResetPlayers to false');

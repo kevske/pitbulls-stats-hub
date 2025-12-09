@@ -63,7 +63,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
   // Calculate current players based on substitution events
   useEffect(() => {
     console.log('Substitution useEffect triggered:', { resetOnLoad, eventsLength: events.length, justLoaded: justLoadedRef.current });
-    // Don't process substitutions if we just loaded a file
+    // Don't process substitutions if we just loaded a file - user will select manually
     if (justLoadedRef.current) return;
     
     const substitutionEvents = events
@@ -117,7 +117,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
     
     // Notify parent component of current players change
     onCurrentPlayersChange?.(updatedCurrentPlayers.map(cp => cp.player));
-  }, [events, players]);
+  }, [events, players, currentPlayers]);
 
   const handlePlayerSelect = (player: Player) => {
     if (isSelectingStartingFive) {
