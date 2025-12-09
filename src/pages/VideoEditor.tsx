@@ -231,12 +231,16 @@ const VideoEditor = () => {
           console.log('Game 8 data after update:', masterBinData.games?.['8']);
           
           // Save back to MasterBin
+          console.log('Sending to MasterBin:', JSON.stringify(masterBinData, null, 2));
           const updateSuccess = await jsonbinStorage.updateBin('693897a8ae596e708f8ea7c2', masterBinData);
+          console.log('Update response received:', updateSuccess);
           
+          // Verify the update by reading back immediately
           if (updateSuccess) {
-            console.log('MasterBin index updated successfully');
-          } else {
-            console.error('Failed to update MasterBin index');
+            console.log('Verifying MasterBin after update...');
+            const verificationData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
+            console.log('Verification read result:', verificationData);
+            console.log('Verification game 8 data:', verificationData?.games?.['8']);
           }
         } catch (error) {
           console.error('Error updating MasterBin:', error);
