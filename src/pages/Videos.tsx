@@ -100,6 +100,14 @@ const Videos = () => {
                     allowFullScreen
                   />
                 </div>
+                <div className="mt-4">
+                  <Link to={`/video-editor?game=${game.gameNumber}&video=${getEmbedUrl(game.youtubeLink!)}`}>
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Edit className="w-4 h-4" />
+                      Video im Stats-Logger öffnen
+                    </Button>
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
