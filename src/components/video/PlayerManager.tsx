@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Player, Position } from '@/types/basketball';
+import { Player, PositionType } from '@/types/basketball';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -9,14 +9,14 @@ import { UserPlus, X } from 'lucide-react';
 
 interface PlayerManagerProps {
   players: Player[];
-  onAddPlayer: (name: string, jerseyNumber: number, position: Position) => void;
+  onAddPlayer: (name: string, jerseyNumber: number, position: PositionType) => void;
   onRemovePlayer: (id: string) => void;
 }
 
 export function PlayerManager({ players, onAddPlayer, onRemovePlayer }: PlayerManagerProps) {
   const [newPlayerName, setNewPlayerName] = useState('');
   const [newPlayerJerseyNumber, setNewPlayerJerseyNumber] = useState('');
-  const [newPlayerPosition, setNewPlayerPosition] = useState<Position>('Guard');
+  const [newPlayerPosition, setNewPlayerPosition] = useState<PositionType>('Guard');
 
   const handleAddPlayer = (e: React.FormEvent) => {
     e.preventDefault();
