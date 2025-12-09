@@ -83,21 +83,25 @@ const VideoEditor = () => {
           if (actualBinId) {
             await loadGameData(actualBinId);
           } else {
-            // No local storage entry - try to find existing bin by searching all bins
-            console.log('No local bin found, searching for existing bin...');
-            const targetName = `game-${gameNumber}-video-${currentPlaylistIndex + 1}`;
+            // No local storage entry - try to find existing bin from MasterBin index
+            console.log('No local bin found, searching MasterBin index...');
             
-            // List all bins and find matching one by name
-            const allBins = await jsonbinStorage.listBins();
-            const matchingBin = allBins.find(bin => bin.name === targetName);
-            
-            if (matchingBin) {
-              console.log('Found matching bin:', matchingBin.id);
-              // Save to localStorage for future use
-              localStorage.setItem(storageKey, matchingBin.id);
-              await loadGameData(matchingBin.id);
-            } else {
-              console.log('No saved bin found for this game/video');
+            try {
+              // Load the MasterBin index
+              const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2');
+              
+              if (masterBinData?.games?.[gameNumber]?.[currentPlaylistIndex + 1]) {
+                const foundBinId = masterBinData.games[gameNumber][currentPlaylistIndex + 1];
+                console.log('Found bin ID in MasterBin:', foundBinId);
+                
+                // Save to localStorage for future use
+                localStorage.setItem(storageKey, foundBinId);
+                await loadGameData(foundBinId);
+              } else {
+                console.log('No saved bin found for this game/video in MasterBin');
+              }
+            } catch (error) {
+              console.error('Failed to load MasterBin index:', error);
             }
           }
           
@@ -172,6 +176,31 @@ const VideoEditor = () => {
       if (binId) {
         // Store the bin ID for this game/video combination
         localStorage.setItem(storageKey, binId);
+        
+        // Update the MasterBin index
+        try {
+          console.log('Updating MasterBin index...');
+          const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') || { games: {} };
+          
+          // Initialize nested objects if they don't exist
+          if (!masterBinData.games) masterBinData.games = {};
+          if (!masterBinData.games[gameNumber]) masterBinData.games[gameNumber] = {};
+          
+          // Set the bin ID for this game/video
+          masterBinData.games[gameNumber][currentPlaylistIndex + 1] = binId;
+          
+          // Save back to MasterBin
+          const updateSuccess = await jsonbinStorage.updateBin('693897a8ae596e708f8ea7c2', masterBinData);
+          
+          if (updateSuccess) {
+            console.log('MasterBin index updated successfully');
+          } else {
+            console.error('Failed to update MasterBin index');
+          }
+        } catch (error) {
+          console.error('Error updating MasterBin:', error);
+        }
+        
         toast.success(`Saved to JSONBin: ${binId}`);
         setLastSavedData({
           version: '1.0.0',
