@@ -139,11 +139,22 @@ const VideoEditor = () => {
 
       console.log('Saving data:', saveData);
       
-      const binId = await createGameDataBin(saveData, `game-${gameNumber}-video-${currentPlaylistIndex + 1}`);
+      // Check if we have an existing bin for this game/video
+      const storageKey = `binId_game-${gameNumber}-video-${currentPlaylistIndex + 1}`;
+      const existingBinId = localStorage.getItem(storageKey);
+      
+      let binId;
+      if (existingBinId) {
+        // Update existing bin
+        const success = await saveGameData(existingBinId, saveData);
+        binId = success ? existingBinId : null;
+      } else {
+        // Create new bin
+        binId = await createGameDataBin(saveData, `game-${gameNumber}-video-${currentPlaylistIndex + 1}`);
+      }
       
       if (binId) {
-        // Store the actual bin ID for this game/video combination
-        const storageKey = `binId_game-${gameNumber}-video-${currentPlaylistIndex + 1}`;
+        // Store the bin ID for this game/video combination
         localStorage.setItem(storageKey, binId);
         toast.success(`Saved to JSONBin: ${binId}`);
         setLastSavedData({
