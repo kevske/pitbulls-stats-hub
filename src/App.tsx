@@ -15,6 +15,7 @@ import PlayerProfile from "./pages/PlayerProfile";
 import Games from "./pages/Games";
 import GameDetail from "./pages/GameDetail";
 import Videos from "./pages/Videos";
+import VideoEditor from "./pages/VideoEditor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,7 +23,7 @@ const queryClient = new QueryClient();
 const App = () => {
   // Handle redirects and browser history with base path
   React.useEffect(() => {
-    const basePath = '/pitbulls-stats-hub';
+    const basePath = import.meta.env.PROD ? '/pitbulls-stats-hub' : '/';
 
     // Function to handle redirects from 404 page
     const handleRedirect = () => {
@@ -62,7 +63,7 @@ const App = () => {
       const currentPath = window.location.pathname;
 
       // If we're not on the home page and the path doesn't start with the base path
-      if (currentPath !== '/' && !currentPath.startsWith(basePath + '/')) {
+      if (currentPath !== '/' && import.meta.env.PROD && !currentPath.startsWith(basePath + '/')) {
         // Check if this is a direct link to a page (like /games/4)
         const pathWithoutBase = currentPath.startsWith('/') ? currentPath.substring(1) : currentPath;
         const pathSegments = pathWithoutBase.split('/');
@@ -104,7 +105,7 @@ const App = () => {
       <ErrorBoundary>
         <TooltipProvider>
           <StatsProvider>
-            <BrowserRouter basename="/pitbulls-stats-hub">
+            <BrowserRouter basename={import.meta.env.PROD ? "/pitbulls-stats-hub" : "/"}>
               <ScrollToTop />
               <Routes>
                 <Route path="/" element={<Home />} />
@@ -115,6 +116,7 @@ const App = () => {
                 <Route path="/games" element={<Games />} />
                 <Route path="/games/:id" element={<GameDetail />} />
                 <Route path="/videos" element={<Videos />} />
+                <Route path="/video-editor" element={<VideoEditor />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
