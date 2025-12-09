@@ -556,10 +556,15 @@ const VideoEditor = () => {
             </div>
             {isPlaylistMode && (
               <div className="flex items-center gap-2">
-                <List className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Video {currentPlaylistIndex + 1} of {playlistVideos.length}
-                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsSideMenuOpen(!isSideMenuOpen)}
+                  className="h-8 px-3 gap-2"
+                >
+                  <List className="h-4 w-4" />
+                  Show Queue
+                </Button>
               </div>
             )}
           </div>
@@ -671,34 +676,6 @@ const VideoEditor = () => {
                   onVideoChange={handleVideoChange}
                 />
 
-                {/* Playlist Navigation */}
-                {isPlaylistMode && (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePrevVideo}
-                      disabled={currentPlaylistIndex === 0}
-                      className="gap-1"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
-                    <div className="text-sm">
-                      <span className="font-mono font-semibold">{playlistVideos[currentPlaylistIndex]?.videoId}</span>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleNextVideo}
-                      disabled={currentPlaylistIndex === playlistVideos.length - 1}
-                      className="gap-1"
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
 
                 {/* Save Button */}
                 <Button onClick={handleSaveToStorage} className="w-full gap-2">
@@ -719,95 +696,6 @@ const VideoEditor = () => {
 
               {/* Game Tags - Right panel */}
               <div className="space-y-4">
-                {/* Queue Management - Always visible when in playlist mode */}
-                {isPlaylistMode && (
-                  <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-medium">Video Queue</CardTitle>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {playlistVideos.length} videos
-                          </Badge>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setIsSideMenuOpen(!isSideMenuOpen)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <List className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="space-y-2">
-                        {/* Add Video Form */}
-                        <div className="flex gap-2">
-                          <Input
-                            type="text"
-                            placeholder="Add YouTube video ID or URL..."
-                            className="flex-1 h-8 text-xs bg-card/30"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                const input = e.currentTarget;
-                                const url = input.value.trim();
-                                if (url) {
-                                  // Extract video ID from URL
-                                  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
-                                  const videoId = match ? match[1] : (url.match(/^[a-zA-Z0-9_-]{11}$/) ? url : null);
-                                  
-                                  if (videoId) {
-                                    handleAddToQueue(videoId);
-                                    input.value = '';
-                                  }
-                                }
-                              }
-                            }}
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-2 text-xs"
-                            onClick={() => {
-                              const input = document.querySelector('input[placeholder*="Add YouTube"]') as HTMLInputElement;
-                              if (input) {
-                                const url = input.value.trim();
-                                if (url) {
-                                  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
-                                  const videoId = match ? match[1] : (url.match(/^[a-zA-Z0-9_-]{11}$/) ? url : null);
-                                  
-                                  if (videoId) {
-                                    handleAddToQueue(videoId);
-                                    input.value = '';
-                                  }
-                                }
-                              }
-                            }}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        
-                        {/* Current/Next Video Info */}
-                        {playlistVideos.length > 0 && (
-                          <div className="text-xs space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-muted-foreground">Current:</span>
-                              <span className="font-mono">Video {currentPlaylistIndex + 1}</span>
-                            </div>
-                            {currentPlaylistIndex < playlistVideos.length - 1 && (
-                              <div className="flex items-center justify-between">
-                                <span className="text-muted-foreground">Next:</span>
-                                <span className="font-mono">Video {currentPlaylistIndex + 2}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
 
                 {/* Current Players on Field - Always visible */}
                 <CurrentPlayersOnField
