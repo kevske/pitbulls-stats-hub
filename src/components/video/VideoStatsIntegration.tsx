@@ -214,10 +214,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
               {validityCheck.status === 'good' && <AlertTriangle className="h-3 w-3 mr-1" />}
               {validityCheck.status === 'poor' && <XCircle className="h-3 w-3 mr-1" />}
               {validityCheck.status === 'unknown' && <AlertTriangle className="h-3 w-3 mr-1" />}
-              {validityCheck.actualScore === 'Score unknown' ? 
-  `${validityCheck.taggedPoints} points tagged (score unknown)` :
-  `${validityCheck.taggedPoints} of ${validityCheck.actualScore.split('-')[0]} points tagged (${validityCheck.percentage}%)`
-}
+              {validityCheck.actualScore === 'Score unknown' ? `${validityCheck.taggedPoints} points tagged (score unknown)` : `${validityCheck.taggedPoints} of ${validityCheck.actualScore.split('-')[0]} points tagged (${validityCheck.percentage}%)`}
             </Badge>
           )}
           {/* Debug info */}
