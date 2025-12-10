@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Users, BarChart2, Film, Upload, X, RefreshCw, Check, AlertCircle, Trophy } from 'lucide-react';
+import { Home, Users, BarChart2, Film, Upload, X, RefreshCw, Check, AlertCircle, Trophy, Calendar } from 'lucide-react';
 import { useStats } from '@/contexts/StatsContext';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -47,6 +47,7 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     { to: '/players', icon: Users, label: 'Spieler' },
     { to: '/stats', icon: BarChart2, label: 'Statistiken' },
     { to: '/games', icon: Trophy, label: 'Spiele' },
+    { to: '/spielplan', icon: Calendar, label: 'Spielplan' },
     { to: '/videos', icon: Film, label: 'Videos' },
   ];
 
