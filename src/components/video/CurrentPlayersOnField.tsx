@@ -64,7 +64,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
 
   // Calculate current players based on substitution events
   useEffect(() => {
-    console.log('Substitution useEffect triggered:', { resetOnLoad, eventsLength: events.length, justLoaded: justLoadedRef.current, hasProcessedLoadedEvents: hasProcessedLoadedEventsRef.current });
+    console.log('Substitution useEffect triggered:', { resetOnLoad, eventsLength: events.length, justLoaded: justLoadedRef.current, hasProcessedLoadedEvents: hasProcessedLoadedEventsRef.current, currentPlayersLength: currentPlayers.length });
     
     // Don't process substitutions if we just loaded a file - user will select manually
     if (justLoadedRef.current || resetOnLoad) {
@@ -72,11 +72,10 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
       return;
     }
     
-    // If we have events but haven't processed loaded events yet, this might be the first run after loading
-    // Only process if we have current players (meaning user has selected starting five)
-    if (events.length > 0 && !hasProcessedLoadedEventsRef.current && currentPlayers.length === 0) {
-      console.log('Skipping substitution processing - no current players, likely after file load');
-      hasProcessedLoadedEventsRef.current = true; // Mark as processed to prevent future skips
+    // IMPORTANT: Only process substitutions if we have user-selected current players
+    // If we have loaded events but no current players, this means we loaded a file but haven't selected starting five yet
+    if (events.length > 0 && currentPlayers.length === 0) {
+      console.log('Skipping substitution processing - no user-selected current players (likely after file load)');
       return;
     }
     
@@ -86,26 +85,42 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
 
     console.log('Substitution events found:', substitutionEvents.length);
 
-    // Start with the current players (including starting five and previous substitutions)
+    // If we have no current players and no substitution events, nothing to do
+    if (currentPlayers.length === 0 && substitutionEvents.length === 0) {
+      console.log('No current players and no substitution events - nothing to process');
+      return;
+    }
+
+    // Start with the current players (user-selected starting five and any manual subs)
     let activePlayers = new Set<string>();
     const playerEntries: Record<string, number> = {};
 
-    // Initialize with current players state (this preserves starting five and previous subs)
+    // Initialize with current players state (this preserves user-selected starting five)
     currentPlayers.forEach(cp => {
       activePlayers.add(cp.player.name);
       playerEntries[cp.player.name] = cp.enteredAt;
     });
 
-    // Apply substitution events in order
+    // Apply NEW substitution events only (events added after current timestamp)
+    // This prevents reconstructing lineup from loaded historical substitution events
+    const currentTimeThreshold = Math.max(...currentPlayers.map(cp => cp.enteredAt), 0);
+    console.log('Current time threshold:', currentTimeThreshold);
+
     substitutionEvents.forEach(event => {
-      if (event.player) {
-        // Player enters
-        activePlayers.add(event.player);
-        playerEntries[event.player] = event.timestamp;
-      }
-      if (event.substitutionOut) {
-        // Player exits
-        activePlayers.delete(event.substitutionOut);
+      // Only process substitution events that occurred after the latest current player entry
+      if (event.timestamp > currentTimeThreshold) {
+        console.log('Processing new substitution event:', event);
+        if (event.player) {
+          // Player enters
+          activePlayers.add(event.player);
+          playerEntries[event.player] = event.timestamp;
+        }
+        if (event.substitutionOut) {
+          // Player exits
+          activePlayers.delete(event.substitutionOut);
+        }
+      } else {
+        console.log('Skipping old substitution event:', event);
       }
     });
 
@@ -131,7 +146,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
     
     // Notify parent component of current players change
     onCurrentPlayersChange?.(updatedCurrentPlayers.map(cp => cp.player));
-  }, [events, players, justLoadedRef.current, resetOnLoad]);
+  }, [events, players, justLoadedRef.current, resetOnLoad, currentPlayers.length]);
 
   const handlePlayerSelect = (player: Player) => {
     if (isSelectingStartingFive) {
