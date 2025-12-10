@@ -31,6 +31,45 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
     status: 'excellent' | 'good' | 'poor' | 'unknown';
   } | null>(null);
 
+  // Auto-detect game info from Google Sheets mapping
+  const getGameInfo = async (gameNum: number) => {
+    setIsLoadingGameInfo(true);
+    try {
+      // Load from MasterBin index
+      const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
+      
+      if (masterBinData?.games?.[gameNum.toString()]) {
+        const gameBinId = masterBinData.games[gameNum.toString()]['1']; // Get first video
+        const gameData = await jsonbinStorage.readBin(gameBinId) as any;
+        
+        return {
+          homeTeam: gameData?.metadata?.homeTeam || 'Pitbulls',
+          awayTeam: gameData?.metadata?.awayTeam || 'Opponent',
+          finalScore: gameData?.metadata?.finalScore,
+          gameType: gameData?.metadata?.gameType || 'Heim'
+        };
+      }
+      
+      // Fallback to games context if MasterBin doesn't have it
+      const gameFromContext = games.find(g => g.gameNumber === gameNum);
+      if (gameFromContext) {
+        return {
+          homeTeam: gameFromContext.homeTeam,
+          awayTeam: gameFromContext.awayTeam,
+          finalScore: gameFromContext.finalScore,
+          gameType: gameFromContext.homeTeam === 'Pitbulls' ? 'Heim' : 'Auswärts'
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Failed to load game info:', error);
+      return null;
+    } finally {
+      setIsLoadingGameInfo(false);
+    }
+  };
+
   // Calculate validity check
   const performValidityCheck = async (gameNum: number) => {
     if (!gameNum) return;
@@ -76,45 +115,6 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
       performValidityCheck(parseInt(gameNumber));
     }
   }, [gameNumber, saveData.events.length]);
-
-  // Auto-detect game info from Google Sheets mapping
-  const getGameInfo = async (gameNum: number) => {
-    setIsLoadingGameInfo(true);
-    try {
-      // Load from MasterBin index
-      const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
-      
-      if (masterBinData?.games?.[gameNum.toString()]) {
-        const gameBinId = masterBinData.games[gameNum.toString()]['1']; // Get first video
-        const gameData = await jsonbinStorage.readBin(gameBinId) as any;
-        
-        return {
-          homeTeam: gameData?.metadata?.homeTeam || 'Pitbulls',
-          awayTeam: gameData?.metadata?.awayTeam || 'Opponent',
-          finalScore: gameData?.metadata?.finalScore,
-          gameType: gameData?.metadata?.gameType || 'Heim'
-        };
-      }
-      
-      // Fallback to games context if MasterBin doesn't have it
-      const gameFromContext = games.find(g => g.gameNumber === gameNum);
-      if (gameFromContext) {
-        return {
-          homeTeam: gameFromContext.homeTeam,
-          awayTeam: gameFromContext.awayTeam,
-          finalScore: gameFromContext.finalScore,
-          gameType: gameFromContext.homeTeam === 'Pitbulls' ? 'Heim' : 'Auswärts'
-        };
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Failed to load game info:', error);
-      return null;
-    } finally {
-      setIsLoadingGameInfo(false);
-    }
-  };
 
   const handleIntegrate = async () => {
     if (!gameNumber || isNaN(Number(gameNumber))) {
