@@ -2,7 +2,11 @@ import { TaggedEvent, Player, DEFAULT_PLAYERS } from '@/types/basketball';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { extractStatsFromVideoData, PlayerGameStats, TeamGameStats } from '@/services/statsExtraction';
+import { Button } from '@/components/ui/button';
+import { extractStatsFromVideoData, PlayerGameStats, TeamGameStats, ExtractedGameStats } from '@/services/statsExtraction';
+import { useState, useEffect } from 'react';
+import { jsonbinStorage } from '@/lib/jsonbinStorage';
+import { useSearchParams } from 'react-router-dom';
 
 interface StatisticsProps {
   events: TaggedEvent[];
@@ -10,33 +14,129 @@ interface StatisticsProps {
 }
 
 export function Statistics({ events, players = DEFAULT_PLAYERS }: StatisticsProps) {
-  // Use the new stats extraction service
-  const extractedStats = extractStatsFromVideoData({
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
-    players,
-    events,
-    metadata: {
-      totalEvents: events.length,
-      totalTimeSpan: events.length > 0 ? Math.max(...events.map(e => e.timestamp)) : 0,
-      exportFormat: 'youtube-timestamps'
+  const [searchParams] = useSearchParams();
+  const gameNumber = searchParams.get('game');
+  const [showWholeGame, setShowWholeGame] = useState(false);
+  const [isLoadingWholeGame, setIsLoadingWholeGame] = useState(false);
+
+  // Get stats for current quarter or whole game
+  const getStats = async () => {
+    if (!showWholeGame || !gameNumber) {
+      // Current quarter stats
+      return extractStatsFromVideoData({
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+        players,
+        events,
+        metadata: {
+          totalEvents: events.length,
+          totalTimeSpan: events.length > 0 ? Math.max(...events.map(e => e.timestamp)) : 0,
+          exportFormat: 'youtube-timestamps'
+        }
+      });
     }
-  });
 
-  const { playerStats, teamStats } = extractedStats;
+    // Whole game stats - fetch all videos from playlist
+    setIsLoadingWholeGame(true);
+    try {
+      const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
+      
+      if (masterBinData?.games?.[gameNumber]) {
+        let allEvents: TaggedEvent[] = [];
+        const gameVideos = masterBinData.games[gameNumber];
+        
+        // Fetch all videos in the playlist
+        for (const [videoNum, binId] of Object.entries(gameVideos)) {
+          try {
+            const videoData = await jsonbinStorage.readBin(binId) as any;
+            if (videoData?.events) {
+              allEvents = [...allEvents, ...videoData.events];
+            }
+          } catch (error) {
+            console.error(`Failed to load video ${videoNum}:`, error);
+          }
+        }
+        
+        return extractStatsFromVideoData({
+          version: '1.0.0',
+          timestamp: new Date().toISOString(),
+          players,
+          events: allEvents,
+          metadata: {
+            totalEvents: allEvents.length,
+            totalTimeSpan: allEvents.length > 0 ? Math.max(...allEvents.map(e => e.timestamp)) : 0,
+            exportFormat: 'youtube-timestamps'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load whole game stats:', error);
+    } finally {
+      setIsLoadingWholeGame(false);
+    }
 
-  if (playerStats.length === 0) {
+    // Fallback to current quarter
+    return extractStatsFromVideoData({
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      players,
+      events,
+      metadata: {
+        totalEvents: events.length,
+        totalTimeSpan: events.length > 0 ? Math.max(...events.map(e => e.timestamp)) : 0,
+        exportFormat: 'youtube-timestamps'
+      }
+    });
+  };
+
+  const [extractedStats, setExtractedStats] = useState<ExtractedGameStats | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Initialize stats on component mount
+  useEffect(() => {
+    const initializeStats = async () => {
+      setIsLoading(true);
+      const stats = await getStats();
+      setExtractedStats(stats);
+      setIsLoading(false);
+    };
+    initializeStats();
+  }, []);
+
+  // Update stats when toggle changes
+  const handleToggle = async () => {
+    setIsLoading(true);
+    setShowWholeGame(!showWholeGame);
+    const newStats = await getStats();
+    setExtractedStats(newStats);
+    setIsLoading(false);
+  };
+
+  if (!extractedStats || isLoading) {
     return (
       <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50 text-center text-muted-foreground text-sm">
-        Statistics will appear here after recording events.
+        {isLoading ? 'Loading statistics...' : 'Statistics will appear here after recording events.'}
       </Card>
     );
   }
 
+  const { playerStats, teamStats } = extractedStats;
+
   return (
     <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
-      <div className="p-3 border-b border-border/50">
+      <div className="p-3 border-b border-border/50 flex justify-between items-center">
         <h3 className="font-semibold text-sm">Enhanced Statistics</h3>
+        {gameNumber && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleToggle}
+            disabled={isLoading || isLoadingWholeGame}
+            className="text-xs"
+          >
+            {isLoadingWholeGame ? 'Loading...' : showWholeGame ? 'Current Quarter' : 'Whole Game'}
+          </Button>
+        )}
       </div>
       <ScrollArea className="h-[400px]">
         <div className="p-3 space-y-4">
