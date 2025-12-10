@@ -72,22 +72,35 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
 
   // Calculate validity check
   const performValidityCheck = async (gameNum: number) => {
+    console.log('Performing validity check for game:', gameNum);
     if (!gameNum) return;
     
     try {
       // Get game info to find actual score
       const gameInfo = await getGameInfo(gameNum);
-      if (!gameInfo?.finalScore) return;
+      console.log('Game info retrieved:', gameInfo);
+      
+      // For testing, show validity even without game info
+      const extractedStats = extractStatsFromVideoData(saveData);
+      const taggedPoints = extractedStats.teamStats.totalPoints;
+      console.log('Tagged points:', taggedPoints);
+      
+      if (!gameInfo?.finalScore) {
+        // Show test validity check even without game score
+        setValidityCheck({
+          actualScore: '?-?',
+          taggedPoints,
+          percentage: 0,
+          status: 'unknown'
+        });
+        return;
+      }
       
       // Extract TSV Neuenstadt's score from final score
       // Assuming format like "89-76" where first number is Pitbulls
       const scoreParts = gameInfo.finalScore.split('-');
       const pitbullsScore = parseInt(scoreParts[0]) || 0;
       const tsvScore = parseInt(scoreParts[1]) || 0;
-      
-      // Calculate tagged points from video data
-      const extractedStats = extractStatsFromVideoData(saveData);
-      const taggedPoints = extractedStats.teamStats.totalPoints;
       
       // Calculate percentage accuracy
       const percentage = pitbullsScore > 0 ? Math.round((taggedPoints / pitbullsScore) * 100) : 0;
@@ -98,6 +111,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
       else if (percentage >= 75) status = 'good';
       else status = 'poor';
       
+      console.log('Setting validity check:', { actualScore: gameInfo.finalScore, taggedPoints, percentage, status });
       setValidityCheck({
         actualScore: gameInfo.finalScore,
         taggedPoints,
@@ -111,8 +125,12 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
 
   // Auto-check validity when game number or events change
   useEffect(() => {
+    console.log('Validity check useEffect:', { gameNumber, eventCount: saveData.events.length, shouldRun: !!(gameNumber && saveData.events.length > 0) });
     if (gameNumber && saveData.events.length > 0) {
+      console.log('Calling performValidityCheck');
       performValidityCheck(parseInt(gameNumber));
+    } else {
+      console.log('Not running validity check - missing game number or events');
     }
   }, [gameNumber, saveData.events.length]);
 
@@ -157,7 +175,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Summary */}
-        <div className="flex gap-2 text-xs">
+        <div className="flex gap-2 text-xs flex-wrap">
           <Badge variant="secondary">{eventCount} events</Badge>
           <Badge variant="secondary">{playerCount} players</Badge>
           {validityCheck && (
@@ -165,15 +183,21 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
               className={
                 validityCheck.status === 'excellent' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
                 validityCheck.status === 'good' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                validityCheck.status === 'unknown' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' :
                 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
               }
             >
               {validityCheck.status === 'excellent' && <CheckCircle className="h-3 w-3 mr-1" />}
               {validityCheck.status === 'good' && <AlertTriangle className="h-3 w-3 mr-1" />}
               {validityCheck.status === 'poor' && <XCircle className="h-3 w-3 mr-1" />}
+              {validityCheck.status === 'unknown' && <AlertTriangle className="h-3 w-3 mr-1" />}
               {validityCheck.taggedPoints} of {validityCheck.actualScore.split('-')[0]} points tagged ({validityCheck.percentage}%)
             </Badge>
           )}
+          {/* Debug info */}
+          <Badge variant="outline" className="text-xs">
+            Debug: {validityCheck ? 'VC set' : 'VC null'} | GN: {gameNumber || 'none'}
+          </Badge>
         </div>
 
         {/* Game Number Input */}
