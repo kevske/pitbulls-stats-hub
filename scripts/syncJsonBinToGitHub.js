@@ -4,7 +4,7 @@ import path from 'path';
 // Fetch all game data from JSONBin MasterBin
 async function syncJsonBinToGitHub() {
   const masterBinId = '693897a8ae596e708f8ea7c2';
-  const apiKey = process.env.JSONBIN_API_KEY;
+  const apiKey = process.env.VITE_JSONBIN_API_KEY;
   
   if (!apiKey) {
     console.error('JSONBIN_API_KEY environment variable is required');
