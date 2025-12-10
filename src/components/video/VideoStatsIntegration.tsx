@@ -70,40 +70,63 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
     }
   };
 
-  // Calculate validity check
+  // Calculate validity check for all videos in playlist
   const performValidityCheck = async (gameNum: number) => {
     console.log('Performing validity check for game:', gameNum);
     if (!gameNum) return;
     
     try {
-      // Get game info to find actual score
-      const gameInfo = await getGameInfo(gameNum);
-      console.log('Game info retrieved:', gameInfo);
+      // Get game info from games context (Google Sheets data)
+      const gameFromContext = games.find(g => g.gameNumber === gameNum);
+      console.log('Game from context:', gameFromContext);
       
-      // For testing, show validity even without game info
-      const extractedStats = extractStatsFromVideoData(saveData);
-      const taggedPoints = extractedStats.teamStats.totalPoints;
-      console.log('Tagged points:', taggedPoints);
+      // Get all videos for this game from MasterBin
+      const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
+      let totalTaggedPoints = 0;
       
-      if (!gameInfo?.finalScore) {
+      if (masterBinData?.games?.[gameNum.toString()]) {
+        const gameVideos = masterBinData.games[gameNum.toString()];
+        console.log('Game videos:', gameVideos);
+        
+        // Fetch and process each video in the playlist
+        for (const [videoNum, binId] of Object.entries(gameVideos)) {
+          try {
+            const videoData = await jsonbinStorage.readBin(binId) as SaveData;
+            if (videoData?.events) {
+              const extractedStats = extractStatsFromVideoData(videoData);
+              totalTaggedPoints += extractedStats.teamStats.totalPoints;
+              console.log(`Video ${videoNum} points:`, extractedStats.teamStats.totalPoints);
+            }
+          } catch (error) {
+            console.error(`Failed to load video ${videoNum}:`, error);
+          }
+        }
+      } else {
+        // Fallback to current video if no playlist found
+        const extractedStats = extractStatsFromVideoData(saveData);
+        totalTaggedPoints = extractedStats.teamStats.totalPoints;
+      }
+      
+      console.log('Total tagged points from all videos:', totalTaggedPoints);
+      
+      if (!gameFromContext?.finalScore) {
         // Show test validity check even without game score
         setValidityCheck({
-          actualScore: '?-?',
-          taggedPoints,
+          actualScore: 'Score unknown',
+          taggedPoints: totalTaggedPoints,
           percentage: 0,
           status: 'unknown'
         });
         return;
       }
       
-      // Extract TSV Neuenstadt's score from final score
+      // Extract Pitbulls' score from final score
       // Assuming format like "89-76" where first number is Pitbulls
-      const scoreParts = gameInfo.finalScore.split('-');
+      const scoreParts = gameFromContext.finalScore.split('-');
       const pitbullsScore = parseInt(scoreParts[0]) || 0;
-      const tsvScore = parseInt(scoreParts[1]) || 0;
       
       // Calculate percentage accuracy
-      const percentage = pitbullsScore > 0 ? Math.round((taggedPoints / pitbullsScore) * 100) : 0;
+      const percentage = pitbullsScore > 0 ? Math.round((totalTaggedPoints / pitbullsScore) * 100) : 0;
       
       // Determine status
       let status: 'excellent' | 'good' | 'poor' | 'unknown' = 'unknown';
@@ -111,10 +134,10 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
       else if (percentage >= 75) status = 'good';
       else status = 'poor';
       
-      console.log('Setting validity check:', { actualScore: gameInfo.finalScore, taggedPoints, percentage, status });
+      console.log('Setting validity check:', { actualScore: gameFromContext.finalScore, taggedPoints: totalTaggedPoints, percentage, status });
       setValidityCheck({
-        actualScore: gameInfo.finalScore,
-        taggedPoints,
+        actualScore: gameFromContext.finalScore,
+        taggedPoints: totalTaggedPoints,
         percentage,
         status
       });
@@ -191,7 +214,10 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
               {validityCheck.status === 'good' && <AlertTriangle className="h-3 w-3 mr-1" />}
               {validityCheck.status === 'poor' && <XCircle className="h-3 w-3 mr-1" />}
               {validityCheck.status === 'unknown' && <AlertTriangle className="h-3 w-3 mr-1" />}
-              {validityCheck.taggedPoints} of {validityCheck.actualScore.split('-')[0]} points tagged ({validityCheck.percentage}%)
+              {validityCheck.actualScore === 'Score unknown' ? 
+  `${validityCheck.taggedPoints} points tagged (score unknown)` :
+  `${validityCheck.taggedPoints} of ${validityCheck.actualScore.split('-')[0]} points tagged (${validityCheck.percentage}%)`
+}
             </Badge>
           )}
           {/* Debug info */}
