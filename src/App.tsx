@@ -16,6 +16,7 @@ import Games from "./pages/Games";
 import GameDetail from "./pages/GameDetail";
 import Videos from "./pages/Videos";
 import VideoEditor from "./pages/VideoEditor";
+import Spielplan from "./pages/Spielplan";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,7 +70,7 @@ const App = () => {
         const pathSegments = pathWithoutBase.split('/');
 
         // If this looks like one of our routes
-        if (pathSegments.length > 0 && ['games', 'players', 'videos', 'stats', 'upload-game'].includes(pathSegments[0])) {
+        if (pathSegments.length > 0 && ['games', 'players', 'videos', 'stats', 'upload-game', 'spielplan'].includes(pathSegments[0])) {
           // Reconstruct the URL with the base path
           const newPath = `${basePath}${currentPath}`;
           window.history.replaceState({}, '', newPath);
@@ -117,6 +118,7 @@ const App = () => {
                 <Route path="/games/:id" element={<GameDetail />} />
                 <Route path="/videos" element={<Videos />} />
                 <Route path="/video-editor" element={<VideoEditor />} />
+                <Route path="/spielplan" element={<Spielplan />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
