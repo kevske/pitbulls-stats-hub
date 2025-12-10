@@ -140,7 +140,8 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
     console.log('Updated current players:', updatedCurrentPlayers.length);
 
     setCurrentPlayers(updatedCurrentPlayers);
-    if (updatedCurrentPlayers.length > 0) {
+    // Only exit starting five selection mode when we have exactly 5 players
+    if (updatedCurrentPlayers.length === 5) {
       setIsSelectingStartingFive(false);
     }
     
@@ -273,7 +274,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             <CardTitle className="text-sm">
-              {isSelectingStartingFive ? 'Select Starting Five' : 'Current Players on Field'}
+              Currently on the court:
             </CardTitle>
             <Badge variant="secondary" className="text-xs">
               {currentPlayers.length}/5
@@ -295,7 +296,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
         {isSelectingStartingFive ? (
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Select the starting five players:
+              Currently on the court:
             </p>
             
             {/* Current selection */}
@@ -341,8 +342,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
         ) : (
           <div className="space-y-3">
             {/* Basketball Court with current players */}
-            <div className="space-y-2">
-              <p className="text-xs font-medium">On Court:</p>
+            <div>
               <BasketballCourt
                 players={currentPlayers.map(cp => cp.player)}
                 onPlayerSelect={handlePlayerSelect}
