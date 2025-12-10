@@ -160,6 +160,20 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
         <div className="flex gap-2 text-xs">
           <Badge variant="secondary">{eventCount} events</Badge>
           <Badge variant="secondary">{playerCount} players</Badge>
+          {validityCheck && (
+            <Badge 
+              className={
+                validityCheck.status === 'excellent' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                validityCheck.status === 'good' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+              }
+            >
+              {validityCheck.status === 'excellent' && <CheckCircle className="h-3 w-3 mr-1" />}
+              {validityCheck.status === 'good' && <AlertTriangle className="h-3 w-3 mr-1" />}
+              {validityCheck.status === 'poor' && <XCircle className="h-3 w-3 mr-1" />}
+              {validityCheck.taggedPoints} of {validityCheck.actualScore.split('-')[0]} points tagged ({validityCheck.percentage}%)
+            </Badge>
+          )}
         </div>
 
         {/* Game Number Input */}
@@ -181,47 +195,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
           )}
         </div>
 
-        {/* Validity Check */}
-        {validityCheck && (
-          <div className="p-3 rounded-lg border">
-            <div className="flex items-center gap-2 mb-2">
-              <Label className="text-xs font-medium">Validity Check</Label>
-              {validityCheck.status === 'excellent' && (
-                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Excellent
-                </Badge>
-              )}
-              {validityCheck.status === 'good' && (
-                <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  Good
-                </Badge>
-              )}
-              {validityCheck.status === 'poor' && (
-                <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                  <XCircle className="h-3 w-3 mr-1" />
-                  Poor
-                </Badge>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div>
-                <span className="text-muted-foreground">Actual Score:</span>
-                <div className="font-medium">{validityCheck.actualScore}</div>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Tagged Points:</span>
-                <div className="font-medium">{validityCheck.taggedPoints}</div>
-              </div>
-              <div className="col-span-2">
-                <span className="text-muted-foreground">Accuracy:</span>
-                <div className="font-medium">{validityCheck.percentage}%</div>
-              </div>
-            </div>
-          </div>
-        )}
-
+        
         {/* Auto-detection Info */}
         <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-2 rounded">
           <div className="flex items-center gap-1 mb-1">
