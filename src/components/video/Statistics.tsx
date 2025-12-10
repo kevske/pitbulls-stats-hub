@@ -1,96 +1,31 @@
-import { TaggedEvent } from '@/types/basketball';
+import { TaggedEvent, Player, DEFAULT_PLAYERS } from '@/types/basketball';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { extractStatsFromVideoData, PlayerGameStats, TeamGameStats } from '@/services/statsExtraction';
 
 interface StatisticsProps {
   events: TaggedEvent[];
+  players?: Player[];
 }
 
-interface PlayerStats {
-  shots: { made: number; missed: number; points: number };
-  rebounds: number;
-  substitutions: number;
-  fouls: number;
-  assists: number;
-  steals: number;
-  blocks: number;
-  turnovers: number;
-}
-
-export function Statistics({ events }: StatisticsProps) {
-  const playerStats = events.reduce((acc, event) => {
-    if (!event.player) return acc;
-
-    if (!acc[event.player]) {
-      acc[event.player] = {
-        shots: { made: 0, missed: 0, points: 0 },
-        rebounds: 0,
-        substitutions: 0,
-        fouls: 0,
-        assists: 0,
-        steals: 0,
-        blocks: 0,
-        turnovers: 0,
-      };
+export function Statistics({ events, players = DEFAULT_PLAYERS }: StatisticsProps) {
+  // Use the new stats extraction service
+  const extractedStats = extractStatsFromVideoData({
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    players,
+    events,
+    metadata: {
+      totalEvents: events.length,
+      totalTimeSpan: events.length > 0 ? Math.max(...events.map(e => e.timestamp)) : 0,
+      exportFormat: 'youtube-timestamps'
     }
+  });
 
-    const stats = acc[event.player];
+  const { playerStats, teamStats } = extractedStats;
 
-    switch (event.type) {
-      case 'shot':
-        if (event.missed) {
-          stats.shots.missed++;
-        } else {
-          stats.shots.made++;
-          stats.shots.points += event.points || 0;
-        }
-        break;
-      case 'rebound':
-        stats.rebounds++;
-        break;
-      case 'substitution':
-        stats.substitutions++;
-        break;
-      case 'foul':
-        stats.fouls++;
-        break;
-      case 'assist':
-        stats.assists++;
-        break;
-      case 'steal':
-        stats.steals++;
-        break;
-      case 'block':
-        stats.blocks++;
-        break;
-      case 'turnover':
-        stats.turnovers++;
-        break;
-    }
-
-    // Handle rebound player separately
-    if (event.type === 'shot' && event.missed && event.reboundPlayer) {
-      if (!acc[event.reboundPlayer]) {
-        acc[event.reboundPlayer] = {
-          shots: { made: 0, missed: 0, points: 0 },
-          rebounds: 0,
-          substitutions: 0,
-          fouls: 0,
-          assists: 0,
-          steals: 0,
-          blocks: 0,
-          turnovers: 0,
-        };
-      }
-      acc[event.reboundPlayer].rebounds++;
-    }
-
-    return acc;
-  }, {} as Record<string, PlayerStats>);
-
-  const players = Object.keys(playerStats).sort();
-
-  if (players.length === 0) {
+  if (playerStats.length === 0) {
     return (
       <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50 text-center text-muted-foreground text-sm">
         Statistics will appear here after recording events.
@@ -101,33 +36,104 @@ export function Statistics({ events }: StatisticsProps) {
   return (
     <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
       <div className="p-3 border-b border-border/50">
-        <h3 className="font-semibold text-sm">Statistics</h3>
+        <h3 className="font-semibold text-sm">Enhanced Statistics</h3>
       </div>
-      <ScrollArea className="h-[200px]">
-        <div className="p-3 space-y-3">
-          {players.map((player) => {
-            const stats = playerStats[player];
-            const statItems = [
-              stats.shots.points > 0 && `${stats.shots.points} pts`,
-              stats.shots.made > 0 && `${stats.shots.made}/${stats.shots.made + stats.shots.missed} FG`,
-              stats.rebounds > 0 && `${stats.rebounds} REB`,
-              stats.assists > 0 && `${stats.assists} AST`,
-              stats.steals > 0 && `${stats.steals} STL`,
-              stats.blocks > 0 && `${stats.blocks} BLK`,
-              stats.turnovers > 0 && `${stats.turnovers} TO`,
-              stats.fouls > 0 && `${stats.fouls} PF`,
-              stats.substitutions > 0 && `${stats.substitutions} SUB`,
-            ].filter(Boolean);
+      <ScrollArea className="h-[400px]">
+        <div className="p-3 space-y-4">
+          {/* Team Summary */}
+          <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+            <h4 className="font-medium text-sm mb-2 text-primary">Team Summary</h4>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>Points: {teamStats.totalPoints}</div>
+              <div>FG%: {teamStats.teamFieldGoalPercentage}%</div>
+              <div>3P%: {teamStats.teamThreePointPercentage}%</div>
+              <div>FT%: {teamStats.teamFreeThrowPercentage}%</div>
+              <div>Assists: {teamStats.totalAssists}</div>
+              <div>Rebounds: {teamStats.totalRebounds}</div>
+              <div>Steals: {teamStats.totalSteals}</div>
+              <div>Blocks: {teamStats.totalBlocks}</div>
+              <div>Turnovers: {teamStats.totalTurnovers}</div>
+              <div>Fouls: {teamStats.totalFouls}</div>
+            </div>
+          </div>
 
-            return (
-              <div key={player} className="p-2 rounded-lg bg-accent/30">
-                <div className="font-medium text-sm mb-1">{player}</div>
-                <div className="text-xs text-muted-foreground">
-                  {statItems.length > 0 ? statItems.join(' • ') : 'No stats'}
+          {/* Individual Player Stats */}
+          {playerStats.map((player) => (
+            <div key={player.playerId} className="p-3 rounded-lg bg-accent/30">
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-medium text-sm">
+                  #{player.jerseyNumber} {player.playerName}
+                </div>
+                <div className="flex gap-1">
+                  {player.totalPoints > 0 && (
+                    <Badge variant="default" className="text-xs">
+                      {player.totalPoints} pts
+                    </Badge>
+                  )}
+                  {player.assists > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {player.assists} ast
+                    </Badge>
+                  )}
+                  {player.rebounds > 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      {player.rebounds} reb
+                    </Badge>
+                  )}
                 </div>
               </div>
-            );
-          })}
+              
+              {/* Shooting Stats */}
+              {(player.fieldGoalsAttempted > 0 || player.freeThrowsAttempted > 0) && (
+                <div className="grid grid-cols-3 gap-2 text-xs mb-2">
+                  <div className="text-center p-1 rounded bg-background/50">
+                    <div className="font-medium">FG</div>
+                    <div>{player.fieldGoalsMade}/{player.fieldGoalsAttempted}</div>
+                    <div className="text-muted-foreground">{player.fieldGoalPercentage}%</div>
+                  </div>
+                  <div className="text-center p-1 rounded bg-background/50">
+                    <div className="font-medium">3PT</div>
+                    <div>{player.threePointersMade}/{player.threePointersAttempted}</div>
+                    <div className="text-muted-foreground">{player.threePointPercentage}%</div>
+                  </div>
+                  <div className="text-center p-1 rounded bg-background/50">
+                    <div className="font-medium">FT</div>
+                    <div>{player.freeThrowsMade}/{player.freeThrowsAttempted}</div>
+                    <div className="text-muted-foreground">{player.freeThrowPercentage}%</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Other Stats */}
+              <div className="flex flex-wrap gap-1 text-xs">
+                {player.steals > 0 && (
+                  <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    {player.steals} STL
+                  </span>
+                )}
+                {player.blocks > 0 && (
+                  <span className="px-2 py-1 rounded bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    {player.blocks} BLK
+                  </span>
+                )}
+                {player.turnovers > 0 && (
+                  <span className="px-2 py-1 rounded bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                    {player.turnovers} TOV
+                  </span>
+                )}
+                {player.fouls > 0 && (
+                  <span className="px-2 py-1 rounded bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                    {player.fouls} PF
+                  </span>
+                )}
+                {player.substitutions > 0 && (
+                  <span className="px-2 py-1 rounded bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+                    {player.substitutions} SUB
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </ScrollArea>
     </Card>

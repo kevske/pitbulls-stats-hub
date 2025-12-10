@@ -8,6 +8,7 @@ import { EventList } from '@/components/video/EventList';
 import { PlayerManager } from '@/components/video/PlayerManager';
 import { Statistics } from '@/components/video/Statistics';
 import { ExportPanel } from '@/components/video/ExportPanel';
+import { VideoStatsIntegration } from '@/components/video/VideoStatsIntegration';
 import { PlaylistPanel, PlaylistVideo } from '@/components/video/PlaylistPanel';
 import { PlaylistSideMenu } from '@/components/video/PlaylistSideMenu';
 import { CurrentPlayersOnField } from '@/components/video/CurrentPlayersOnField';
@@ -17,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, List, Upload, FileText, Plus, Save } from 'lucide-react';
-import { SaveData } from '@/lib/saveLoad';
+import { generateSaveData, SaveData } from '@/lib/saveLoad';
 import { loadSaveFile } from '@/lib/saveLoad';
 import { toast } from 'sonner';
 import Layout from '@/components/Layout';
@@ -688,6 +689,15 @@ const VideoEditor = () => {
                   onLoadData={handleLoadData}
                   lastSavedData={lastSavedData}
                 />
+
+                {/* Video Stats Integration */}
+                <VideoStatsIntegration 
+                  saveData={generateSaveData(players, events, videoId, playlistId)}
+                  gameNumber={gameNumber}
+                  onIntegrationComplete={(result) => {
+                    console.log('Video stats integrated:', result);
+                  }}
+                />
               </div>
 
               {/* Game Tags - Right panel */}
@@ -719,7 +729,7 @@ const VideoEditor = () => {
                     />
                   </TabsContent>
                   <TabsContent value="stats" className="mt-3">
-                    <Statistics events={events} />
+                    <Statistics events={events} players={players} />
                   </TabsContent>
                   <TabsContent value="players" className="mt-3">
                     <PlayerManager
