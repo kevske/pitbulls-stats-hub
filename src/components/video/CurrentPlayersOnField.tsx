@@ -72,6 +72,13 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
       return;
     }
     
+    // IMPORTANT: Don't process substitutions if user is still selecting starting five
+    // This prevents automatic lineup reconstruction when user manually selects players
+    if (isSelectingStartingFive) {
+      console.log('Skipping substitution processing - user is selecting starting five');
+      return;
+    }
+    
     // IMPORTANT: Only process substitutions if we have user-selected current players
     // If we have loaded events but no current players, this means we loaded a file but haven't selected starting five yet
     if (events.length > 0 && currentPlayers.length === 0) {
@@ -147,7 +154,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
     
     // Notify parent component of current players change
     onCurrentPlayersChange?.(updatedCurrentPlayers.map(cp => cp.player));
-  }, [events, players, justLoadedRef.current, resetOnLoad, currentPlayers.length]);
+  }, [events, players, justLoadedRef.current, resetOnLoad, currentPlayers.length, isSelectingStartingFive]);
 
   const handlePlayerSelect = (player: Player) => {
     if (isSelectingStartingFive) {
