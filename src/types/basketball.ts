@@ -42,7 +42,9 @@ export type EventType =
   | 'assist'
   | 'steal'
   | 'block'
-  | 'turnover';
+  | 'turnover'
+  | 'highlight'
+  | 'learning';
 
 export interface EventTemplate {
   type: EventType;
@@ -56,6 +58,8 @@ export interface EventTemplate {
 export const EVENT_TEMPLATES: EventTemplate[] = [
   { type: 'start_of_quarter', label: 'Start of Quarter', icon: '🟢', requiresPlayer: false },
   { type: 'timeout', label: 'Time Out', icon: '⏸️', requiresPlayer: false },
+  { type: 'highlight', label: 'Highlight', icon: '⭐', requiresPlayer: false },
+  { type: 'learning', label: 'Learning', icon: '💩', requiresPlayer: false },
   { type: 'substitution', label: 'Substitution', icon: '🔄', requiresPlayer: true },
   { type: 'shot', label: 'Shot', icon: '🏀', requiresPlayer: true, requiresPoints: true, requiresMissed: true },
   { type: 'rebound', label: 'Rebound', icon: '📥', requiresPlayer: true },
