@@ -1,5 +1,5 @@
-const fs = require('fs').promises;
-const path = require('path');
+import fs from 'fs/promises';
+import path from 'path';
 
 // Fetch all game data from JSONBin MasterBin
 async function syncJsonBinToGitHub() {
