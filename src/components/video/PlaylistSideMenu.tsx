@@ -203,7 +203,10 @@ export function PlaylistSideMenu({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => onSelectVideo(index)}
+                                onClick={() => {
+                                  onSelectVideo(index);
+                                  onToggle(); // Close menu for better visibility
+                                }}
                                 className="h-6 px-2 text-xs"
                                 disabled={isCurrent}
                               >

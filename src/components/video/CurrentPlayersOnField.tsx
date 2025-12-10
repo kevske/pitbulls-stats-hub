@@ -69,12 +69,6 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
       return;
     }
     
-    // Also skip if we're in starting five selection mode
-    if (isSelectingStartingFive) {
-      console.log('Skipping substitution processing - in starting five selection mode');
-      return;
-    }
-    
     const substitutionEvents = events
       .filter(event => event.type === 'substitution')
       .sort((a, b) => a.timestamp - b.timestamp);
@@ -126,7 +120,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
     
     // Notify parent component of current players change
     onCurrentPlayersChange?.(updatedCurrentPlayers.map(cp => cp.player));
-  }, [events, players, justLoadedRef.current, resetOnLoad, isSelectingStartingFive]);
+  }, [events, players, justLoadedRef.current, resetOnLoad]);
 
   const handlePlayerSelect = (player: Player) => {
     if (isSelectingStartingFive) {
