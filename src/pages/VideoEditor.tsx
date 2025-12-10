@@ -484,9 +484,7 @@ const VideoEditor = () => {
     // Add video context for playlist mode
     const eventWithVideo: TaggedEvent = {
       ...completeEvent,
-      description: playlistVideos.length > 0 
-        ? `[Video ${currentPlaylistIndex + 1}] ${completeEvent.description}`
-        : completeEvent.description,
+      description: completeEvent.description,
     };
     setEvents((prev) => [...prev, eventWithVideo]);
   };
