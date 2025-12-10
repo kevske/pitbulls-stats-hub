@@ -1,0 +1,571 @@
+{
+  "gameNumber": 8,
+  "videoIndex": 3,
+  "events": [
+    {
+      "timestamp": 20.020203967575075,
+      "formattedTime": "00:20",
+      "type": "substitution",
+      "player": "Jan Crocoll",
+      "substitutionOut": "Jan Strobel",
+      "id": "6723940b-ac4d-4d85-b365-2a9fe88a6c3b",
+      "description": "Substitution Jan Crocoll. Substitution out Jan Strobel"
+    },
+    {
+      "timestamp": 28.840275,
+      "formattedTime": "00:28",
+      "type": "rebound",
+      "player": "Stefan Anselm",
+      "id": "939b44aa-ac06-428d-898e-2b1616a0f8be",
+      "description": "Rebound Stefan Anselm"
+    },
+    {
+      "timestamp": 38.815241,
+      "formattedTime": "00:38",
+      "type": "assist",
+      "player": "Tim Krause",
+      "id": "137f7b59-e9a4-45d2-8393-2243b7402096",
+      "description": "Assist Tim Krause"
+    },
+    {
+      "timestamp": 38.815241,
+      "formattedTime": "00:38",
+      "type": "shot",
+      "player": "Alexander Rib",
+      "points": 3,
+      "missed": false,
+      "id": "bc325e35-8fd5-413c-bdeb-c3da48f4aac1",
+      "description": "Shot Alexander Rib: three. Made"
+    },
+    {
+      "timestamp": 62.6172810667572,
+      "formattedTime": "01:02",
+      "type": "rebound",
+      "player": "Stefan Anselm",
+      "id": "e674b797-d73e-4446-93e6-935aad3db5d4",
+      "description": "Rebound Stefan Anselm"
+    },
+    {
+      "timestamp": 73.29215497138978,
+      "formattedTime": "01:13",
+      "type": "assist",
+      "player": "Alexander Rib",
+      "id": "7c1980e8-f1fc-4685-b950-6fca80642123",
+      "description": "Assist Alexander Rib"
+    },
+    {
+      "timestamp": 73.29215497138978,
+      "formattedTime": "01:13",
+      "type": "shot",
+      "player": "Stefan Anselm",
+      "points": 2,
+      "missed": false,
+      "id": "a8a6ba7e-1616-48c0-93f7-f7d572d008a6",
+      "description": "Shot Stefan Anselm: two. Made"
+    },
+    {
+      "timestamp": 88.77489301335144,
+      "formattedTime": "01:28",
+      "type": "rebound",
+      "player": "Jan Crocoll",
+      "id": "e57025bf-1ac2-44d4-a859-b05f977d8609",
+      "description": "Rebound Jan Crocoll"
+    },
+    {
+      "timestamp": 102.94457804196168,
+      "formattedTime": "01:42",
+      "type": "shot",
+      "player": "Tim Krause",
+      "points": 2,
+      "missed": true,
+      "id": "dc3ab0fc-9b44-4aa9-9c5b-07d8954b3b28",
+      "description": "Shot Tim Krause: two. Missed"
+    },
+    {
+      "timestamp": 127.25874296948243,
+      "formattedTime": "02:07",
+      "type": "steal",
+      "player": "Kevin Rassner",
+      "id": "5960ad97-51b0-4df9-a208-d6e1d77e6073",
+      "description": "Steal Kevin Rassner"
+    },
+    {
+      "timestamp": 134.5550180591278,
+      "formattedTime": "02:14",
+      "type": "assist",
+      "player": "Stefan Anselm",
+      "id": "21d93367-8db3-4755-ace1-829b3532a060",
+      "description": "Assist Stefan Anselm"
+    },
+    {
+      "timestamp": 134.5550180591278,
+      "formattedTime": "02:14",
+      "type": "shot",
+      "player": "Alexander Rib",
+      "points": 2,
+      "missed": false,
+      "id": "eb16ef79-315f-469c-b590-8a9ff70504b4",
+      "description": "Shot Alexander Rib: two. Made"
+    },
+    {
+      "timestamp": 951.9291031220703,
+      "formattedTime": "15:51",
+      "type": "shot",
+      "player": "Christoph Mörsch",
+      "points": 2,
+      "missed": true,
+      "id": "a04fc0fb-7050-452c-af30-d307e0d0809c",
+      "description": "Shot Christoph Mörsch: two. Missed"
+    },
+    {
+      "timestamp": 951.9291031220703,
+      "formattedTime": "15:51",
+      "type": "rebound",
+      "player": "Jan Strobel",
+      "id": "25bb057c-984b-412e-837b-80139f80cbbf",
+      "description": "Rebound Jan Strobel"
+    },
+    {
+      "timestamp": 996.6094411068116,
+      "formattedTime": "16:36",
+      "type": "turnover",
+      "player": "Christoph Mörsch",
+      "id": "f42eb6fb-5bf1-45d9-8c52-326862fc2117",
+      "description": "Turnover Christoph Mörsch"
+    },
+    {
+      "timestamp": 1021.9083129656677,
+      "formattedTime": "17:01",
+      "type": "rebound",
+      "player": "Stefan Anselm",
+      "id": "f7c63e9a-d89c-42f5-9761-0753ef94d62a",
+      "description": "Rebound Stefan Anselm"
+    },
+    {
+      "timestamp": 1029.2097839637604,
+      "formattedTime": "17:09",
+      "type": "shot",
+      "player": "Tim Krause",
+      "points": 3,
+      "missed": true,
+      "id": "c97d87a8-8031-4359-ac0d-d5090ebcb48d",
+      "description": "Shot Tim Krause: three. Missed"
+    },
+    {
+      "timestamp": 152.49859585694884,
+      "formattedTime": "02:32",
+      "type": "foul",
+      "player": "Stefan Anselm",
+      "id": "8b903f2d-ca39-4f8b-b96b-43c13779fac7",
+      "description": "Foul Stefan Anselm"
+    },
+    {
+      "timestamp": 219.4566878550415,
+      "formattedTime": "03:39",
+      "type": "shot",
+      "player": "Alexander Rib",
+      "points": 3,
+      "missed": false,
+      "id": "c62e1a64-3030-4e6c-a5f8-1a5669f34ba6",
+      "description": "Shot Alexander Rib: three. Made"
+    },
+    {
+      "timestamp": 219.4566878550415,
+      "formattedTime": "03:39",
+      "type": "assist",
+      "player": "Jan Crocoll",
+      "id": "a19b18e2-f83d-4396-8183-380123b5177a",
+      "description": "Assist Jan Crocoll"
+    },
+    {
+      "timestamp": 248.7327839217987,
+      "formattedTime": "04:08",
+      "type": "timeout",
+      "id": "2be88c6b-10de-49ab-bea9-295b7251726f",
+      "description": "Time Out"
+    },
+    {
+      "timestamp": 333.204985879837,
+      "formattedTime": "05:33",
+      "type": "substitution",
+      "player": "Abdullah Ari",
+      "substitutionOut": "Kevin Rassner",
+      "id": "ee25ec57-d407-4220-acc7-2c46de73aa10",
+      "description": "Substitution Abdullah Ari. Substitution out Kevin Rassner"
+    },
+    {
+      "timestamp": 350.2686119103546,
+      "formattedTime": "05:50",
+      "type": "assist",
+      "player": "Alexander Rib",
+      "id": "ac436b1e-eb89-4017-95db-89772eec3379",
+      "description": "Assist Alexander Rib"
+    },
+    {
+      "timestamp": 350.2686119103546,
+      "formattedTime": "05:50",
+      "type": "shot",
+      "player": "Abdullah Ari",
+      "points": 2,
+      "missed": false,
+      "id": "5ca37913-c9fd-4189-961f-275e3c50a041",
+      "description": "Shot Abdullah Ari: two. Made"
+    },
+    {
+      "timestamp": 396.83572406866455,
+      "formattedTime": "06:36",
+      "type": "shot",
+      "player": "Stefan Anselm",
+      "points": 2,
+      "missed": true,
+      "id": "13216631-f3e0-4f75-8e93-182c6881f73b",
+      "description": "Shot Stefan Anselm: two. Missed"
+    },
+    {
+      "timestamp": 405.5114122117157,
+      "formattedTime": "06:45",
+      "type": "steal",
+      "player": "Abdullah Ari",
+      "id": "2ec4bf64-dead-40ad-80a0-fee712ed7acf",
+      "description": "Steal Abdullah Ari"
+    },
+    {
+      "timestamp": 410.9111748531341,
+      "formattedTime": "06:50",
+      "type": "shot",
+      "player": "Abdullah Ari",
+      "points": 2,
+      "missed": false,
+      "id": "c13504fd-42e8-4574-9b74-23b049f3458b",
+      "description": "Shot Abdullah Ari: two. Made"
+    },
+    {
+      "timestamp": 452.8115219485016,
+      "formattedTime": "07:32",
+      "type": "shot",
+      "player": "Abdullah Ari",
+      "points": 2,
+      "missed": true,
+      "id": "edf3a40f-4938-4d78-ab3b-3817f64b8644",
+      "description": "Shot Abdullah Ari: two. Missed"
+    },
+    {
+      "timestamp": 487.01107518692015,
+      "formattedTime": "08:07",
+      "type": "shot",
+      "player": "Stefan Anselm",
+      "points": 2,
+      "missed": false,
+      "id": "bb0158ec-9bb5-4f94-a7ee-c044eef34a05",
+      "description": "Shot Stefan Anselm: two. Made"
+    },
+    {
+      "timestamp": 487.01107518692015,
+      "formattedTime": "08:07",
+      "type": "assist",
+      "player": "Alexander Rib",
+      "id": "e0f51076-f264-4cb2-bd15-814efe4067d5",
+      "description": "Assist Alexander Rib"
+    },
+    {
+      "timestamp": 518.524617923706,
+      "formattedTime": "08:38",
+      "type": "substitution",
+      "player": "Kevin Rassner",
+      "substitutionOut": "Tim Krause",
+      "id": "785ad7e7-101b-4942-a4bf-4af8934897da",
+      "description": "Substitution Kevin Rassner. Substitution out Tim Krause"
+    },
+    {
+      "timestamp": 548.8343229732972,
+      "formattedTime": "09:08",
+      "type": "substitution",
+      "player": "Nino de Bortoli",
+      "substitutionOut": "Stefan Anselm",
+      "id": "e21e842f-2e72-4122-b802-0fe1eb7d8691",
+      "description": "Substitution Nino de Bortoli. Substitution out Stefan Anselm"
+    },
+    {
+      "timestamp": 576.3574578264313,
+      "formattedTime": "09:36",
+      "type": "shot",
+      "player": "Alexander Rib",
+      "points": 2,
+      "missed": true,
+      "id": "8017afa9-41f7-4545-ac1b-7349850d2b9f",
+      "description": "Shot Alexander Rib: two. Missed"
+    },
+    {
+      "timestamp": 595.8557550915527,
+      "formattedTime": "09:55",
+      "type": "steal",
+      "player": "Abdullah Ari",
+      "id": "7ac4e7d0-d618-40c2-9460-0b153fe79565",
+      "description": "Steal Abdullah Ari"
+    },
+    {
+      "timestamp": 608.155615043869,
+      "formattedTime": "10:08",
+      "type": "shot",
+      "player": "Abdullah Ari",
+      "points": 2,
+      "missed": true,
+      "id": "ebd749ab-ee3b-4232-9f37-e95e9b90a5b2",
+      "description": "Shot Abdullah Ari: two. Missed"
+    },
+    {
+      "timestamp": 657.4495540152587,
+      "formattedTime": "10:57",
+      "type": "shot",
+      "player": "Nino de Bortoli",
+      "points": 3,
+      "missed": true,
+      "id": "c91dfe71-0bc4-4453-b7f1-2b6694c7f3d2",
+      "description": "Shot Nino de Bortoli: three. Missed"
+    },
+    {
+      "timestamp": 640.1634250190735,
+      "formattedTime": "10:40",
+      "type": "substitution",
+      "player": "David Scheja",
+      "substitutionOut": "Jan Crocoll",
+      "id": "3abde155-10d8-4564-aa04-2279a27eac61",
+      "description": "Substitution David Scheja. Substitution out Jan Crocoll"
+    },
+    {
+      "timestamp": 678.7554430057221,
+      "formattedTime": "11:18",
+      "type": "shot",
+      "player": "David Scheja",
+      "points": 2,
+      "missed": true,
+      "id": "468c2693-7513-4bf3-ac41-43f0c6378da0",
+      "description": "Shot David Scheja: two. Missed"
+    },
+    {
+      "timestamp": 680.553663,
+      "formattedTime": "11:20",
+      "type": "rebound",
+      "player": "Abdullah Ari",
+      "id": "80229f57-9fe4-4144-852b-3adf11400e9b",
+      "description": "Rebound Abdullah Ari"
+    },
+    {
+      "timestamp": 689.7412169485016,
+      "formattedTime": "11:29",
+      "type": "substitution",
+      "player": "Christoph Mörsch",
+      "substitutionOut": "Abdullah Ari",
+      "id": "9bd09fdb-f8eb-4ae6-bf6f-42ad188088b7",
+      "description": "Substitution Christoph Mörsch. Substitution out Abdullah Ari"
+    },
+    {
+      "timestamp": 714.5092290457764,
+      "formattedTime": "11:54",
+      "type": "shot",
+      "player": "Kevin Rassner",
+      "points": 2,
+      "missed": true,
+      "id": "8bc8ea44-02c6-4929-9669-a50e94d3d759",
+      "description": "Shot Kevin Rassner: two. Missed"
+    },
+    {
+      "timestamp": 717.2192100839234,
+      "formattedTime": "11:57",
+      "type": "rebound",
+      "player": "Alexander Rib",
+      "id": "aa39a53e-8ca1-449d-a4ed-352d5970dce9",
+      "description": "Rebound Alexander Rib"
+    },
+    {
+      "timestamp": 752.7239360133515,
+      "formattedTime": "12:32",
+      "type": "shot",
+      "player": "Kevin Rassner",
+      "points": 1,
+      "missed": true,
+      "id": "dd33d475-5db3-478d-846c-9e789de78307",
+      "description": "Shot Kevin Rassner: free throw. Missed"
+    },
+    {
+      "timestamp": 764.9265949217987,
+      "formattedTime": "12:44",
+      "type": "shot",
+      "player": "Kevin Rassner",
+      "points": 1,
+      "missed": false,
+      "id": "2a1d9aa7-fa67-4a7d-b508-cf7654323e34",
+      "description": "Shot Kevin Rassner: free throw. Made"
+    },
+    {
+      "timestamp": 785.3272950667572,
+      "formattedTime": "13:05",
+      "type": "turnover",
+      "player": "Alexander Rib",
+      "id": "d1cf3a3c-c702-4f92-886b-4b7c8efbd854",
+      "description": "Turnover Alexander Rib"
+    },
+    {
+      "timestamp": 827.6738600419617,
+      "formattedTime": "13:47",
+      "type": "substitution",
+      "player": "Stefan Anselm",
+      "substitutionOut": "Nino de Bortoli",
+      "id": "b28bf95d-18bd-42a6-bfad-5d54fb90222c",
+      "description": "Substitution Stefan Anselm. Substitution out Nino de Bortoli"
+    },
+    {
+      "timestamp": 834.7891248760224,
+      "formattedTime": "13:54",
+      "type": "shot",
+      "player": "Stefan Anselm",
+      "points": 3,
+      "missed": true,
+      "id": "e62178ec-cdf2-448a-894d-2e6277b81eee",
+      "description": "Shot Stefan Anselm: three. Missed"
+    },
+    {
+      "timestamp": 850.3866208588562,
+      "formattedTime": "14:10",
+      "type": "steal",
+      "player": "Kevin Rassner",
+      "id": "c2717987-bb2c-4242-b5aa-7b33b410582f",
+      "description": "Steal Kevin Rassner"
+    },
+    {
+      "timestamp": 860.447789824524,
+      "formattedTime": "14:20",
+      "type": "turnover",
+      "player": "Kevin Rassner",
+      "id": "c1daeb25-8a6b-4a72-901f-2114389246f3",
+      "description": "Turnover Kevin Rassner"
+    },
+    {
+      "timestamp": 895.3910079961853,
+      "formattedTime": "14:55",
+      "type": "turnover",
+      "player": "Stefan Anselm",
+      "id": "8623217e-c53e-4bf7-86be-6cc219e10865",
+      "description": "Turnover Stefan Anselm"
+    },
+    {
+      "timestamp": 918.4893580019074,
+      "formattedTime": "15:18",
+      "type": "substitution",
+      "player": "Tim Krause",
+      "substitutionOut": "Alexander Rib",
+      "id": "1e4dcb5c-7bdb-4f86-8b79-931cfc923fdf",
+      "description": "Substitution Tim Krause. Substitution out Alexander Rib"
+    },
+    {
+      "timestamp": 919.9327628989105,
+      "formattedTime": "15:19",
+      "type": "substitution",
+      "player": "Jan Strobel",
+      "substitutionOut": "Kevin Rassner",
+      "id": "0ef566f3-5580-4cfd-8560-6d7628cb3554",
+      "description": "Substitution Jan Strobel. Substitution out Kevin Rassner"
+    }
+  ],
+  "players": [
+    {
+      "id": "1",
+      "name": "Kevin Rassner",
+      "jerseyNumber": 19,
+      "position": "Forward"
+    },
+    {
+      "id": "2",
+      "name": "Stefan Anselm",
+      "jerseyNumber": 30,
+      "position": "Guard"
+    },
+    {
+      "id": "3",
+      "name": "Gregor Arapidis",
+      "jerseyNumber": 77,
+      "position": "Forward"
+    },
+    {
+      "id": "4",
+      "name": "Abdullah Ari",
+      "jerseyNumber": 55,
+      "position": "Forward"
+    },
+    {
+      "id": "5",
+      "name": "Sven Bader",
+      "jerseyNumber": 17,
+      "position": "Guard"
+    },
+    {
+      "id": "6",
+      "name": "Jan Crocoll",
+      "jerseyNumber": 21,
+      "position": "Center"
+    },
+    {
+      "id": "7",
+      "name": "Nino de Bortoli",
+      "jerseyNumber": 7,
+      "position": "Guard"
+    },
+    {
+      "id": "8",
+      "name": "Marcus Hayes",
+      "jerseyNumber": 33,
+      "position": "Center"
+    },
+    {
+      "id": "9",
+      "name": "Tim Krause",
+      "jerseyNumber": 13,
+      "position": "Guard"
+    },
+    {
+      "id": "10",
+      "name": "Christoph Mörsch",
+      "jerseyNumber": 41,
+      "position": "Center"
+    },
+    {
+      "id": "11",
+      "name": "Alexander Rib",
+      "jerseyNumber": 11,
+      "position": "Guard"
+    },
+    {
+      "id": "12",
+      "name": "David Scheja",
+      "jerseyNumber": 69,
+      "position": "Center"
+    },
+    {
+      "id": "13",
+      "name": "Marius Scholl",
+      "jerseyNumber": 24,
+      "position": "Guard"
+    },
+    {
+      "id": "14",
+      "name": "Jan Strobel",
+      "jerseyNumber": 8,
+      "position": "Forward"
+    },
+    {
+      "id": "15",
+      "name": "Tobi Thury",
+      "jerseyNumber": 52,
+      "position": "Forward"
+    },
+    {
+      "id": "16",
+      "name": "Danny Seitz",
+      "jerseyNumber": 31,
+      "position": "Forward"
+    }
+  ],
+  "videoId": "",
+  "playlistId": "PLo9Gj2rLRK5yEGrBKsGcjmaxTvZaXIp8-",
+  "timestamp": "2025-12-10T01:03:01.946Z"
+}
