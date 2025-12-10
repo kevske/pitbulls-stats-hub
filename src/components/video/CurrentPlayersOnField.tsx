@@ -42,6 +42,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
   const [showSubstitutionDropdown, setShowSubstitutionDropdown] = useState(false);
   const [isSelectingStartingFive, setIsSelectingStartingFive] = useState(true);
   const justLoadedRef = useRef(false);
+  const hasProcessedLoadedEventsRef = useRef(false);
 
   // Reset current players when a file is loaded
   useEffect(() => {
@@ -52,6 +53,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
       setIsSelectingStartingFive(true);
       onCurrentPlayersChange?.([]);
       justLoadedRef.current = true;
+      hasProcessedLoadedEventsRef.current = false; // Reset this flag
       // Clear the flag after a longer delay to ensure all useEffect cycles complete
       setTimeout(() => {
         justLoadedRef.current = false;
@@ -62,10 +64,19 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
 
   // Calculate current players based on substitution events
   useEffect(() => {
-    console.log('Substitution useEffect triggered:', { resetOnLoad, eventsLength: events.length, justLoaded: justLoadedRef.current });
+    console.log('Substitution useEffect triggered:', { resetOnLoad, eventsLength: events.length, justLoaded: justLoadedRef.current, hasProcessedLoadedEvents: hasProcessedLoadedEventsRef.current });
+    
     // Don't process substitutions if we just loaded a file - user will select manually
     if (justLoadedRef.current || resetOnLoad) {
       console.log('Skipping substitution processing - file was just loaded or reset triggered');
+      return;
+    }
+    
+    // If we have events but haven't processed loaded events yet, this might be the first run after loading
+    // Only process if we have current players (meaning user has selected starting five)
+    if (events.length > 0 && !hasProcessedLoadedEventsRef.current && currentPlayers.length === 0) {
+      console.log('Skipping substitution processing - no current players, likely after file load');
+      hasProcessedLoadedEventsRef.current = true; // Mark as processed to prevent future skips
       return;
     }
     
