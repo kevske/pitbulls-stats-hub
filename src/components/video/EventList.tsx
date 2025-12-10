@@ -3,6 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Trash2, Clock } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 interface EventListProps {
   events: TaggedEvent[];
@@ -13,6 +14,7 @@ interface EventListProps {
 
 export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0 }: EventListProps) {
   const sortedEvents = [...events].sort((a, b) => a.timestamp - b.timestamp);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   // Find where to insert the current time indicator
   const getCurrentTimePosition = () => {
@@ -26,7 +28,30 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0 }: 
     return sortedEvents.length; // After all events
   };
 
-  // No auto-scroll - let user control scrolling manually
+  // Smart scrolling: keep 2 previous and 3 following events visible
+  useEffect(() => {
+    if (scrollAreaRef.current && sortedEvents.length > 0) {
+      const position = getCurrentTimePosition();
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      
+      if (viewport) {
+        // Calculate the target element to scroll to (2 events before current position)
+        const targetIndex = Math.max(0, position - 2);
+        const allEventElements = scrollAreaRef.current.querySelectorAll('[data-event-index]');
+        const targetElement = allEventElements[targetIndex] as HTMLElement;
+        
+        if (targetElement) {
+          setTimeout(() => {
+            targetElement.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start', // Scroll to top of viewport
+              inline: 'nearest'
+            });
+          }, 100);
+        }
+      }
+    }
+  }, [currentTime]);
 
   if (events.length === 0) {
     return (
@@ -42,7 +67,7 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0 }: 
       <div className="p-3 border-b border-border/50">
         <h3 className="font-semibold text-sm">Events ({events.length})</h3>
       </div>
-      <ScrollArea className="h-[300px]">
+      <ScrollArea ref={scrollAreaRef} className="h-[300px]">
         <div className="p-2 space-y-1">
           {sortedEvents.map((event, index) => {
             const template = EVENT_TEMPLATES.find(t => t.type === event.type);
@@ -67,6 +92,7 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0 }: 
                 {/* Event */}
                 <div
                   className="flex items-start gap-2 p-2 rounded-lg hover:bg-accent/50 group transition-colors"
+                  data-event-index={index}
                 >
                   <button
                     onClick={() => onSeekTo?.(event.timestamp)}
