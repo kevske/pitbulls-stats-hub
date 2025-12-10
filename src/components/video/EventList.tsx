@@ -3,7 +3,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Trash2, Clock } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 
 interface EventListProps {
   events: TaggedEvent[];
@@ -14,7 +13,6 @@ interface EventListProps {
 
 export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0 }: EventListProps) {
   const sortedEvents = [...events].sort((a, b) => a.timestamp - b.timestamp);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   // Find where to insert the current time indicator
   const getCurrentTimePosition = () => {
@@ -28,23 +26,7 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0 }: 
     return sortedEvents.length; // After all events
   };
 
-  // Auto-scroll to keep current time indicator visible
-  useEffect(() => {
-    if (scrollAreaRef.current && sortedEvents.length > 0) {
-      const indicator = scrollAreaRef.current.querySelector('[data-current-time-indicator]');
-      
-      if (indicator) {
-        // Use a small timeout to ensure DOM is updated
-        setTimeout(() => {
-          indicator.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center',
-            inline: 'nearest'
-          });
-        }, 100);
-      }
-    }
-  }, [currentTime, sortedEvents.length]);
+  // No auto-scroll - let user control scrolling manually
 
   if (events.length === 0) {
     return (
@@ -60,7 +42,7 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0 }: 
       <div className="p-3 border-b border-border/50">
         <h3 className="font-semibold text-sm">Events ({events.length})</h3>
       </div>
-      <ScrollArea ref={scrollAreaRef} className="h-[300px]">
+      <ScrollArea className="h-[300px]">
         <div className="p-2 space-y-1">
           {sortedEvents.map((event, index) => {
             const template = EVENT_TEMPLATES.find(t => t.type === event.type);
