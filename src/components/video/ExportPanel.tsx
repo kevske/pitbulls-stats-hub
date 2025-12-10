@@ -2,7 +2,7 @@ import { TaggedEvent, Player } from '@/types/basketball';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, Download, Check, Upload, Save, FolderOpen, Cloud, CloudOff, RefreshCw } from 'lucide-react';
+import { Copy, Download, Check, Upload, Save, FolderOpen } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { 
@@ -13,8 +13,6 @@ import {
   loadSaveFile,
   hasUnsavedChanges
 } from '@/lib/saveLoad';
-import { GoogleSheetsService } from '@/lib/googleSheets';
-import { GoogleSheetsConfigDialog } from '@/components/video/GoogleSheetsConfig';
 
 interface ExportPanelProps {
   events: TaggedEvent[];
@@ -35,8 +33,6 @@ export function ExportPanel({
 }: ExportPanelProps) {
   const [copied, setCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [sheetsService, setSheetsService] = useState<GoogleSheetsService | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   const sortedEvents = [...events].sort((a, b) => a.timestamp - b.timestamp);
 
@@ -90,82 +86,6 @@ export function ExportPanel({
     }
   };
 
-  const handleSheetsConnect = (service: GoogleSheetsService) => {
-    setSheetsService(service);
-  };
-
-  const handleSyncToSheets = async () => {
-    if (!sheetsService) return;
-
-    setIsSyncing(true);
-    try {
-      // Initialize spreadsheet if needed
-      await sheetsService.initializeSpreadsheet();
-      
-      // Save events and players
-      await sheetsService.saveEvents(events, videoId);
-      await sheetsService.savePlayers(players);
-      
-      toast.success('Data synced to Google Sheets!');
-    } catch (error) {
-      toast.error('Failed to sync: ' + (error as Error).message);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const handleLoadFromSheets = async () => {
-    if (!sheetsService) return;
-
-    setIsSyncing(true);
-    try {
-      const { events: sheetsEvents, videoId: sheetsVideoId } = await sheetsService.loadEvents();
-      const sheetsPlayers = await sheetsService.loadPlayers();
-      
-      const saveData: SaveData = {
-        version: '1.0.0',
-        timestamp: new Date().toISOString(),
-        videoId: sheetsVideoId,
-        players: sheetsPlayers,
-        events: sheetsEvents,
-        metadata: {
-          totalEvents: sheetsEvents.length,
-          totalTimeSpan: sheetsEvents.length > 0 
-            ? Math.max(...sheetsEvents.map(e => e.timestamp))
-            : 0,
-          exportFormat: 'youtube-timestamps'
-        }
-      };
-      
-      onLoadData?.(saveData);
-      toast.success('Data loaded from Google Sheets!');
-    } catch (error) {
-      toast.error('Failed to load: ' + (error as Error).message);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const handleExportFromSheets = async () => {
-    if (!sheetsService) return;
-
-    try {
-      const textData = await sheetsService.exportToText();
-      
-      // Download the exported text
-      const blob = new Blob([textData], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'sheets-timestamps.txt';
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      toast.success('Exported from Google Sheets!');
-    } catch (error) {
-      toast.error('Failed to export: ' + (error as Error).message);
-    }
-  };
 
   if (events.length === 0) {
     return null;
@@ -181,71 +101,19 @@ export function ExportPanel({
               Unsaved changes
             </span>
           )}
-          {sheetsService && (
-            <span className="text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded-full flex items-center gap-1">
-              <Cloud className="h-3 w-3" />
-              Connected
-            </span>
-          )}
         </div>
       </div>
       
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-2 mb-3">
-        {/* Local Storage */}
-        <div className="space-y-2">
-          <Button variant="outline" size="sm" onClick={handleLoadProject} className="w-full gap-1">
-            <FolderOpen className="h-3 w-3" />
-            Load File
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleSaveProject} className="w-full gap-1">
-            <Save className="h-3 w-3" />
-            Save File
-          </Button>
-        </div>
-        
-        {/* Google Sheets */}
-        <div className="space-y-2">
-          {!sheetsService ? (
-            <GoogleSheetsConfigDialog onConnect={handleSheetsConnect}>
-              <Button variant="outline" size="sm" className="w-full gap-1">
-                <Cloud className="h-3 w-3" />
-                Connect Sheets
-              </Button>
-            </GoogleSheetsConfigDialog>
-          ) : (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleSyncToSheets} 
-                disabled={isSyncing}
-                className="w-full gap-1"
-              >
-                {isSyncing ? (
-                  <RefreshCw className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Cloud className="h-3 w-3" />
-                )}
-                {isSyncing ? 'Syncing...' : 'Sync to Sheets'}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleLoadFromSheets} 
-                disabled={isSyncing}
-                className="w-full gap-1"
-              >
-                {isSyncing ? (
-                  <RefreshCw className="h-3 w-3 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-3 w-3" />
-                )}
-                Load from Sheets
-              </Button>
-            </>
-          )}
-        </div>
+        <Button variant="outline" size="sm" onClick={handleLoadProject} className="w-full gap-1">
+          <FolderOpen className="h-3 w-3" />
+          Load File
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleSaveProject} className="w-full gap-1">
+          <Save className="h-3 w-3" />
+          Save File
+        </Button>
       </div>
       
       {/* Export Options */}
@@ -254,12 +122,6 @@ export function ExportPanel({
           <Download className="h-3 w-3" />
           YouTube
         </Button>
-        {sheetsService && (
-          <Button variant="outline" size="sm" onClick={handleExportFromSheets} className="flex-1 gap-1">
-            <Download className="h-3 w-3" />
-            Export Sheets
-          </Button>
-        )}
         <Button variant="outline" size="sm" onClick={handleCopy} className="gap-1">
           {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
           {copied ? 'Copied!' : 'Copy'}
