@@ -3,6 +3,7 @@ import { Player, TaggedEvent } from '@/types/basketball';
 export interface SaveData {
   version: string;
   timestamp: string;
+  lastModified?: string; // For version tracking and conflict detection
   videoId?: string;
   playlistId?: string;
   players: Player[];
@@ -24,10 +25,12 @@ export function generateSaveData(
   const totalTimeSpan = sortedEvents.length > 0 
     ? Math.max(...sortedEvents.map(e => e.timestamp))
     : 0;
+  const now = new Date().toISOString();
 
   return {
     version: '1.0.0',
-    timestamp: new Date().toISOString(),
+    timestamp: now,
+    lastModified: now,
     videoId,
     playlistId,
     players,
@@ -121,4 +124,59 @@ export function hasUnsavedChanges(
       JSON.stringify(lastSavedData.events.sort((a, b) => a.timestamp - b.timestamp))) return true;
   
   return false;
+}
+
+// Timestamp comparison utilities
+export interface TimestampComparisonResult {
+  isNewer: boolean;
+  isOlder: boolean;
+  isSame: boolean;
+  timeDifference: number; // in milliseconds
+  summary: string;
+}
+
+export function compareTimestamps(timestamp1: string, timestamp2: string): TimestampComparisonResult {
+  const date1 = new Date(timestamp1);
+  const date2 = new Date(timestamp2);
+  
+  if (isNaN(date1.getTime()) || isNaN(date2.getTime())) {
+    return {
+      isNewer: false,
+      isOlder: false,
+      isSame: false,
+      timeDifference: 0,
+      summary: 'Invalid timestamp(s)'
+    };
+  }
+  
+  const timeDifference = date1.getTime() - date2.getTime();
+  const isNewer = timeDifference > 0;
+  const isOlder = timeDifference < 0;
+  const isSame = timeDifference === 0;
+  
+  let summary = '';
+  if (isSame) {
+    summary = 'Versions are identical';
+  } else if (isNewer) {
+    const minutes = Math.floor(timeDifference / 60000);
+    summary = `Local version is ${minutes} minute(s) newer`;
+  } else {
+    const minutes = Math.floor(Math.abs(timeDifference) / 60000);
+    summary = `Remote version is ${minutes} minute(s) newer`;
+  }
+  
+  return {
+    isNewer,
+    isOlder,
+    isSame,
+    timeDifference,
+    summary
+  };
+}
+
+export function updateLastModified(saveData: SaveData): SaveData {
+  return {
+    ...saveData,
+    lastModified: new Date().toISOString()
+  };
 }

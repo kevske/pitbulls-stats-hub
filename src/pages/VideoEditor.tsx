@@ -18,12 +18,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, List, Upload, FileText, Plus, Save } from 'lucide-react';
-import { generateSaveData, SaveData } from '@/lib/saveLoad';
+import { generateSaveData, SaveData, compareTimestamps, updateLastModified } from '@/lib/saveLoad';
 import { loadSaveFile } from '@/lib/saveLoad';
+import { jsonbinStorage, VideoEntry } from '@/lib/jsonbinStorage';
 import { toast } from 'sonner';
 import Layout from '@/components/Layout';
 import { useJsonBinStorage } from '@/hooks/useJsonBinStorage';
-import { jsonbinStorage } from '@/lib/jsonbinStorage';
 import { useSearchParams } from 'react-router-dom';
 
 const VideoEditor = () => {
@@ -57,6 +57,89 @@ const VideoEditor = () => {
   const [isQueueMode, setIsQueueMode] = useState(false);
   const [currentPlayersOnCourt, setCurrentPlayersOnCourt] = useState<Player[]>([]);
   const [shouldResetPlayers, setShouldResetPlayers] = useState(false);
+  
+  // Timestamp conflict state
+  const [timestampConflict, setTimestampConflict] = useState<{
+    hasConflict: boolean;
+    localIsNewer: boolean;
+    comparison: any;
+  } | null>(null);
+
+  // Load data with timestamp checking
+  const loadWithTimestampCheck = async (
+    binId: string, 
+    gameNumber: string, 
+    videoNumber: string,
+    masterBinTimestamp?: string
+  ) => {
+    try {
+      console.log('Loading data with timestamp check:', { binId, gameNumber, videoNumber, masterBinTimestamp });
+      
+      // Load the actual data
+      await loadGameData(binId);
+      
+      if (savedGameData && savedGameData.events) {
+        const localTimestamp = savedGameData.lastModified || savedGameData.timestamp;
+        
+        if (masterBinTimestamp && localTimestamp) {
+          // Compare timestamps
+          const comparison = compareTimestamps(localTimestamp, masterBinTimestamp);
+          
+          console.log('Timestamp comparison:', comparison);
+          
+          if (!comparison.isSame) {
+            setTimestampConflict({
+              hasConflict: true,
+              localIsNewer: comparison.isNewer,
+              comparison
+            });
+            
+            if (comparison.isOlder) {
+              toast.warning(`Remote version is newer: ${comparison.summary}`, {
+                duration: 5000
+              });
+            } else {
+              toast.info(`Local version is newer: ${comparison.summary}`, {
+                duration: 3000
+              });
+            }
+          } else {
+            setTimestampConflict(null);
+          }
+        } else {
+          // No timestamp to compare against, proceed normally
+          setTimestampConflict(null);
+        }
+        
+        // Load the data regardless of timestamp conflict
+        setEvents(savedGameData.events);
+        setLastSavedData({
+          version: '1.0.0',
+          timestamp: new Date().toISOString(),
+          lastModified: localTimestamp,
+          videoId,
+          playlistId,
+          players: savedGameData.players || DEFAULT_PLAYERS,
+          events: savedGameData.events,
+          metadata: {
+            totalEvents: savedGameData.events.length,
+            totalTimeSpan: Math.max(...savedGameData.events.map(e => e.timestamp)),
+            exportFormat: 'youtube-timestamps'
+          }
+        });
+      } else {
+        // No saved data found
+        setEvents([]);
+        setLastSavedData(null);
+        setTimestampConflict(null);
+      }
+    } catch (error) {
+      console.error('Error in loadWithTimestampCheck:', error);
+      setEvents([]);
+      setLastSavedData(null);
+      setTimestampConflict(null);
+    }
+  };
 
   // Handle URL parameters and load game data
   useEffect(() => {
@@ -82,62 +165,34 @@ const VideoEditor = () => {
           const actualBinId = localStorage.getItem(storageKey);
           
           if (actualBinId) {
-            await loadGameData(actualBinId);
+            // Check timestamp before loading
+            await loadWithTimestampCheck(actualBinId, gameNumber, (currentPlaylistIndex + 1).toString());
           } else {
             // No local storage entry - try to find existing bin from MasterBin index
             console.log('No local bin found, searching MasterBin index...');
             
             try {
-              // Load the MasterBin index
-              const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
-              console.log('MasterBin data loaded:', masterBinData);
-              console.log('Looking for game:', gameNumber, 'video:', currentPlaylistIndex + 1);
-              console.log('Game number type:', typeof gameNumber);
-              console.log('Video index type:', typeof (currentPlaylistIndex + 1));
+              // Use the new MasterBin structure
+              const videoEntry = await jsonbinStorage.getVideoEntry(gameNumber, (currentPlaylistIndex + 1).toString());
               
-              // Use string keys to match MasterBin structure
-              const gameNum = gameNumber;
-              const videoNum = (currentPlaylistIndex + 1).toString();
-              
-              if (masterBinData?.games?.[gameNum]?.[videoNum]) {
-                const foundBinId = masterBinData.games[gameNum][videoNum];
-                console.log('Found bin ID in MasterBin:', foundBinId);
+              if (videoEntry) {
+                console.log('Found video entry in MasterBin:', videoEntry);
                 
                 // Save to localStorage for future use
-                localStorage.setItem(storageKey, foundBinId);
-                await loadGameData(foundBinId);
+                localStorage.setItem(storageKey, videoEntry.binId);
+                
+                // Check timestamp before loading
+                await loadWithTimestampCheck(videoEntry.binId, gameNumber, (currentPlaylistIndex + 1).toString(), videoEntry.lastModified);
               } else {
                 console.log('No saved bin found for this game/video in MasterBin');
-                console.log('Available games:', Object.keys(masterBinData?.games || {}));
-                if (masterBinData?.games?.[gameNum]) {
-                  console.log('Available videos for game', gameNum, ':', Object.keys(masterBinData.games[gameNum]));
-                }
+                // No saved data found for this video - clear events from previous video
+                setEvents([]);
+                setLastSavedData(null);
+                setTimestampConflict(null);
               }
             } catch (error) {
               console.error('Failed to load MasterBin index:', error);
             }
-          }
-          
-          if (savedGameData && savedGameData.events) {
-            setEvents(savedGameData.events);
-            setLastSavedData({
-              version: '1.0.0',
-              timestamp: new Date().toISOString(),
-              videoId,
-              playlistId,
-              players: savedGameData.players || DEFAULT_PLAYERS,
-              events: savedGameData.events,
-              metadata: {
-                totalEvents: savedGameData.events.length,
-                totalTimeSpan: Math.max(...savedGameData.events.map(e => e.timestamp)),
-                exportFormat: 'youtube-timestamps'
-              }
-            });
-          } else {
-            // No saved data found for this video - clear events from previous video
-            console.log('No saved data found for this video, clearing events from previous video');
-            setEvents([]);
-            setLastSavedData(null);
           }
         } catch (error) {
           console.log('No saved data found for this game, starting fresh');
@@ -165,6 +220,7 @@ const VideoEditor = () => {
         return;
       }
 
+      const now = new Date().toISOString();
       const saveData = {
         gameNumber: parseInt(gameNumber),
         videoIndex: currentPlaylistIndex + 1,
@@ -172,7 +228,8 @@ const VideoEditor = () => {
         players,
         videoId,
         playlistId,
-        timestamp: new Date().toISOString()
+        timestamp: now,
+        lastModified: now
       };
 
       console.log('Saving data:', saveData);
@@ -197,56 +254,25 @@ const VideoEditor = () => {
         // Store the bin ID for this game/video combination
         localStorage.setItem(storageKey, binId);
         
-        // Update the MasterBin index
+        // Update the MasterBin with new structure and timestamp
         try {
-          console.log('Updating MasterBin index...');
+          console.log('Updating MasterBin with timestamp...');
           
-          // First try to read the MasterBin
-          let masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
-          
-          // If the read fails or returns empty data, reinitialize
-          if (!masterBinData || !masterBinData.games) {
-            console.log('MasterBin is empty or corrupted, reinitializing...');
-            masterBinData = { games: {} };
-          }
-          
-          console.log('Current MasterBin before update:', masterBinData);
-          console.log('Current MasterBin games:', masterBinData.games);
-          console.log('Current game 8 data:', masterBinData.games?.['8']);
-          
-          // Use string keys to match MasterBin structure
           const gameNum = gameNumber;
           const videoNum = (currentPlaylistIndex + 1).toString();
           
-          console.log(`Adding game ${gameNum}, video ${videoNum} with bin ID: ${binId}`);
+          // Use the new MasterBin methods
+          const success = await jsonbinStorage.addVideoToMasterBin(
+            gameNum, 
+            videoNum, 
+            binId, 
+            now
+          );
           
-          // Initialize nested objects if they don't exist
-          if (!masterBinData.games) masterBinData.games = {};
-          if (!masterBinData.games[gameNum]) masterBinData.games[gameNum] = {};
-          
-          // Check if we're overwriting an existing video
-          if (masterBinData.games[gameNum][videoNum] && masterBinData.games[gameNum][videoNum] !== binId) {
-            console.log(`Warning: Overwriting existing bin ID for game ${gameNum}, video ${videoNum}`);
-            console.log(`Old: ${masterBinData.games[gameNum][videoNum]}, New: ${binId}`);
-          }
-          
-          // Set the bin ID for this game/video
-          masterBinData.games[gameNum][videoNum] = binId;
-          
-          console.log('MasterBin after update:', masterBinData);
-          console.log('Game 8 data after update:', masterBinData.games?.['8']);
-          
-          // Save back to MasterBin
-          console.log('Sending to MasterBin:', JSON.stringify(masterBinData, null, 2));
-          const updateSuccess = await jsonbinStorage.updateBin('693897a8ae596e708f8ea7c2', masterBinData);
-          console.log('Update response received:', updateSuccess);
-          
-          // Verify the update by reading back immediately
-          if (updateSuccess) {
-            console.log('Verifying MasterBin after update...');
-            const verificationData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
-            console.log('Verification read result:', verificationData);
-            console.log('Verification game 8 data:', verificationData?.games?.['8']);
+          if (success) {
+            console.log('MasterBin updated successfully with timestamp');
+          } else {
+            console.error('Failed to update MasterBin');
           }
         } catch (error) {
           console.error('Error updating MasterBin:', error);
@@ -255,7 +281,8 @@ const VideoEditor = () => {
         toast.success(`Saved to JSONBin: ${binId}`);
         setLastSavedData({
           version: '1.0.0',
-          timestamp: new Date().toISOString(),
+          timestamp: now,
+          lastModified: now,
           videoId,
           playlistId,
           players,
@@ -266,6 +293,9 @@ const VideoEditor = () => {
             exportFormat: 'youtube-timestamps'
           }
         });
+        
+        // Clear any timestamp conflict after successful save
+        setTimestampConflict(null);
       } else {
         toast.error('Failed to save to JSONBin - check console for details');
       }
@@ -680,6 +710,48 @@ const VideoEditor = () => {
                   Save to Cloud Storage
                 </Button>
 
+                {/* Timestamp Conflict Alert */}
+                {timestampConflict && timestampConflict.hasConflict && (
+                  <Card className={`border-2 ${
+                    timestampConflict.localIsNewer 
+                      ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20' 
+                      : 'border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20'
+                  }`}>
+                    <CardContent className="p-3">
+                      <div className="flex items-start gap-2">
+                        <div className={`w-2 h-2 rounded-full mt-1.5 ${
+                          timestampConflict.localIsNewer ? 'bg-blue-500' : 'bg-orange-500'
+                        }`} />
+                        <div className="flex-1">
+                          <div className={`text-sm font-medium ${
+                            timestampConflict.localIsNewer 
+                              ? 'text-blue-800 dark:text-blue-200' 
+                              : 'text-orange-800 dark:text-orange-200'
+                          }`}>
+                            {timestampConflict.localIsNewer ? 'Local Version is Newer' : 'Remote Version is Newer'}
+                          </div>
+                          <div className={`text-xs mt-1 ${
+                            timestampConflict.localIsNewer 
+                              ? 'text-blue-600 dark:text-blue-300' 
+                              : 'text-orange-600 dark:text-orange-300'
+                          }`}>
+                            {timestampConflict.comparison.summary}
+                          </div>
+                          {timestampConflict.localIsNewer ? (
+                            <div className="text-xs text-muted-foreground mt-2">
+                              Your local changes are newer than the cloud version. Saving will overwrite the remote version.
+                            </div>
+                          ) : (
+                            <div className="text-xs text-muted-foreground mt-2">
+                              The cloud version is newer. Consider loading the latest version before making changes.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Export Panel */}
                 <ExportPanel 
                   events={events}
@@ -726,6 +798,7 @@ const VideoEditor = () => {
                       events={events}
                       onDeleteEvent={handleDeleteEvent}
                       onSeekTo={handleSeekTo}
+                      currentTime={currentTime}
                     />
                   </TabsContent>
                   <TabsContent value="stats" className="mt-3">
