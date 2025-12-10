@@ -28,7 +28,7 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0 }: 
     return sortedEvents.length; // After all events
   };
 
-  // Smart scrolling: keep 2 previous and 3 following events visible
+  // Smart scrolling: keep 2 previous and 3 following events visible without centering
   useEffect(() => {
     if (scrollAreaRef.current && sortedEvents.length > 0) {
       const position = getCurrentTimePosition();
@@ -40,12 +40,20 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0 }: 
         const allEventElements = scrollAreaRef.current.querySelectorAll('[data-event-index]');
         const targetElement = allEventElements[targetIndex] as HTMLElement;
         
-        if (targetElement) {
+        if (targetElement && viewport instanceof HTMLElement) {
           setTimeout(() => {
-            targetElement.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'start', // Scroll to top of viewport
-              inline: 'nearest'
+            // Get the position of the target element relative to the viewport
+            const elementRect = targetElement.getBoundingClientRect();
+            const viewportRect = viewport.getBoundingClientRect();
+            const scrollTop = viewport.scrollTop;
+            
+            // Calculate the desired scroll position: position the element at the top
+            const elementTopRelativeToViewport = elementRect.top - viewportRect.top + scrollTop;
+            
+            // Scroll to position the target element at the top of the viewport
+            viewport.scrollTo({
+              top: elementTopRelativeToViewport,
+              behavior: 'smooth'
             });
           }, 100);
         }
