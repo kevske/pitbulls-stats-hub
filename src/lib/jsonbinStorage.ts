@@ -7,6 +7,18 @@ export interface JsonBinRecord {
   metadata?: any;
 }
 
+export interface VideoEntry {
+  binId: string;
+  lastModified: string;
+  timestamp: string;
+}
+
+export interface MasterBinData {
+  games: Record<string, Record<string, VideoEntry>>;
+  version: string;
+  lastUpdated: string;
+}
+
 export interface JsonBinResponse<T> {
   record: JsonBinRecord;
   metadata: JsonBinRecord;
@@ -275,6 +287,109 @@ export class JsonBinStorage {
     } catch (error) {
       console.error('Error updating metadata:', error);
       return false;
+    }
+  }
+
+  // MasterBin specific methods
+  async readMasterBin(): Promise<MasterBinData | null> {
+    try {
+      const data = await this.readBin<MasterBinData>('693897a8ae596e708f8ea7c2');
+      
+      // Handle migration from old format to new format
+      if (data && !data.version) {
+        // This is the old format - migrate it
+        console.log('Migrating old MasterBin format to new format...');
+        const migratedData: MasterBinData = {
+          games: {},
+          version: '2.0.0',
+          lastUpdated: new Date().toISOString()
+        };
+
+        // Convert old format (games[gameNum][videoNum] = binId) to new format
+        if (data.games) {
+          for (const [gameNum, gameVideos] of Object.entries(data.games)) {
+            migratedData.games[gameNum] = {};
+            for (const [videoNum, binId] of Object.entries(gameVideos)) {
+              if (typeof binId === 'string') {
+                // Old format - create new VideoEntry
+                migratedData.games[gameNum][videoNum] = {
+                  binId,
+                  lastModified: new Date().toISOString(),
+                  timestamp: new Date().toISOString()
+                };
+              } else {
+                // Already in new format
+                migratedData.games[gameNum][videoNum] = binId as VideoEntry;
+              }
+            }
+          }
+        }
+
+        // Save the migrated format
+        await this.updateBin('693897a8ae596e708f8ea7c2', migratedData);
+        return migratedData;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error reading MasterBin:', error);
+      return null;
+    }
+  }
+
+  async updateMasterBin(masterBinData: MasterBinData): Promise<boolean> {
+    try {
+      // Update the lastUpdated timestamp
+      masterBinData.lastUpdated = new Date().toISOString();
+      const result = await this.updateBin('693897a8ae596e708f8ea7c2', masterBinData);
+      return !!result;
+    } catch (error) {
+      console.error('Error updating MasterBin:', error);
+      return false;
+    }
+  }
+
+  async addVideoToMasterBin(
+    gameNumber: string, 
+    videoNumber: string, 
+    binId: string, 
+    lastModified: string
+  ): Promise<boolean> {
+    try {
+      const masterBinData = await this.readMasterBin();
+      if (!masterBinData) {
+        console.error('Failed to read MasterBin');
+        return false;
+      }
+
+      // Initialize nested objects if they don't exist
+      if (!masterBinData.games) masterBinData.games = {};
+      if (!masterBinData.games[gameNumber]) masterBinData.games[gameNumber] = {};
+
+      // Add or update the video entry
+      masterBinData.games[gameNumber][videoNumber] = {
+        binId,
+        lastModified,
+        timestamp: new Date().toISOString()
+      };
+
+      return await this.updateMasterBin(masterBinData);
+    } catch (error) {
+      console.error('Error adding video to MasterBin:', error);
+      return false;
+    }
+  }
+
+  async getVideoEntry(gameNumber: string, videoNumber: string): Promise<VideoEntry | null> {
+    try {
+      const masterBinData = await this.readMasterBin();
+      if (!masterBinData?.games?.[gameNumber]?.[videoNumber]) {
+        return null;
+      }
+      return masterBinData.games[gameNumber][videoNumber];
+    } catch (error) {
+      console.error('Error getting video entry:', error);
+      return null;
     }
   }
 }

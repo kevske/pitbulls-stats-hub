@@ -1,17 +1,50 @@
-import { TaggedEvent, EVENT_TEMPLATES } from '@/types/basketball';
+import { TaggedEvent, EVENT_TEMPLATES, formatTime } from '@/types/basketball';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Clock } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 interface EventListProps {
   events: TaggedEvent[];
   onDeleteEvent: (id: string) => void;
   onSeekTo?: (timestamp: number) => void;
+  currentTime?: number;
 }
 
-export function EventList({ events, onDeleteEvent, onSeekTo }: EventListProps) {
+export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0 }: EventListProps) {
   const sortedEvents = [...events].sort((a, b) => a.timestamp - b.timestamp);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
+  // Find where to insert the current time indicator
+  const getCurrentTimePosition = () => {
+    if (sortedEvents.length === 0) return 0;
+    
+    for (let i = 0; i < sortedEvents.length; i++) {
+      if (currentTime < sortedEvents[i].timestamp) {
+        return i;
+      }
+    }
+    return sortedEvents.length; // After all events
+  };
+
+  // Auto-scroll to keep current time indicator visible
+  useEffect(() => {
+    if (scrollAreaRef.current && sortedEvents.length > 0) {
+      const indicator = scrollAreaRef.current.querySelector('[data-current-time-indicator]');
+      
+      if (indicator) {
+        // Use a small timeout to ensure DOM is updated
+        setTimeout(() => {
+          indicator.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'nearest'
+          });
+        }, 100);
+      }
+    }
+  }, [currentTime, sortedEvents.length]);
 
   if (events.length === 0) {
     return (
@@ -27,35 +60,67 @@ export function EventList({ events, onDeleteEvent, onSeekTo }: EventListProps) {
       <div className="p-3 border-b border-border/50">
         <h3 className="font-semibold text-sm">Events ({events.length})</h3>
       </div>
-      <ScrollArea className="h-[300px]">
+      <ScrollArea ref={scrollAreaRef} className="h-[300px]">
         <div className="p-2 space-y-1">
-          {sortedEvents.map((event) => {
+          {sortedEvents.map((event, index) => {
             const template = EVENT_TEMPLATES.find(t => t.type === event.type);
+            const shouldShowIndicator = index === getCurrentTimePosition();
+            
             return (
-              <div
-                key={event.id}
-                className="flex items-start gap-2 p-2 rounded-lg hover:bg-accent/50 group transition-colors"
-              >
-                <button
-                  onClick={() => onSeekTo?.(event.timestamp)}
-                  className="font-mono text-xs text-primary hover:underline cursor-pointer bg-primary/10 px-2 py-1 rounded flex-shrink-0"
+              <div key={event.id}>
+                {/* Current Time Indicator */}
+                {shouldShowIndicator && (
+                  <div 
+                    className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/30 my-1"
+                    data-current-time-indicator
+                  >
+                    <Clock className="h-3 w-3 text-primary" />
+                    <span className="font-mono text-xs text-primary font-semibold">
+                      NOW: {formatTime(currentTime)}
+                    </span>
+                    <div className="flex-1 h-0.5 bg-gradient-to-r from-primary/50 to-transparent"></div>
+                  </div>
+                )}
+                
+                {/* Event */}
+                <div
+                  className="flex items-start gap-2 p-2 rounded-lg hover:bg-accent/50 group transition-colors"
                 >
-                  {event.formattedTime}
-                </button>
-                <span className="text-base flex-shrink-0">{template?.icon}</span>
-                <span className="flex-1 text-sm leading-relaxed">{event.description}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 opacity-100 transition-opacity hover:bg-destructive/10 flex-shrink-0"
-                  onClick={() => onDeleteEvent(event.id)}
-                  title="Delete event"
-                >
-                  <Trash2 className="h-3 w-3 text-destructive" />
-                </Button>
+                  <button
+                    onClick={() => onSeekTo?.(event.timestamp)}
+                    className="font-mono text-xs text-primary hover:underline cursor-pointer bg-primary/10 px-2 py-1 rounded flex-shrink-0"
+                  >
+                    {event.formattedTime}
+                  </button>
+                  <span className="text-base flex-shrink-0">{template?.icon}</span>
+                  <span className="flex-1 text-sm leading-relaxed">{event.description}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 opacity-100 transition-opacity hover:bg-destructive/10 flex-shrink-0"
+                    onClick={() => onDeleteEvent(event.id)}
+                    title="Delete event"
+                  >
+                    <Trash2 className="h-3 w-3 text-destructive" />
+                  </Button>
+                </div>
               </div>
             );
           })}
+          
+          {/* Current Time Indicator at the end if after all events */}
+          {sortedEvents.length > 0 && getCurrentTimePosition() === sortedEvents.length && (
+            <div 
+              className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/30 my-1"
+              data-current-time-indicator
+            >
+              <Clock className="h-3 w-3 text-primary" />
+              <span className="font-mono text-xs text-primary font-semibold">
+                NOW: {formatTime(currentTime)}
+              </span>
+              <div className="flex-1 h-0.5 bg-gradient-to-r from-primary/50 to-transparent"></div>
+            </div>
+          )}
         </div>
       </ScrollArea>
     </Card>
