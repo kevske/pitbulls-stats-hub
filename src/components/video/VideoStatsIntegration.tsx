@@ -222,7 +222,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
           )}
           {/* Debug info */}
           <Badge variant="outline" className="text-xs">
-            Debug: {validityCheck ? 'VC set' : 'VC null'} | GN: {gameNumber || 'none'}
+            Debug: {validityCheck ? `${validityCheck.taggedPoints} of ${validityCheck.actualScore.split('-')[0]}` : 'VC null'} | GN: {gameNumber || 'none'}
           </Badge>
         </div>
 
