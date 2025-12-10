@@ -132,6 +132,11 @@ const VideoEditor = () => {
                 exportFormat: 'youtube-timestamps'
               }
             });
+          } else {
+            // No saved data found for this video - clear events from previous video
+            console.log('No saved data found for this video, clearing events from previous video');
+            setEvents([]);
+            setLastSavedData(null);
           }
         } catch (error) {
           console.log('No saved data found for this game, starting fresh');
@@ -415,6 +420,8 @@ const VideoEditor = () => {
     }
     // Reset time for new video
     setCurrentTime(0);
+    // Clear events when switching to a different video
+    setEvents([]);
   }, [isQueueMode]);
 
   const handleSelectPlaylistVideo = useCallback((index: number) => {
