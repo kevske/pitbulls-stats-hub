@@ -15,6 +15,9 @@ const Players: React.FC = () => {
   const [supabasePlayers, setSupabasePlayers] = useState<PlayerStats[]>([]);
   const [supabaseLoading, setSupabaseLoading] = useState(false);
   const [supabaseError, setSupabaseError] = useState<string | null>(null);
+  const [gameFilter, setGameFilter] = useState<GameFilter | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [positionFilter, setPositionFilter] = useState<string>('all');
 
   // Load Supabase data when data source changes
   useEffect(() => {
@@ -41,34 +44,6 @@ const Players: React.FC = () => {
   const players = dataSource === 'supabase' ? supabasePlayers : googleSheetsPlayers;
   const loading = dataSource === 'supabase' ? supabaseLoading : googleSheetsLoading;
   const error = dataSource === 'supabase' ? supabaseError : googleSheetsError;
-
-  if (loading) {
-    return (
-      <Layout>
-        <div className="container mx-auto p-4">
-          <div className="text-center py-8">
-            Lade Spielerdaten von {dataSource === 'supabase' ? 'Supabase' : 'Google Sheets'}...
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (error) {
-    return (
-      <Layout>
-        <div className="container mx-auto p-4">
-          <div className="text-red-500 text-center py-8">
-            Fehler beim Laden der Spielerdaten: {error}
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  const [gameFilter, setGameFilter] = useState<GameFilter | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [positionFilter, setPositionFilter] = useState<string>('all');
 
   // Get the latest game number
   const latestGameNumber = useMemo(() => {
@@ -118,6 +93,30 @@ const Players: React.FC = () => {
       return nameA.localeCompare(nameB);
     });
   }, [players, searchQuery, positionFilter]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container mx-auto p-4">
+          <div className="text-center py-8">
+            Lade Spielerdaten von {dataSource === 'supabase' ? 'Supabase' : 'Google Sheets'}...
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="container mx-auto p-4">
+          <div className="text-red-500 text-center py-8">
+            Fehler beim Laden der Spielerdaten: {error}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
