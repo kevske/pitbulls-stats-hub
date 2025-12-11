@@ -195,7 +195,7 @@ const Spielplan: React.FC = () => {
     , allPlayers[0]);
     
     if (playerWithMostFoulOuts && playerWithMostFoulOuts.seasonStats.fouledOutGames > 1) {
-      return `${playerWithMostFoulOuts.player.full_name} hat in ${playerWithMostFoulOuts.seasonStats.fouledOutGames} Spielen mit 5+ Fouls disqualifiziert`;
+      return `${playerWithMostFoulOuts.player.full_name} hat sich in ${playerWithMostFoulOuts.seasonStats.fouledOutGames} Spielen ausgefoult`;
     }
     return null;
   };
@@ -209,8 +209,7 @@ const Spielplan: React.FC = () => {
     
     if (playerWithMostMissedFT && playerWithMostMissedFT.seasonStats.avgFreeThrowAttempts > 0) {
       const missedFT = playerWithMostMissedFT.seasonStats.avgFreeThrowAttempts - playerWithMostMissedFT.seasonStats.avgFreeThrows;
-      return `${playerWithMostMissedFT.player.full_name} bekommt ${playerWithMostMissedFT.seasonStats.avgFreeThrowAttempts.toFixed(1)} Freiwürfe pro Spiel, 
-        verfehlt aber ${missedFT.toFixed(1)} davon`;
+      return `${playerWithMostMissedFT.player.full_name} verfehlt im Schnitt ${missedFT.toFixed(1)} seiner ${playerWithMostMissedFT.seasonStats.avgFreeThrowAttempts.toFixed(1)} Freiwürfe pro Spiel`;
     }
     return null;
   };
@@ -496,10 +495,10 @@ const Spielplan: React.FC = () => {
                               <thead>
                                 <tr className="bg-gray-50">
                                   <th className="border border-gray-300 px-4 py-2 text-left">Name</th>
-                                  <th className="border border-gray-300 px-4 py-2 text-center">Points Per Game</th>
-                                  <th className="border border-gray-300 px-4 py-2 text-center">3Pts per game</th>
-                                  <th className="border border-gray-300 px-4 py-2 text-center">Free throws per game (Made/Taken)</th>
-                                  <th className="border border-gray-300 px-4 py-2 text-center">Fouls per game</th>
+                                  <th className="border border-gray-300 px-4 py-2 text-center">Punkte</th>
+                                  <th className="border border-gray-300 px-4 py-2 text-center">3er</th>
+                                  <th className="border border-gray-300 px-4 py-2 text-center">FW</th>
+                                  <th className="border border-gray-300 px-4 py-2 text-center">Fouls</th>
                                 </tr>
                               </thead>
                               <tbody>
