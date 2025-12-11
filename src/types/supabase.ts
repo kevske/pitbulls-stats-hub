@@ -24,6 +24,7 @@ export interface BoxScore {
   team_id: string;
   player_first_name: string;
   player_last_name: string;
+  player_slug?: string; // Foreign key to player_info (only for TSV Neuenstadt players)
   points: number;
   free_throw_attempts: number;
   free_throws_made: number;
@@ -34,6 +35,26 @@ export interface BoxScore {
   scraped_at: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface BoxScoreWithPlayerInfo extends BoxScore {
+  info_first_name?: string;
+  info_last_name?: string;
+  email?: string;
+  jersey_number?: number;
+  position?: string;
+  height?: string;
+  weight?: number;
+  birth_date?: string;
+  nationality?: string;
+  bio?: string;
+  achievements?: string[];
+  social_links?: {
+    instagram?: string;
+    twitter?: string;
+    website?: string;
+  };
+  player_active?: boolean;
 }
 
 export interface DangerousPlayer {
@@ -68,6 +89,44 @@ export interface DangerousPlayer {
     avgFreeThrowsLastTwo: number;
   };
   dangerLevel: 'high' | 'medium' | 'low';
+}
+
+export interface PlayerInfo {
+  id: string;
+  player_slug: string; // e.g., "abdullah-ari"
+  first_name: string;
+  last_name: string;
+  email?: string; // for magic link authentication
+  jersey_number?: number;
+  position?: string;
+  height?: string; // e.g., "6'2\""
+  weight?: number; // in lbs
+  birth_date?: string; // ISO date string
+  nationality?: string;
+  bio?: string;
+  achievements?: string[];
+  social_links?: {
+    instagram?: string;
+    twitter?: string;
+    website?: string;
+  };
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  table_name: string;
+  record_id: string;
+  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  old_data?: any;
+  new_data?: any;
+  user_email: string;
+  user_id: string;
+  timestamp: string;
+  ip_address?: string;
+  user_agent?: string;
 }
 
 export interface GameWithDangerousPlayers extends Game {
