@@ -21,10 +21,11 @@ export class AuthService {
       }
 
       // Send magic link
+      const baseUrl = import.meta.env.PROD ? 'https://kevske.github.io/pitbulls-stats-hub' : window.location.origin;
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/admin/player-info`,
+          emailRedirectTo: `${baseUrl}/admin/player-info`,
         },
       });
 
