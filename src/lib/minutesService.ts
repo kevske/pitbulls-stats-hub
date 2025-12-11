@@ -8,10 +8,12 @@ export interface PlayerMinutesData {
   minutes: number;
   gameId: string;
   gameNumber: number;
+  gameDate?: string;
 }
 
 export interface GameMinutesData {
   gameNumber: number;
+  gameDate?: string;
   playerMinutes: Array<{
     playerId: string;
     minutes: number;
@@ -113,38 +115,47 @@ export class MinutesService {
   // Get all games that need minutes data
   static async getGamesNeedingMinutes(): Promise<Array<{
     gameNumber: number;
+    gameDate?: string;
     playersNeedingMinutes: number;
     totalPlayers: number;
   }>> {
     try {
       const { data, error } = await supabase
         .from('box_scores')
-        .select('game_id, player_slug, points, minutes_played')
+        .select('game_id, player_slug, points, minutes_played, game_date')
         .not('player_slug', 'is', null)
         .gt('points', 0);
 
       if (error) throw error;
 
       // Group by game and count
-      const gameStats = new Map<number, { totalPlayers: number; needingMinutes: number }>();
+      const gameStats = new Map<string, { totalPlayers: number; needingMinutes: number; gameDate?: string }>();
       
       (data || []).forEach(row => {
-        const gameNumber = parseInt(row.game_id);
-        const current = gameStats.get(gameNumber) || { totalPlayers: 0, needingMinutes: 0 };
+        const gameId = row.game_id;
+        const current = gameStats.get(gameId) || { totalPlayers: 0, needingMinutes: 0, gameDate: row.game_date };
         current.totalPlayers++;
         if ((row.minutes_played || 0) === 0) {
           current.needingMinutes++;
         }
-        gameStats.set(gameNumber, current);
+        gameStats.set(gameId, current);
       });
 
+      // Convert to expected format, but use game_id as string since we can't map to gameNumber
       return Array.from(gameStats.entries())
-        .map(([gameNumber, stats]) => ({
-          gameNumber,
+        .map(([gameId, stats]) => ({
+          gameNumber: parseInt(gameId) || 0, // Convert to number, but this might not match CSV games
+          gameDate: stats.gameDate,
           playersNeedingMinutes: stats.needingMinutes,
           totalPlayers: stats.totalPlayers
         }))
-        .sort((a, b) => b.gameNumber - a.gameNumber);
+        .sort((a, b) => {
+          // Sort by date if available, otherwise by gameNumber
+          if (a.gameDate && b.gameDate) {
+            return new Date(b.gameDate).getTime() - new Date(a.gameDate).getTime();
+          }
+          return b.gameNumber - a.gameNumber;
+        });
     } catch (error) {
       console.error('Error getting games needing minutes:', error);
       throw error;

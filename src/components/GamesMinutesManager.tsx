@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStats } from '@/contexts/StatsContext';
 import { MinutesService } from '@/lib/minutesService';
+import { DataDebug } from '@/lib/dataDebug';
 import { ArrowLeft, Settings, Clock, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -19,6 +20,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
   const [selectedGame, setSelectedGame] = useState<number | null>(gameNumber || null);
   const [gamesNeedingMinutes, setGamesNeedingMinutes] = useState<Array<{
     gameNumber: number;
+    gameDate?: string;
     playersNeedingMinutes: number;
     totalPlayers: number;
   }>>([]);
@@ -65,6 +67,20 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
 
   const handleBackToGameList = () => {
     setSelectedGame(null);
+  };
+
+  const formatGameDate = (dateString?: string) => {
+    if (!dateString) return 'Kein Datum';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('de-DE', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      });
+    } catch (e) {
+      return dateString;
+    }
   };
 
   const handleSuccess = () => {
@@ -143,7 +159,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                         >
                           <CardHeader>
                             <CardTitle className="flex items-center justify-between">
-                              <span>Spieltag {game.gameNumber}</span>
+                              <span>{formatGameDate(game.gameDate)}</span>
                               <Button variant="outline" size="sm" className="border-orange-300">
                                 <Clock className="h-4 w-4 mr-2" />
                                 {game.playersNeedingMinutes} Spieler
@@ -195,7 +211,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                         >
                           <CardHeader>
                             <CardTitle className="flex items-center justify-between">
-                              <span>Spieltag {game.gameNumber}</span>
+                              <span>{formatGameDate(game.gameDate)}</span>
                               <Button variant="outline" size="sm" className="border-green-300">
                                 <Clock className="h-4 w-4 mr-2" />
                                 Bearbeiten
@@ -230,7 +246,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
             {/* Games without any boxscore data */}
             {games
               .filter(game => !gamesNeedingMinutes.some(g => g.gameNumber === game.gameNumber))
-              .sort((a, b) => b.gameNumber - a.gameNumber)
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
               .map((game) => (
                 <Card 
                   key={game.gameNumber}
@@ -238,7 +254,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                 >
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span>Spieltag {game.gameNumber}</span>
+                      <span>{game.date}</span>
                       <Button variant="outline" size="sm" disabled>
                         <Clock className="h-4 w-4 mr-2" />
                         Keine Daten
@@ -253,6 +269,47 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                       </div>
                       <div className="text-sm text-muted-foreground">
                         Keine Boxscore-Daten verfügbar
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+            {/* Database games that don't exist in CSV */}
+            {gamesNeedingMinutes
+              .filter(dbGame => !games.some(csvGame => csvGame.gameNumber === dbGame.gameNumber))
+              .map((game) => (
+                <Card 
+                  key={`db-${game.gameNumber}`}
+                  className="border-blue-200 bg-blue-50/30"
+                >
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>{formatGameDate(game.gameDate) || 'Datenbank Spiel'}</span>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="border-blue-300"
+                        onClick={() => handleGameSelect(game.gameNumber)}
+                      >
+                        <Clock className="h-4 w-4 mr-2" />
+                        {game.playersNeedingMinutes > 0 ? 'Minuten eintragen' : 'Bearbeiten'}
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-medium">Nur in Datenbank vorhanden</p>
+                        <p className="text-sm text-muted-foreground">Keine CSV-Daten</p>
+                      </div>
+                      <div className="text-right">
+                        <div className={`text-sm font-medium ${game.playersNeedingMinutes > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                          {game.playersNeedingMinutes > 0 ? `${game.playersNeedingMinutes} fehlen` : 'Vollständig'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          von {game.totalPlayers} Spielern
+                        </div>
                       </div>
                     </div>
                   </CardContent>

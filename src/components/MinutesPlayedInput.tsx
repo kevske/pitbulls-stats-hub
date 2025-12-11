@@ -154,85 +154,95 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
-          Spielminuten - Spieltag {gameNumber}
+          Spielminuten - Spiel {gameNumber}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {playerMinutes.map(({ playerId, minutes }) => (
-            <div key={playerId} className="space-y-2">
-              <Label htmlFor={`minutes-${playerId}`} className="text-sm font-medium">
-                <div className="flex items-center gap-2">
-                  <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold">
-                    #{getPlayerJerseyNumber(playerId)}
-                  </span>
-                  {getPlayerName(playerId)}
+        {playerMinutes.length === 0 ? (
+          <div className="text-center text-muted-foreground p-6">
+            <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Keine Spielerdaten für dieses Spiel gefunden.</p>
+            <p className="text-sm">Dieses Spiel hat möglicherweise keine Boxscore-Daten in der Datenbank.</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {playerMinutes.map(({ playerId, minutes }) => (
+                <div key={playerId} className="space-y-2">
+                  <Label htmlFor={`minutes-${playerId}`} className="text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold">
+                        #{getPlayerJerseyNumber(playerId)}
+                      </span>
+                      {getPlayerName(playerId)}
+                    </div>
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id={`minutes-${playerId}`}
+                      type="number"
+                      min="0"
+                      max="60"
+                      step="1"
+                      value={minutes || ''}
+                      onChange={(e) => handleMinutesChange(playerId, e.target.value)}
+                      placeholder="Minuten"
+                      className="w-24"
+                    />
+                    <span className="text-sm text-muted-foreground">Min</span>
+                  </div>
                 </div>
-              </Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id={`minutes-${playerId}`}
-                  type="number"
-                  min="0"
-                  max="60"
-                  step="1"
-                  value={minutes || ''}
-                  onChange={(e) => handleMinutesChange(playerId, e.target.value)}
-                  placeholder="Minuten"
-                  className="w-24"
-                />
-                <span className="text-sm text-muted-foreground">Min</span>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Summary Section */}
-        {summary && (
-          <div className="border rounded-lg p-4 bg-muted/30">
-            <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              Status Übersicht
-            </h3>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <div className="text-muted-foreground">Spieler mit Minuten</div>
-                <div className="font-semibold text-green-600">{summary.playersWithMinutes}</div>
+            {/* Summary Section */}
+            {summary && (
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  Status Übersicht
+                </h3>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <div className="text-muted-foreground">Spieler mit Minuten</div>
+                    <div className="font-semibold text-green-600">{summary.playersWithMinutes}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground">Spieler ohne Minuten</div>
+                    <div className="font-semibold text-orange-600">{summary.playersNeedingMinutes}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground">Gesamtminuten</div>
+                    <div className="font-semibold">{summary.totalMinutes}</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="text-muted-foreground">Spieler ohne Minuten</div>
-                <div className="font-semibold text-orange-600">{summary.playersNeedingMinutes}</div>
+            )}
+
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    Gesamtminuten: {getTotalMinutes()}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  (Basketballspiel: 40 Minuten regulär + mögliche Verlängerung bis 60 Minuten)
+                </div>
               </div>
-              <div>
-                <div className="text-muted-foreground">Gesamtminuten</div>
-                <div className="font-semibold">{summary.totalMinutes}</div>
-              </div>
+
+              <Button 
+                onClick={handleSave} 
+                disabled={saving}
+                className="w-full"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {saving ? 'Speichern...' : 'Minuten speichern'}
+              </Button>
             </div>
-          </div>
+          </>
         )}
-
-        <div className="border-t pt-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                Gesamtminuten: {getTotalMinutes()}
-              </span>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              (Basketballspiel: 40 Minuten regulär + mögliche Verlängerung bis 60 Minuten)
-            </div>
-          </div>
-
-          <Button 
-            onClick={handleSave} 
-            disabled={saving}
-            className="w-full"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Speichern...' : 'Minuten speichern'}
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );
