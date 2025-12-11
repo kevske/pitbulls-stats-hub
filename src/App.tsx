@@ -17,6 +17,9 @@ import GameDetail from "./pages/GameDetail";
 import Videos from "./pages/Videos";
 import VideoEditor from "./pages/VideoEditor";
 import Spielplan from "./pages/Spielplan";
+import AdminPlayerInfo from "./pages/AdminPlayerInfo";
+import Login from "./pages/Login";
+import AdminAuditLogs from "./pages/AdminAuditLogs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -119,6 +122,9 @@ const App = () => {
                 <Route path="/videos" element={<Videos />} />
                 <Route path="/video-editor" element={<VideoEditor />} />
                 <Route path="/spielplan" element={<Spielplan />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/admin/player-info" element={<AdminPlayerInfo />} />
+                <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
