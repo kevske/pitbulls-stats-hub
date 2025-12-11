@@ -120,20 +120,47 @@ export class MinutesService {
     totalPlayers: number;
   }>> {
     try {
-      const { data, error } = await supabase
+      // First get all box_scores with their game_ids
+      const { data: boxScoresData, error: boxScoresError } = await supabase
         .from('box_scores')
-        .select('game_id, player_slug, points, minutes_played, game_date')
+        .select('game_id, player_slug, points, minutes_played')
         .not('player_slug', 'is', null)
         .gt('points', 0);
 
-      if (error) throw error;
+      if (boxScoresError) throw boxScoresError;
+
+      // Get unique game_ids from box_scores
+      const uniqueGameIds = [...new Set(boxScoresData?.map(row => row.game_id) || [])];
+
+      // Fetch game dates from games table
+      const { data: gamesData, error: gamesError } = await supabase
+        .from('games')
+        .select('gameNumber, game_date, game_time')
+        .in('gameNumber', uniqueGameIds.map(id => parseInt(id) || 0));
+
+      if (gamesError) throw gamesError;
+
+      // Create a map of gameNumber to gameDate
+      const gameDateMap = new Map<number, string>();
+      gamesData?.forEach(game => {
+        gameDateMap.set(game.gameNumber, game.game_date);
+      });
 
       // Group by game and count
-      const gameStats = new Map<string, { totalPlayers: number; needingMinutes: number; gameDate?: string }>();
+      const gameStats = new Map<string, { 
+        totalPlayers: number; 
+        needingMinutes: number; 
+        gameDate?: string;
+      }>();
       
-      (data || []).forEach(row => {
+      (boxScoresData || []).forEach(row => {
         const gameId = row.game_id;
-        const current = gameStats.get(gameId) || { totalPlayers: 0, needingMinutes: 0, gameDate: row.game_date };
+        const gameNumber = parseInt(gameId) || 0;
+        const current = gameStats.get(gameId) || { 
+          totalPlayers: 0, 
+          needingMinutes: 0, 
+          gameDate: gameDateMap.get(gameNumber)
+        };
         current.totalPlayers++;
         if ((row.minutes_played || 0) === 0) {
           current.needingMinutes++;
@@ -141,10 +168,10 @@ export class MinutesService {
         gameStats.set(gameId, current);
       });
 
-      // Convert to expected format, but use game_id as string since we can't map to gameNumber
+      // Convert to expected format
       return Array.from(gameStats.entries())
         .map(([gameId, stats]) => ({
-          gameNumber: parseInt(gameId) || 0, // Convert to number, but this might not match CSV games
+          gameNumber: parseInt(gameId) || 0,
           gameDate: stats.gameDate,
           playersNeedingMinutes: stats.needingMinutes,
           totalPlayers: stats.totalPlayers
