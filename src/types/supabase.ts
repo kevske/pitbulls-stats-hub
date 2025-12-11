@@ -100,11 +100,10 @@ export interface PlayerInfo {
   jersey_number?: number;
   position?: string;
   height?: string; // e.g., "6'2\""
-  weight?: number; // in lbs
+  weight?: number; // in kg
   birth_date?: string; // ISO date string
   nationality?: string;
   bio?: string;
-  achievements?: string[];
   social_links?: {
     instagram?: string;
     twitter?: string;

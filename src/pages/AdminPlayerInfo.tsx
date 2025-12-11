@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useToast } from '../hooks/use-toast';
-import { Pencil, Trash2, Plus, Save, X, User, Users, Settings, History } from 'lucide-react';
+import { Pencil, Trophy, Plus, Save, X, User, Users, Settings, History } from 'lucide-react';
 
 const AdminPlayerInfo: React.FC = () => {
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
@@ -22,7 +22,6 @@ const AdminPlayerInfo: React.FC = () => {
   const [editingPlayer, setEditingPlayer] = useState<PlayerInfo | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<PlayerInfo>>({});
-  const [newAchievement, setNewAchievement] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -68,7 +67,6 @@ const AdminPlayerInfo: React.FC = () => {
         birth_date: formData.birth_date || null,
         nationality: formData.nationality || null,
         bio: formData.bio || null,
-        achievements: formData.achievements || [],
         social_links: formData.social_links || {},
         is_active: formData.is_active ?? true,
       };
@@ -115,20 +113,20 @@ const AdminPlayerInfo: React.FC = () => {
     }
   };
 
-  const handleDeletePlayer = async (id: string) => {
+  const handleAchievePlayer = async (id: string) => {
     try {
-      await PlayerInfoService.deletePlayer(id);
+      await PlayerInfoService.updatePlayer(id, { is_active: false });
       loadPlayers();
       
       toast({
-        title: 'Success',
-        description: 'Player deleted successfully.',
+        title: 'Erfolg',
+        description: 'Spieler archiviert.',
       });
     } catch (error) {
-      console.error('Error deleting player:', error);
+      console.error('Error achieving player:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to delete player. Please try again.',
+        title: 'Fehler',
+        description: 'Fehler beim Archivieren. Bitte versuche es erneut.',
         variant: 'destructive',
       });
     }
@@ -144,53 +142,36 @@ const AdminPlayerInfo: React.FC = () => {
     setFormData({});
   };
 
-  const addAchievement = () => {
-    if (newAchievement.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        achievements: [...(prev.achievements || []), newAchievement.trim()]
-      }));
-      setNewAchievement('');
-    }
-  };
-
-  const removeAchievement = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      achievements: prev.achievements?.filter((_, i) => i !== index) || []
-    }));
-  };
-
   const PlayerForm: React.FC<{ isEdit?: boolean }> = ({ isEdit = false }) => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="player_slug">Player Slug *</Label>
+          <Label htmlFor="player_slug">Spieler-Slug *</Label>
           <Input
             id="player_slug"
             value={formData.player_slug || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, player_slug: e.target.value }))}
-            placeholder="e.g., abdullah-ari"
+            placeholder="z.B., abdullah-ari"
             disabled={isEdit}
           />
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <Label htmlFor="first_name">First Name *</Label>
+            <Label htmlFor="first_name">Vorname *</Label>
             <Input
               id="first_name"
               value={formData.first_name || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-              placeholder="First name"
+              placeholder="Vorname"
             />
           </div>
           <div>
-            <Label htmlFor="last_name">Last Name *</Label>
+            <Label htmlFor="last_name">Nachname *</Label>
             <Input
               id="last_name"
               value={formData.last_name || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-              placeholder="Last name"
+              placeholder="Nachname"
             />
           </div>
         </div>
@@ -198,17 +179,17 @@ const AdminPlayerInfo: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="email">Email (for login)</Label>
+          <Label htmlFor="email">E-Mail (für Login)</Label>
           <Input
             id="email"
             type="email"
             value={formData.email || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            placeholder="player@example.com"
+            placeholder="spieler@example.com"
           />
         </div>
         <div>
-          <Label htmlFor="jersey_number">Jersey Number</Label>
+          <Label htmlFor="jersey_number">Trikotnummer</Label>
           <Input
             id="jersey_number"
             type="number"
@@ -224,7 +205,7 @@ const AdminPlayerInfo: React.FC = () => {
           <Label htmlFor="position">Position</Label>
           <Select value={formData.position || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, position: value || undefined }))}>
             <SelectTrigger>
-              <SelectValue placeholder="Select position" />
+              <SelectValue placeholder="Position auswählen" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="PG">Point Guard</SelectItem>
@@ -236,7 +217,7 @@ const AdminPlayerInfo: React.FC = () => {
           </Select>
         </div>
         <div>
-          <Label htmlFor="height">Height</Label>
+          <Label htmlFor="height">Größe</Label>
           <Input
             id="height"
             value={formData.height || ''}
@@ -248,17 +229,17 @@ const AdminPlayerInfo: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="weight">Weight (lbs)</Label>
+          <Label htmlFor="weight">Gewicht (kg)</Label>
           <Input
             id="weight"
             type="number"
             value={formData.weight || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, weight: e.target.value ? parseInt(e.target.value) : undefined }))}
-            placeholder="180"
+            placeholder="80"
           />
         </div>
         <div>
-          <Label htmlFor="birth_date">Birth Date</Label>
+          <Label htmlFor="birth_date">Geburtsdatum</Label>
           <Input
             id="birth_date"
             type="date"
@@ -267,51 +248,27 @@ const AdminPlayerInfo: React.FC = () => {
           />
         </div>
         <div>
-          <Label htmlFor="nationality">Nationality</Label>
+          <Label htmlFor="nationality">Nationalität</Label>
           <Input
             id="nationality"
             value={formData.nationality || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, nationality: e.target.value }))}
-            placeholder="German"
+            placeholder="Deutsch"
           />
         </div>
       </div>
 
       <div>
-        <Label htmlFor="bio">Bio</Label>
+        <Label htmlFor="bio">Biografie</Label>
         <Textarea
           id="bio"
           value={formData.bio || ''}
           onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-          placeholder="Player biography..."
+          placeholder="Spielerbiografie..."
           rows={4}
         />
       </div>
 
-      <div>
-        <Label>Achievements</Label>
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <Input
-              value={newAchievement}
-              onChange={(e) => setNewAchievement(e.target.value)}
-              placeholder="Add achievement..."
-              onKeyPress={(e) => e.key === 'Enter' && addAchievement()}
-            />
-            <Button type="button" onClick={addAchievement} size="sm">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {formData.achievements?.map((achievement, index) => (
-              <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                {achievement}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => removeAchievement(index)} />
-              </Badge>
-            ))}
-          </div>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
@@ -358,16 +315,16 @@ const AdminPlayerInfo: React.FC = () => {
           checked={formData.is_active ?? true}
           onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
         />
-        <Label htmlFor="is_active">Active Player</Label>
+        <Label htmlFor="is_active">Aktiver Spieler</Label>
       </div>
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={isEdit ? cancelEdit : () => setIsCreateDialogOpen(false)}>
-          Cancel
+          Abbrechen
         </Button>
         <Button onClick={isEdit ? handleUpdatePlayer : handleCreatePlayer}>
           <Save className="h-4 w-4 mr-2" />
-          {isEdit ? 'Update' : 'Create'} Player
+          {isEdit ? 'Spieler aktualisieren' : 'Neuen Spieler erstellen'}
         </Button>
       </div>
     </div>
@@ -379,7 +336,7 @@ const AdminPlayerInfo: React.FC = () => {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p>Loading players...</p>
+            <p>Spieler werden geladen...</p>
           </div>
         </div>
       </div>
@@ -392,8 +349,8 @@ const AdminPlayerInfo: React.FC = () => {
         <div className="mb-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold">Player Info Management</h1>
-              <p className="text-gray-600">Manage player profiles and information</p>
+              <h1 className="text-3xl font-bold">Spieler-Informationen</h1>
+              <p className="text-gray-600">Spielerprofile und Informationen verwalten</p>
             </div>
             <div className="flex gap-2">
               <Button
@@ -401,20 +358,20 @@ const AdminPlayerInfo: React.FC = () => {
                 onClick={() => window.location.href = '/admin/audit-logs'}
               >
                 <History className="h-4 w-4 mr-2" />
-                View Audit Logs
+                Audit-Logs ansehen
               </Button>
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add New Player
+                    Neuer Spieler
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Create New Player</DialogTitle>
+                    <DialogTitle>Neuen Spieler erstellen</DialogTitle>
                     <DialogDescription>
-                      Add a new player to the database. Fill in their information below.
+                      Füge einen neuen Spieler zur Datenbank hinzu. Gib seine Informationen unten ein.
                     </DialogDescription>
                   </DialogHeader>
                   <PlayerForm />
@@ -438,7 +395,7 @@ const AdminPlayerInfo: React.FC = () => {
                         {player.first_name} {player.last_name}
                       </h3>
                       <Badge variant={player.is_active ? "default" : "secondary"}>
-                        {player.is_active ? "Active" : "Inactive"}
+                        {player.is_active ? "Aktiv" : "Inaktiv"}
                       </Badge>
                       {player.jersey_number && (
                         <Badge variant="outline">#{player.jersey_number}</Badge>
@@ -451,27 +408,27 @@ const AdminPlayerInfo: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                       {player.height && (
                         <div>
-                          <span className="font-medium">Height:</span> {player.height}
+                          <span className="font-medium">Größe:</span> {player.height}
                         </div>
                       )}
                       {player.weight && (
                         <div>
-                          <span className="font-medium">Weight:</span> {player.weight} lbs
+                          <span className="font-medium">Gewicht:</span> {player.weight} kg
                         </div>
                       )}
                       {player.birth_date && (
                         <div>
-                          <span className="font-medium">Birth Date:</span> {new Date(player.birth_date).toLocaleDateString()}
+                          <span className="font-medium">Geburtsdatum:</span> {new Date(player.birth_date).toLocaleDateString()}
                         </div>
                       )}
                       {player.email && (
                         <div>
-                          <span className="font-medium">Email:</span> {player.email}
+                          <span className="font-medium">E-Mail:</span> {player.email}
                         </div>
                       )}
                       {player.nationality && (
                         <div>
-                          <span className="font-medium">Nationality:</span> {player.nationality}
+                          <span className="font-medium">Nationalität:</span> {player.nationality}
                         </div>
                       )}
                       <div>
@@ -485,22 +442,10 @@ const AdminPlayerInfo: React.FC = () => {
                       </div>
                     )}
 
-                    {player.achievements && player.achievements.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="font-medium text-sm mb-2">Achievements:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {player.achievements.map((achievement, index) => (
-                            <Badge key={index} variant="secondary">
-                              {achievement}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
 
                     {(player.social_links?.instagram || player.social_links?.twitter || player.social_links?.website) && (
                       <div className="mt-4">
-                        <h4 className="font-medium text-sm mb-2">Social Links:</h4>
+                        <h4 className="font-medium text-sm mb-2">Soziale Links:</h4>
                         <div className="flex gap-4 text-sm">
                           {player.social_links.instagram && (
                             <span>IG: {player.social_links.instagram}</span>
@@ -527,20 +472,20 @@ const AdminPlayerInfo: React.FC = () => {
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4" />
+                          <Trophy className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Player</AlertDialogTitle>
+                          <AlertDialogTitle>Spieler archivieren</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete {player.first_name} {player.last_name}? This action cannot be undone.
+                            Möchtest du {player.first_name} {player.last_name} archivieren? Der Spieler wird inaktiv, aber die Daten bleiben erhalten.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeletePlayer(player.id)}>
-                            Delete
+                          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleAchievePlayer(player.id)}>
+                            Archivieren
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -556,13 +501,13 @@ const AdminPlayerInfo: React.FC = () => {
           <Card>
             <CardContent className="p-12 text-center">
               <User className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">No players found</h3>
+              <h3 className="text-lg font-semibold mb-2">Keine Spieler gefunden</h3>
               <p className="text-gray-600 mb-4">
-                Get started by adding your first player to the database.
+                Beginne damit, deinen ersten Spieler zur Datenbank hinzuzufügen.
               </p>
               <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add First Player
+                Ersten Spieler hinzufügen
               </Button>
             </CardContent>
           </Card>
