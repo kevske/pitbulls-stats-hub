@@ -1,12 +1,14 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useStats } from '@/contexts/StatsContext';
 import { format, parse } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Layout from '@/components/Layout';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Clock, Settings } from 'lucide-react';
 
 const Games: React.FC = () => {
   const { games, gameLogs, players, loading, error } = useStats();
@@ -46,7 +48,18 @@ const Games: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-6">Spiele</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Spiele</h1>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/games/minutes')}
+            className="flex items-center gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            <Clock className="h-4 w-4" />
+            Minuten verwalten
+          </Button>
+        </div>
         <div className="space-y-4">
           {games.map((game) => (
             <Card
