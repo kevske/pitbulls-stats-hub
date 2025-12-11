@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useStats } from '@/contexts/StatsContext';
 import Layout from '@/components/Layout';
 import PlayerCard from '@/components/PlayerCard';
@@ -17,7 +17,7 @@ const Players: React.FC = () => {
   const [supabaseError, setSupabaseError] = useState<string | null>(null);
 
   // Load Supabase data when data source changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (dataSource === 'supabase') {
       loadSupabaseData();
     }
