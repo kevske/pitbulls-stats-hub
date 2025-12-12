@@ -20,7 +20,6 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
   const [selectedGame, setSelectedGame] = useState<number | null>(gameNumber || null);
   const [gamesNeedingMinutes, setGamesNeedingMinutes] = useState<Array<{
     gameNumber: number;
-    gameDate?: string;
     playersNeedingMinutes: number;
     totalPlayers: number;
   }>>([]);
@@ -67,20 +66,6 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
 
   const handleBackToGameList = () => {
     setSelectedGame(null);
-  };
-
-  const formatGameDate = (dateString?: string) => {
-    if (!dateString) return 'Kein Datum';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('de-DE', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric' 
-      });
-    } catch (e) {
-      return dateString;
-    }
   };
 
   const handleSuccess = () => {
@@ -159,7 +144,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                         >
                           <CardHeader>
                             <CardTitle className="flex items-center justify-between">
-                              <span>{formatGameDate(game.gameDate)}</span>
+                              <span>Spiel {game.gameNumber}</span>
                               <Button variant="outline" size="sm" className="border-orange-300">
                                 <Clock className="h-4 w-4 mr-2" />
                                 {game.playersNeedingMinutes} Spieler
@@ -211,7 +196,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                         >
                           <CardHeader>
                             <CardTitle className="flex items-center justify-between">
-                              <span>{formatGameDate(game.gameDate)}</span>
+                              <span>Spiel {game.gameNumber}</span>
                               <Button variant="outline" size="sm" className="border-green-300">
                                 <Clock className="h-4 w-4 mr-2" />
                                 Bearbeiten
@@ -285,7 +270,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                 >
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span>{formatGameDate(game.gameDate) || 'Datenbank Spiel'}</span>
+                      <span>Spiel {game.gameNumber}</span>
                       <Button 
                         variant="outline" 
                         size="sm" 
