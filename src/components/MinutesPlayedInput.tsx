@@ -33,7 +33,15 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
   // Load player minutes data when component loads
   useEffect(() => {
     const loadPlayerMinutes = async () => {
+      if (!gameNumber || gameNumber <= 0) {
+        console.error('Invalid gameNumber:', gameNumber);
+        toast.error('Ungültige Spielnummer');
+        setLoading(false);
+        return;
+      }
+
       try {
+        console.log('Starting to load player minutes for game:', gameNumber);
         setLoading(true);
         
         // Get players who need minutes data for this game
@@ -42,6 +50,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
         
         // Get summary data
         const summaryData = await MinutesService.getGameMinutesSummary(gameNumber);
+        console.log('Summary data:', summaryData);
         setSummary(summaryData);
         
         // Convert to our component format, filter out null playerIds
@@ -56,14 +65,20 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
         console.log('Players filtered out:', playersData.length - componentData.length);
         
         setPlayerMinutes(componentData);
+        console.log('Player minutes state set');
       } catch (error) {
         console.error('Error loading player minutes:', error);
         toast.error('Fehler beim Laden der Spielerdaten');
+        // Set empty data to prevent infinite loading
+        setPlayerMinutes([]);
       } finally {
+        console.log('Setting loading to false');
         setLoading(false);
+        console.log('Loading state set to false');
       }
     };
 
+    console.log('useEffect triggered for gameNumber:', gameNumber);
     loadPlayerMinutes();
   }, [gameNumber]);
 
