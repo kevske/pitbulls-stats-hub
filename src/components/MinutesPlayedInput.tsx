@@ -110,10 +110,10 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
         return;
       }
 
-      // Save to database using the service (convert back to minutes for the service)
+      // Save to database using the service (convert seconds back to decimal minutes)
       const serviceData = playerMinutes.map(pm => ({
         playerId: pm.playerId,
-        minutes: Math.floor(pm.seconds / 60)
+        minutes: pm.seconds / 60 // Keep decimal precision
       }));
       const success = await MinutesService.updatePlayerMinutes(gameNumber, serviceData);
       
