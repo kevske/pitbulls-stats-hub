@@ -44,34 +44,34 @@ const TimeInput: React.FC<TimeInputProps> = ({
     return minutes * 60 + seconds;
   };
 
-  // Handle input changes with right-to-left typing
+  // Handle input changes with left-to-right typing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let inputValue = e.target.value;
     
-    // Remove any non-digit characters
+    // Remove any non-digit characters and colons
     let digitsOnly = inputValue.replace(/\D/g, '');
     
     // Limit to 4 digits (mmss)
     if (digitsOnly.length > 4) {
-      digitsOnly = digitsOnly.slice(-4);
+      digitsOnly = digitsOnly.slice(0, 4);
     }
     
-    // Format with right-to-left logic
+    // Format with left-to-right logic: 10min -> min -> 10sec -> sec
     let formattedValue = "--:--";
     
     if (digitsOnly.length === 1) {
-      // Single digit: --:0X
-      formattedValue = `--:0${digitsOnly}`;
+      // Single digit: 1X:-- (10 minutes position)
+      formattedValue = `${digitsOnly}X:--`;
     } else if (digitsOnly.length === 2) {
-      // Two digits: --:XX
-      formattedValue = `--:${digitsOnly}`;
+      // Two digits: XX:-- (complete minutes)
+      formattedValue = `${digitsOnly}:--`;
     } else if (digitsOnly.length === 3) {
-      // Three digits: 0X:XX
-      const minutes = digitsOnly[0];
-      const seconds = digitsOnly.slice(1);
-      formattedValue = `0${minutes}:${seconds}`;
+      // Three digits: XX:X-- (10 seconds position)
+      const minutes = digitsOnly.slice(0, 2);
+      const tenSeconds = digitsOnly[2];
+      formattedValue = `${minutes}:${tenSeconds}X`;
     } else if (digitsOnly.length === 4) {
-      // Four digits: XX:XX
+      // Four digits: XX:XX (complete time)
       const minutes = digitsOnly.slice(0, 2);
       const seconds = digitsOnly.slice(2);
       formattedValue = `${minutes}:${seconds}`;
@@ -79,9 +79,17 @@ const TimeInput: React.FC<TimeInputProps> = ({
     
     setDisplayValue(formattedValue);
     
-    // Convert to seconds and call onChange
-    const totalSeconds = timeDisplayToSeconds(formattedValue);
-    onChange(totalSeconds);
+    // Only convert to seconds when we have complete input (4 digits or 2 digits for minutes only)
+    if (digitsOnly.length === 2) {
+      // Only minutes entered, treat as MM:00
+      const minutes = parseInt(digitsOnly) || 0;
+      const totalSeconds = minutes * 60;
+      onChange(totalSeconds);
+    } else if (digitsOnly.length === 4) {
+      // Complete time entered
+      const totalSeconds = timeDisplayToSeconds(formattedValue);
+      onChange(totalSeconds);
+    }
   };
 
   // Handle keypresses for better UX
