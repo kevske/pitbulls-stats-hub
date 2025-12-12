@@ -95,20 +95,20 @@ export class MinutesService {
   static async updatePlayerMinutes(gameNumber: number, playerMinutes: Array<{playerId: string, minutes: number}>): Promise<boolean> {
     try {
       console.log('Updating player minutes:', playerMinutes);
-      const updates = playerMinutes.map(({ playerId, minutes }) => ({
-        game_id: gameNumber.toString(),
-        player_slug: playerId,
-        minutes_played: minutes // Store decimal minutes directly
-      }));
-      console.log('Updates to send:', updates);
-
-      // Update each player's minutes
-      const { error } = await supabase
-        .from('box_scores')
-        .upsert(updates, { onConflict: 'game_id,player_slug' });
-
-      console.log('Supabase response error:', error);
-      if (error) throw error;
+      
+      // Update each player's minutes individually
+      for (const { playerId, minutes } of playerMinutes) {
+        const { error } = await supabase
+          .from('box_scores')
+          .update({ minutes_played: minutes })
+          .eq('game_id', gameNumber.toString())
+          .eq('player_slug', playerId);
+          
+        if (error) {
+          console.error('Error updating player:', playerId, error);
+          throw error;
+        }
+      }
 
       return true;
     } catch (error) {
