@@ -144,16 +144,19 @@ export class MinutesService {
     totalPlayers: number;
   }>> {
     try {
-      // First, get all games from the database that involve TSV Neuenstadt
+      // First, get all games from the database that involve TSV Neuenstadt and are not in the future
+      const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
       const { data: allGames, error: allGamesError } = await supabase
         .from('games')
         .select('game_id, home_team_name, away_team_name, game_date')
         .or('home_team_name.ilike.%TSV Neuenstadt%,away_team_name.ilike.%TSV Neuenstadt%')
+        .lte('game_date', today) // Only include games up to today (hide future games)
         .order('game_date', { ascending: false });
 
       if (allGamesError) throw allGamesError;
 
-      console.log('All TSV Neuenstadt games:', allGames?.length || 0);
+      console.log('All TSV Neuenstadt games (past/present):', allGames?.length || 0);
+      console.log('Sample game IDs from games table:', allGames?.slice(0, 3).map(g => ({ id: g.game_id, date: g.game_date })));
 
       // Get box_scores data for all these games - only for TSV Neuenstadt players
       const gameIds = allGames?.map(g => g.game_id) || [];
@@ -168,6 +171,23 @@ export class MinutesService {
       if (boxScoresError) throw boxScoresError;
 
       console.log('Box scores records found:', boxScoresData?.length || 0);
+      console.log('Sample game IDs from box_scores:', [...new Set((boxScoresData || []).slice(0, 5).map(row => row.game_id))]);
+
+      // If we're not getting matches, try a different approach - get all box_scores and match later
+      let allBoxScoresData = boxScoresData;
+      if (!boxScoresData || boxScoresData.length === 0) {
+        console.log('No box scores found with game_id matching, trying to get all box scores...');
+        const { data: allBoxScores, error: allBoxScoresError } = await supabase
+          .from('box_scores')
+          .select('game_id, player_slug, points, minutes_played')
+          .eq('team_id', '168416')
+          .not('player_slug', 'is', null)
+          .gt('points', 0);
+
+        if (allBoxScoresError) throw allBoxScoresError;
+        allBoxScoresData = allBoxScores;
+        console.log('All box scores records:', allBoxScoresData?.length || 0);
+      }
 
       // Create a map for quick game info lookup
       const gameInfoMap = new Map<string, {
@@ -194,7 +214,7 @@ export class MinutesService {
       const uniquePlayersPerGame = new Map<string, Set<string>>();
       const playersNeedingMinutesPerGame = new Map<string, Set<string>>();
       
-      (boxScoresData || []).forEach(row => {
+      (allBoxScoresData || []).forEach(row => {
         const gameId = row.game_id;
         const playerSlug = row.player_slug;
         
@@ -233,6 +253,8 @@ export class MinutesService {
       });
 
       console.log('Final game stats count:', gameStats.size);
+      console.log('Games without box scores:', Array.from(gameStats.entries()).filter(([_, stats]) => stats.totalPlayers === 0).length);
+      console.log('Games with box scores:', Array.from(gameStats.entries()).filter(([_, stats]) => stats.totalPlayers > 0).map(([gameId, _]) => gameId));
 
       // Convert to expected format
       return Array.from(gameStats.entries())
