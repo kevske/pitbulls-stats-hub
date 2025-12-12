@@ -14,6 +14,8 @@ export interface PlayerMinutesData {
 export interface GameMinutesData {
   gameNumber: number;
   gameDate?: string;
+  homeTeam?: string;
+  awayTeam?: string;
   playerMinutes: Array<{
     playerId: string;
     minutes: number;
@@ -36,6 +38,7 @@ export class MinutesService {
           team_id
         `)
         .eq('game_id', gameNumber.toString())
+        .eq('team_id', '168416') // Only TSV Neuenstadt players
         .not('player_slug', 'is', null)
         .gt('points', 0) // Only players who actually played
         .order('player_last_name, player_first_name');
@@ -91,6 +94,7 @@ export class MinutesService {
         .from('box_scores')
         .select('minutes_played, points')
         .eq('game_id', gameNumber.toString())
+        .eq('team_id', '168416') // Only TSV Neuenstadt players
         .not('player_slug', 'is', null)
         .gt('points', 0);
 
@@ -116,18 +120,45 @@ export class MinutesService {
   static async getGamesNeedingMinutes(): Promise<Array<{
     gameNumber: number;
     gameDate?: string;
+    homeTeam?: string;
+    awayTeam?: string;
     playersNeedingMinutes: number;
     totalPlayers: number;
   }>> {
     try {
-      // Get box_scores data first
+      // Get box_scores data first - only for TSV Neuenstadt players
       const { data: boxScoresData, error: boxScoresError } = await supabase
         .from('box_scores')
         .select('game_id, player_slug, points, minutes_played')
+        .eq('team_id', '168416') // Only TSV Neuenstadt players
         .not('player_slug', 'is', null)
-        .gt('points', 0);
+        .gt('points', 0); // Only players who actually played
 
       if (boxScoresError) throw boxScoresError;
+
+      // Get game information from database for team names
+      const gameIds = [...new Set((boxScoresData || []).map(row => row.game_id))];
+      const { data: gamesData, error: gamesError } = await supabase
+        .from('games')
+        .select('game_id, home_team_name, away_team_name, game_date')
+        .in('game_id', gameIds);
+
+      if (gamesError) throw gamesError;
+
+      // Create a map for quick game info lookup
+      const gameInfoMap = new Map<string, {
+        homeTeam: string;
+        awayTeam: string;
+        gameDate: string;
+      }>();
+      
+      (gamesData || []).forEach(game => {
+        gameInfoMap.set(game.game_id, {
+          homeTeam: game.home_team_name,
+          awayTeam: game.away_team_name,
+          gameDate: game.game_date
+        });
+      });
 
       // Group by game and count
       const gameStats = new Map<string, { 
@@ -150,11 +181,17 @@ export class MinutesService {
 
       // Convert to expected format
       return Array.from(gameStats.entries())
-        .map(([gameId, stats]) => ({
-          gameNumber: parseInt(gameId) || 0,
-          playersNeedingMinutes: stats.needingMinutes,
-          totalPlayers: stats.totalPlayers
-        }))
+        .map(([gameId, stats]) => {
+          const gameInfo = gameInfoMap.get(gameId);
+          return {
+            gameNumber: parseInt(gameId) || 0,
+            gameDate: gameInfo?.gameDate,
+            homeTeam: gameInfo?.homeTeam,
+            awayTeam: gameInfo?.awayTeam,
+            playersNeedingMinutes: stats.needingMinutes,
+            totalPlayers: stats.totalPlayers
+          };
+        })
         .sort((a, b) => b.gameNumber - a.gameNumber);
     } catch (error) {
       console.error('Error getting games needing minutes:', error);
