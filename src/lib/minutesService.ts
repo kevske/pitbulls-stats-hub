@@ -64,11 +64,13 @@ export class MinutesService {
 
       if (error) throw error;
 
-      // Get unique players by grouping by player name and taking the first occurrence (since player_slug may be null)
+      // Get unique players by grouping by player name and taking the first occurrence (handle null names)
       const uniquePlayers = new Map<string, any>();
       
       (data || []).forEach(row => {
-        const playerKey = `${row.player_first_name}-${row.player_last_name}`;
+        const firstName = row.player_first_name || 'Unknown';
+        const lastName = row.player_last_name || 'Player';
+        const playerKey = `${firstName}-${lastName}`;
         if (!uniquePlayers.has(playerKey)) {
           uniquePlayers.set(playerKey, row);
         }
@@ -150,11 +152,13 @@ export class MinutesService {
 
       if (error) throw error;
 
-      // Get unique players by player name (since player_slug may be null)
+      // Get unique players by player name (handle null names)
       const uniquePlayers = new Map<string, any>();
       
       (data || []).forEach(row => {
-        const playerKey = `${row.player_first_name}-${row.player_last_name}`;
+        const firstName = row.player_first_name || 'Unknown';
+        const lastName = row.player_last_name || 'Player';
+        const playerKey = `${firstName}-${lastName}`;
         if (!uniquePlayers.has(playerKey)) {
           uniquePlayers.set(playerKey, row);
         }
@@ -221,9 +225,6 @@ export class MinutesService {
         });
       });
 
-      // Try multiple approaches to find box scores with correct TSV Neuenstadt team filtering
-      let boxScoresData = [];
-      
       // Get all TSV Neuenstadt team IDs from games
       const tsvTeamIds = new Set<string>();
       (allGames || []).forEach(game => {
@@ -235,178 +236,35 @@ export class MinutesService {
       });
       
       console.log('TSV Neuenstadt team IDs found:', Array.from(tsvTeamIds));
-      
-      // Approach 1: Try with exact game_id matching and correct TSV team IDs (removed player_slug requirement, added player names)
+
+      // Single clean approach: Get box scores for TSV Neuenstadt games
       const gameIds = allGames?.map(g => g.game_id) || [];
-      const { data: boxScores1, error: boxScoresError1 } = await supabase
+      const { data: boxScores, error: boxScoresError } = await supabase
         .from('box_scores')
-        .select('game_id, player_slug, points, minutes_played, team_id, player_first_name, player_last_name')
+        .select('game_id, player_first_name, player_last_name, points, minutes_played, team_id')
+        .in('game_id', gameIds)
         .in('team_id', Array.from(tsvTeamIds))
-        .in('game_id', gameIds);
+        .gt('points', 0);
 
-      if (!boxScoresError1 && boxScores1 && boxScores1.length > 0) {
-        // Filter to only include TSV Neuenstadt players by checking team_id against game info
-        const filteredBoxScores = boxScores1.filter(row => {
-          const gameInfo = gameInfoMap.get(row.game_id.toString());
-          return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
-        });
-        
-        // Deduplicate by player name and game_id before counting (since player_slug may be null)
-        const uniquePlayers = new Map<string, any>();
-        filteredBoxScores.forEach(row => {
-          const key = `${row.game_id}-${row.player_first_name}-${row.player_last_name}`;
-          if (!uniquePlayers.has(key)) {
-            uniquePlayers.set(key, row);
-          }
-        });
-        
-        boxScoresData = Array.from(uniquePlayers.values());
-        console.log('Found box scores with correct TSV team filtering (deduplicated):', boxScoresData.length);
-      }
+      if (boxScoresError) throw boxScoresError;
 
-      // Approach 2: Try with team_id as string 'tsv-neuenstadt' (removed player_slug requirement)
-      if (boxScoresData.length === 0) {
-        const { data: boxScores2, error: boxScoresError2 } = await supabase
-          .from('box_scores')
-          .select('game_id, player_slug, points, minutes_played, team_id, player_first_name, player_last_name')
-          .eq('team_id', 'tsv-neuenstadt')
-          .in('game_id', gameIds);
-
-        if (!boxScoresError2 && boxScores2 && boxScores2.length > 0) {
-          // Filter to only include TSV Neuenstadt players by checking against game info
-          const filteredBoxScores = boxScores2.filter(row => {
-            const gameInfo = gameInfoMap.get(row.game_id.toString());
-            return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
-          });
-          
-          // Deduplicate by player name and game_id (since player_slug may be null)
-          const uniquePlayers = new Map<string, any>();
-          filteredBoxScores.forEach(row => {
-            const key = `${row.game_id}-${row.player_first_name}-${row.player_last_name}`;
-            if (!uniquePlayers.has(key)) {
-              uniquePlayers.set(key, row);
-            }
-          });
-          
-          boxScoresData = Array.from(uniquePlayers.values());
-          console.log('Found box scores with team_id=tsv-neuenstadt (filtered and deduplicated):', boxScoresData.length);
+      // Filter to only include TSV Neuenstadt players by checking team_id against game info
+      const filteredBoxScores = (boxScores || []).filter(row => {
+        const gameInfo = gameInfoMap.get(row.game_id.toString());
+        return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
+      });
+      
+      // Deduplicate by player name and game_id
+      const uniquePlayers = new Map<string, any>();
+      filteredBoxScores.forEach(row => {
+        const key = `${row.game_id}-${row.player_first_name}-${row.player_last_name}`;
+        if (!uniquePlayers.has(key)) {
+          uniquePlayers.set(key, row);
         }
-      }
-
-      // Approach 3: Try without team_id filter at all, then filter for TSV Neuenstadt players (removed player_slug requirement)
-      if (boxScoresData.length === 0) {
-        const { data: boxScores3, error: boxScoresError3 } = await supabase
-          .from('box_scores')
-          .select('game_id, player_slug, points, minutes_played, team_id, player_first_name, player_last_name')
-          .in('game_id', gameIds);
-
-        if (!boxScoresError3 && boxScores3 && boxScores3.length > 0) {
-          // Filter to only include TSV Neuenstadt players by checking team_id against game info
-          const filteredBoxScores = boxScores3.filter(row => {
-            const gameInfo = gameInfoMap.get(row.game_id.toString());
-            return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
-          });
-          
-          // Deduplicate by player name and game_id (since player_slug may be null)
-          const uniquePlayers = new Map<string, any>();
-          filteredBoxScores.forEach(row => {
-            const key = `${row.game_id}-${row.player_first_name}-${row.player_last_name}`;
-            if (!uniquePlayers.has(key)) {
-              uniquePlayers.set(key, row);
-            }
-          });
-          
-          boxScoresData = Array.from(uniquePlayers.values());
-          console.log('Found box scores without team_id filter (filtered for TSV and deduplicated):', boxScoresData.length);
-          console.log('Team IDs found after filtering:', [...new Set(boxScoresData.map(row => row.team_id))]);
-        }
-      }
-
-      // Approach 4: Try getting all box scores and match by game_id as number, then filter for TSV (removed player_slug requirement)
-      if (boxScoresData.length === 0) {
-        const gameIdsAsNumbers = gameIds.map(id => parseInt(id)).filter(id => !isNaN(id));
-        const { data: boxScores4, error: boxScoresError4 } = await supabase
-          .from('box_scores')
-          .select('game_id, player_slug, points, minutes_played, team_id, player_first_name, player_last_name')
-          .in('game_id', gameIdsAsNumbers);
-
-        if (!boxScoresError4 && boxScores4 && boxScores4.length > 0) {
-          // Filter to only include TSV Neuenstadt players by checking team_id against game info
-          const filteredBoxScores = boxScores4.filter(row => {
-            const gameInfo = gameInfoMap.get(row.game_id.toString());
-            return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
-          });
-          
-          // Deduplicate by player name and game_id (since player_slug may be null)
-          const uniquePlayers = new Map<string, any>();
-          filteredBoxScores.forEach(row => {
-            const key = `${row.game_id}-${row.player_first_name}-${row.player_last_name}`;
-            if (!uniquePlayers.has(key)) {
-              uniquePlayers.set(key, row);
-            }
-          });
-          
-          boxScoresData = Array.from(uniquePlayers.values());
-          console.log('Found box scores with numeric game_ids (filtered for TSV and deduplicated):', boxScoresData.length);
-        }
-      }
-
-      // Approach 5: Get ALL box scores and see what we have, then filter for TSV (removed player_slug requirement)
-      if (boxScoresData.length === 0) {
-        const { data: allBoxScores, error: allBoxScoresError } = await supabase
-          .from('box_scores')
-          .select('game_id, player_slug, points, minutes_played, team_id, player_first_name, player_last_name')
-          .limit(50); // Limit to avoid too much data
-
-        if (!allBoxScoresError && allBoxScores && allBoxScores.length > 0) {
-          console.log('Sample of ALL box scores:', allBoxScores.length);
-          console.log('Sample game IDs from box_scores:', [...new Set(allBoxScores.slice(0, 10).map(row => row.game_id))]);
-          console.log('Sample team IDs from box_scores:', [...new Set(allBoxScores.slice(0, 10).map(row => row.team_id))]);
-          
-          // Try to find matches manually and filter for TSV Neuenstadt players
-          const matchingGames = allBoxScores.filter(row => 
-            (gameIds.includes(row.game_id.toString()) || 
-            gameIds.includes(row.game_id) ||
-            gameIds.map(id => parseInt(id)).includes(parseInt(row.game_id))) &&
-            // Additional filter for TSV Neuenstadt players
-            (() => {
-              const gameInfo = gameInfoMap.get(row.game_id.toString());
-              return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
-            })()
-          );
-          
-          if (matchingGames.length > 0) {
-            // Deduplicate the matching games by player name (since player_slug may be null)
-            const uniquePlayers = new Map<string, any>();
-            matchingGames.forEach(row => {
-              const key = `${row.game_id}-${row.player_first_name}-${row.player_last_name}`;
-              if (!uniquePlayers.has(key)) {
-                uniquePlayers.set(key, row);
-              }
-            });
-            
-            boxScoresData = Array.from(uniquePlayers.values());
-            console.log('Found manually matched box scores (filtered for TSV and deduplicated):', boxScoresData.length);
-          }
-        }
-      }
-
-      console.log('Final box scores count:', boxScoresData.length);
-      if (boxScoresData.length > 0) {
-        console.log('Sample box scores:', boxScoresData.slice(0, 3));
-        
-        // Show distribution of players across games
-        const gameDistribution = new Map<string, number>();
-        boxScoresData.forEach(row => {
-          const gameId = row.game_id.toString();
-          gameDistribution.set(gameId, (gameDistribution.get(gameId) || 0) + 1);
-        });
-        
-        console.log('Player distribution across games:');
-        gameDistribution.forEach((count, gameId) => {
-          console.log(`  Game ${gameId}: ${count} players`);
-        });
-      }
+      });
+      
+      const boxScoresData = Array.from(uniquePlayers.values());
+      console.log('Found TSV Neuenstadt box scores:', boxScoresData.length);
 
       // Group by game and count unique players
       const gameStats = new Map<string, { 
@@ -445,51 +303,6 @@ export class MinutesService {
           needingMinutes: needingMinutes.size
         });
       });
-
-      // Test specific game 2786687 to verify our logic works
-      console.log('Testing with known working game 2786687...');
-      const { data: testGame2786687, error: testGameError } = await supabase
-        .from('games')
-        .select('game_id, home_team_name, away_team_name, home_team_id, away_team_id')
-        .eq('game_id', '2786687')
-        .single();
-
-      if (!testGameError && testGame2786687) {
-        const isTSVNeuenstadtHome = testGame2786687.home_team_name.toLowerCase().includes('neuenstadt');
-        const tsvNeuenstadtTeamId = isTSVNeuenstadtHome ? testGame2786687.home_team_id : testGame2786687.away_team_id;
-        console.log('Game 2786687 details:', {
-          home_team: testGame2786687.home_team_name,
-          away_team: testGame2786687.away_team_name,
-          tsv_team_id: tsvNeuenstadtTeamId
-        });
-
-        // Test box scores for this game with our team ID (removed player_slug requirement)
-        const { data: testBoxScores, error: testBoxScoresError } = await supabase
-          .from('box_scores')
-          .select('player_first_name, player_last_name, player_slug, team_id, points, minutes_played')
-          .eq('game_id', '2786687')
-          .eq('team_id', tsvNeuenstadtTeamId);
-
-        if (!testBoxScoresError && testBoxScores) {
-          console.log('Found TSV Neuenstadt players for game 2786687:', testBoxScores.length);
-          console.log('Sample players:', testBoxScores.slice(0, 3).map(p => `${p.player_first_name} ${p.player_last_name}: ${p.points} pts`));
-        } else {
-          console.log('Error finding TSV players for game 2786687:', testBoxScoresError);
-        }
-
-        // Let's also check ALL box scores for this game to see what's there
-        const { data: allBoxScoresForGame, error: allBoxScoresError } = await supabase
-          .from('box_scores')
-          .select('player_first_name, player_last_name, player_slug, team_id, points, minutes_played')
-          .eq('game_id', '2786687');
-
-        if (!allBoxScoresError && allBoxScoresForGame) {
-          console.log('ALL box scores for game 2786687:', allBoxScoresForGame.length);
-          console.log('Team IDs in this game:', [...new Set(allBoxScoresForGame.map(bs => bs.team_id))]);
-          console.log('Players with slug:', allBoxScoresForGame.filter(bs => bs.player_slug).length);
-          console.log('Sample all players:', allBoxScoresForGame.slice(0, 5).map(p => `${p.player_first_name} ${p.player_last_name} (team: ${p.team_id}): ${p.points} pts`));
-        }
-      }
 
       // Also include games that don't have any box_scores yet (all players need minutes)
       (allGames || []).forEach(game => {
