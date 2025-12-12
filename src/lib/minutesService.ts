@@ -451,6 +451,39 @@ export class MinutesService {
         });
       });
 
+      // Test specific game 2786687 to verify our logic works
+      console.log('Testing with known working game 2786687...');
+      const { data: testGame2786687, error: testGameError } = await supabase
+        .from('games')
+        .select('game_id, home_team_name, away_team_name, home_team_id, away_team_id')
+        .eq('game_id', '2786687')
+        .single();
+
+      if (!testGameError && testGame2786687) {
+        const isTSVNeuenstadtHome = testGame2786687.home_team_name.toLowerCase().includes('neuenstadt');
+        const tsvNeuenstadtTeamId = isTSVNeuenstadtHome ? testGame2786687.home_team_id : testGame2786687.away_team_id;
+        console.log('Game 2786687 details:', {
+          home_team: testGame2786687.home_team_name,
+          away_team: testGame2786687.away_team_name,
+          tsv_team_id: tsvNeuenstadtTeamId
+        });
+
+        // Test box scores for this game with our team ID
+        const { data: testBoxScores, error: testBoxScoresError } = await supabase
+          .from('box_scores')
+          .select('player_first_name, player_last_name, player_slug, team_id, points, minutes_played')
+          .eq('game_id', '2786687')
+          .eq('team_id', tsvNeuenstadtTeamId)
+          .not('player_slug', 'is', null);
+
+        if (!testBoxScoresError && testBoxScores) {
+          console.log('Found TSV Neuenstadt players for game 2786687:', testBoxScores.length);
+          console.log('Sample players:', testBoxScores.slice(0, 3).map(p => `${p.player_first_name} ${p.player_last_name}: ${p.points} pts`));
+        } else {
+          console.log('Error finding TSV players for game 2786687:', testBoxScoresError);
+        }
+      }
+
       // Also include games that don't have any box_scores yet (all players need minutes)
       (allGames || []).forEach(game => {
         if (!gameStats.has(game.game_id)) {
