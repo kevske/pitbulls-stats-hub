@@ -168,12 +168,20 @@ export class MinutesService {
         .select('game_id, player_slug, points, minutes_played')
         .eq('team_id', '168416')
         .not('player_slug', 'is', null)
-        .gt('points', 0)
         .in('game_id', gameIds);
 
       if (!boxScoresError1 && boxScores1 && boxScores1.length > 0) {
-        boxScoresData = boxScores1;
-        console.log('Found box scores with team_id=168416:', boxScores1.length);
+        // Deduplicate by player_slug and game_id before counting
+        const uniquePlayers = new Map<string, any>();
+        boxScores1.forEach(row => {
+          const key = `${row.game_id}-${row.player_slug}`;
+          if (!uniquePlayers.has(key)) {
+            uniquePlayers.set(key, row);
+          }
+        });
+        
+        boxScoresData = Array.from(uniquePlayers.values());
+        console.log('Found box scores with team_id=168416 (deduplicated):', boxScoresData.length);
       }
 
       // Approach 2: Try with team_id as string 'tsv-neuenstadt'
@@ -183,12 +191,20 @@ export class MinutesService {
           .select('game_id, player_slug, points, minutes_played')
           .eq('team_id', 'tsv-neuenstadt')
           .not('player_slug', 'is', null)
-          .gt('points', 0)
           .in('game_id', gameIds);
 
         if (!boxScoresError2 && boxScores2 && boxScores2.length > 0) {
-          boxScoresData = boxScores2;
-          console.log('Found box scores with team_id=tsv-neuenstadt:', boxScores2.length);
+          // Deduplicate by player_slug and game_id
+          const uniquePlayers = new Map<string, any>();
+          boxScores2.forEach(row => {
+            const key = `${row.game_id}-${row.player_slug}`;
+            if (!uniquePlayers.has(key)) {
+              uniquePlayers.set(key, row);
+            }
+          });
+          
+          boxScoresData = Array.from(uniquePlayers.values());
+          console.log('Found box scores with team_id=tsv-neuenstadt (deduplicated):', boxScoresData.length);
         }
       }
 
@@ -198,13 +214,21 @@ export class MinutesService {
           .from('box_scores')
           .select('game_id, player_slug, points, minutes_played, team_id')
           .not('player_slug', 'is', null)
-          .gt('points', 0)
           .in('game_id', gameIds);
 
         if (!boxScoresError3 && boxScores3 && boxScores3.length > 0) {
-          boxScoresData = boxScores3;
-          console.log('Found box scores without team_id filter:', boxScores3.length);
-          console.log('Team IDs found:', [...new Set(boxScores3.map(row => row.team_id))]);
+          // Deduplicate by player_slug and game_id
+          const uniquePlayers = new Map<string, any>();
+          boxScores3.forEach(row => {
+            const key = `${row.game_id}-${row.player_slug}`;
+            if (!uniquePlayers.has(key)) {
+              uniquePlayers.set(key, row);
+            }
+          });
+          
+          boxScoresData = Array.from(uniquePlayers.values());
+          console.log('Found box scores without team_id filter (deduplicated):', boxScoresData.length);
+          console.log('Team IDs found:', [...new Set(boxScoresData.map(row => row.team_id))]);
         }
       }
 
@@ -215,12 +239,20 @@ export class MinutesService {
           .from('box_scores')
           .select('game_id, player_slug, points, minutes_played, team_id')
           .not('player_slug', 'is', null)
-          .gt('points', 0)
           .in('game_id', gameIdsAsNumbers);
 
         if (!boxScoresError4 && boxScores4 && boxScores4.length > 0) {
-          boxScoresData = boxScores4;
-          console.log('Found box scores with numeric game_ids:', boxScores4.length);
+          // Deduplicate by player_slug and game_id
+          const uniquePlayers = new Map<string, any>();
+          boxScores4.forEach(row => {
+            const key = `${row.game_id}-${row.player_slug}`;
+            if (!uniquePlayers.has(key)) {
+              uniquePlayers.set(key, row);
+            }
+          });
+          
+          boxScoresData = Array.from(uniquePlayers.values());
+          console.log('Found box scores with numeric game_ids (deduplicated):', boxScoresData.length);
         }
       }
 
@@ -230,7 +262,6 @@ export class MinutesService {
           .from('box_scores')
           .select('game_id, player_slug, points, minutes_played, team_id')
           .not('player_slug', 'is', null)
-          .gt('points', 0)
           .limit(50); // Limit to avoid too much data
 
         if (!allBoxScoresError && allBoxScores && allBoxScores.length > 0) {
@@ -246,8 +277,17 @@ export class MinutesService {
           );
           
           if (matchingGames.length > 0) {
-            boxScoresData = matchingGames;
-            console.log('Found manually matched box scores:', matchingGames.length);
+            // Deduplicate the matching games
+            const uniquePlayers = new Map<string, any>();
+            matchingGames.forEach(row => {
+              const key = `${row.game_id}-${row.player_slug}`;
+              if (!uniquePlayers.has(key)) {
+                uniquePlayers.set(key, row);
+              }
+            });
+            
+            boxScoresData = Array.from(uniquePlayers.values());
+            console.log('Found manually matched box scores (deduplicated):', boxScoresData.length);
           }
         }
       }
@@ -255,6 +295,18 @@ export class MinutesService {
       console.log('Final box scores count:', boxScoresData.length);
       if (boxScoresData.length > 0) {
         console.log('Sample box scores:', boxScoresData.slice(0, 3));
+        
+        // Show distribution of players across games
+        const gameDistribution = new Map<string, number>();
+        boxScoresData.forEach(row => {
+          const gameId = row.game_id.toString();
+          gameDistribution.set(gameId, (gameDistribution.get(gameId) || 0) + 1);
+        });
+        
+        console.log('Player distribution across games:');
+        gameDistribution.forEach((count, gameId) => {
+          console.log(`  Game ${gameId}: ${count} players`);
+        });
       }
 
       // Create a map for quick game info lookup
