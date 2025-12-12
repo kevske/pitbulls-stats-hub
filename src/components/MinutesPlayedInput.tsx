@@ -43,11 +43,13 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
         const summaryData = await MinutesService.getGameMinutesSummary(gameNumber);
         setSummary(summaryData);
         
-        // Convert to our component format
-        const componentData = playersData.map(player => ({
-          playerId: player.playerSlug,
-          minutes: player.minutes
-        }));
+        // Convert to our component format, filter out null playerIds
+        const componentData = playersData
+          .filter(player => player.playerSlug != null) // Filter out null playerSlugs
+          .map(player => ({
+            playerId: player.playerSlug,
+            minutes: player.minutes
+          }));
         
         setPlayerMinutes(componentData);
       } catch (error) {
@@ -171,8 +173,8 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
         ) : (
           <>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {playerMinutes.map(({ playerId, minutes }) => (
-                <div key={playerId} className="space-y-2">
+              {playerMinutes.filter(pm => pm.playerId != null).map(({ playerId, minutes }) => (
+                <div key={playerId || `unknown-${Math.random()}`} className="space-y-2">
                   <Label htmlFor={`minutes-${playerId}`} className="text-sm font-medium">
                     <div className="flex items-center gap-2">
                       <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold">
