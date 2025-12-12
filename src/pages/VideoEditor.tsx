@@ -21,6 +21,7 @@ import { ChevronLeft, ChevronRight, List, Upload, FileText, Plus, Save } from 'l
 import { generateSaveData, SaveData, compareTimestamps, updateLastModified } from '@/lib/saveLoad';
 import { loadSaveFile } from '@/lib/saveLoad';
 import { VideoProjectService } from '@/lib/videoProjectService';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import Layout from '@/components/Layout';
 import { useSearchParams } from 'react-router-dom';
@@ -176,7 +177,8 @@ const VideoEditor = () => {
         videoId,
         playlistId,
         timestamp: now,
-        lastModified: now
+        lastModified: now,
+        version: '1.0.0'
       };
 
       console.log('Saving data to Supabase:', saveData);
@@ -195,6 +197,106 @@ const VideoEditor = () => {
       toast.error(`Failed to save data: ${(error as Error).message}`);
     }
   };
+
+  // Autosave and Realtime
+  useEffect(() => {
+    if (!gameNumber) return;
+
+    // 1. Realtime Subscription
+    const channelName = `video_project:${gameNumber}:${currentPlaylistIndex + 1}`;
+    console.log('Subscribing to realtime channel:', channelName);
+
+    const subscription = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'video_projects',
+          filter: `game_number=eq.${gameNumber}` // We filter further in callback
+        },
+        (payload) => {
+          console.log('Realtime update received:', payload);
+          const newData = payload.new as any;
+
+          // Ensure it matches our current video
+          if (newData.video_index !== (currentPlaylistIndex + 1)) return;
+
+          const remoteLastModified = newData.updated_at;
+          const localLastModified = lastSavedData?.lastModified;
+
+          // If remote is newer than what we have loaded/saved
+          if (remoteLastModified && (!localLastModified || new Date(remoteLastModified) > new Date(localLastModified))) {
+            console.log('Remote change detected, auto-updating...');
+            toast.info('Remote changes detected. Updating...');
+
+            const projectData = newData.data;
+            setEvents(projectData.events || []);
+            setPlayers(projectData.players || []);
+            if (newData.video_id) setVideoId(newData.video_id);
+            if (newData.playlist_id) setPlaylistId(newData.playlist_id);
+
+            setLastSavedData({
+              gameNumber: parseInt(newData.game_number),
+              videoIndex: newData.video_index,
+              videoId: newData.video_id,
+              playlistId: newData.playlist_id,
+              events: projectData.events || [],
+              players: projectData.players || [],
+              metadata: projectData.metadata,
+              timestamp: newData.created_at,
+              lastModified: newData.updated_at,
+              version: '1.0.0'
+            });
+
+            // Clear any conflict warnings since we just synced
+            setTimestampConflict(null);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [gameNumber, currentPlaylistIndex, lastSavedData]);
+
+  // Auto-save debounce
+  useEffect(() => {
+    if (!gameNumber || !events.length) return;
+
+    const timeoutId = setTimeout(async () => {
+      // Check if changes exist compared to last saved
+      const hasUnsavedChanges = !lastSavedData ||
+        JSON.stringify(events) !== JSON.stringify(lastSavedData.events) ||
+        JSON.stringify(players) !== JSON.stringify(lastSavedData.players);
+
+      if (hasUnsavedChanges) {
+        console.log('Auto-saving changes...');
+        const now = new Date().toISOString();
+        const saveData: SaveData = {
+          gameNumber: parseInt(gameNumber),
+          videoIndex: currentPlaylistIndex + 1,
+          events,
+          players,
+          videoId,
+          playlistId,
+          timestamp: now,
+          lastModified: now,
+          version: '1.0.0'
+        };
+
+        const savedId = await VideoProjectService.saveProject(saveData);
+        if (savedId) {
+          setLastSavedData(saveData);
+          // toast.success('Auto-saved'); // Optional: don't spam toasts
+        }
+      }
+    }, 2000); // 2 second debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [events, players, gameNumber, currentPlaylistIndex, videoId, playlistId, lastSavedData]);
 
   // Exit protection
   useEffect(() => {
