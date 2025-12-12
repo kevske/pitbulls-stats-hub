@@ -44,11 +44,11 @@ const TimeInput: React.FC<TimeInputProps> = ({
     return minutes * 60 + seconds;
   };
 
-  // Handle input changes with left-to-right typing
+  // Handle input changes - simple 4 digit input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let inputValue = e.target.value;
     
-    // Remove any non-digit characters and colons
+    // Remove any non-digit characters
     let digitsOnly = inputValue.replace(/\D/g, '');
     
     // Limit to 4 digits (mmss)
@@ -56,22 +56,24 @@ const TimeInput: React.FC<TimeInputProps> = ({
       digitsOnly = digitsOnly.slice(0, 4);
     }
     
-    // Format with left-to-right logic: 10min -> min -> 10sec -> sec
+    // Format as mm:ss when we have digits
     let formattedValue = "--:--";
     
-    if (digitsOnly.length === 1) {
-      // Single digit: 1X:-- (10 minutes position)
-      formattedValue = `${digitsOnly}X:--`;
+    if (digitsOnly.length === 0) {
+      formattedValue = "--:--";
+    } else if (digitsOnly.length === 1) {
+      // Single digit: 0X:--
+      formattedValue = `0${digitsOnly}:--`;
     } else if (digitsOnly.length === 2) {
-      // Two digits: XX:-- (complete minutes)
+      // Two digits: XX:--
       formattedValue = `${digitsOnly}:--`;
     } else if (digitsOnly.length === 3) {
-      // Three digits: XX:X-- (10 seconds position)
+      // Three digits: XX:0X
       const minutes = digitsOnly.slice(0, 2);
-      const tenSeconds = digitsOnly[2];
-      formattedValue = `${minutes}:${tenSeconds}X`;
+      const seconds = digitsOnly.slice(2);
+      formattedValue = `${minutes}:0${seconds}`;
     } else if (digitsOnly.length === 4) {
-      // Four digits: XX:XX (complete time)
+      // Four digits: XX:XX
       const minutes = digitsOnly.slice(0, 2);
       const seconds = digitsOnly.slice(2);
       formattedValue = `${minutes}:${seconds}`;
@@ -79,13 +81,29 @@ const TimeInput: React.FC<TimeInputProps> = ({
     
     setDisplayValue(formattedValue);
     
-    // Only convert to seconds when we have complete input (4 digits only)
-    if (digitsOnly.length === 4) {
-      // Complete time entered
-      const totalSeconds = timeDisplayToSeconds(formattedValue);
+    // Convert to seconds when we have at least 1 digit
+    if (digitsOnly.length > 0) {
+      // For partial input, use 0 for missing parts
+      let minutes = 0;
+      let seconds = 0;
+      
+      if (digitsOnly.length === 1) {
+        minutes = parseInt(digitsOnly);
+        seconds = 0;
+      } else if (digitsOnly.length === 2) {
+        minutes = parseInt(digitsOnly);
+        seconds = 0;
+      } else if (digitsOnly.length === 3) {
+        minutes = parseInt(digitsOnly.slice(0, 2));
+        seconds = parseInt(digitsOnly.slice(2)) * 10; // 10 seconds position
+      } else if (digitsOnly.length === 4) {
+        minutes = parseInt(digitsOnly.slice(0, 2));
+        seconds = parseInt(digitsOnly.slice(2));
+      }
+      
+      const totalSeconds = minutes * 60 + seconds;
       onChange(totalSeconds);
     }
-    // For partial input (1-3 digits), don't update the value yet
   };
 
   // Handle keypresses for better UX
@@ -104,8 +122,8 @@ const TimeInput: React.FC<TimeInputProps> = ({
   // Update display when value changes externally
   useEffect(() => {
     const newDisplayValue = secondsToTimeDisplay(value);
-    // Only update if the current display is a complete time or empty, not during active input
-    if (!displayValue.includes('X') && displayValue !== newDisplayValue) {
+    // Only update if the current display is not during active input
+    if (displayValue !== newDisplayValue) {
       setDisplayValue(newDisplayValue);
     }
   }, [value]);
