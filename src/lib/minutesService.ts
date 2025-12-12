@@ -26,6 +26,26 @@ export class MinutesService {
   // Get players who need minutes data for a specific game
   static async getPlayersNeedingMinutes(gameNumber: number): Promise<PlayerMinutesData[]> {
     try {
+      // First, get the game info to determine which team is TSV Neuenstadt
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('home_team_name, away_team_name, home_team_id, away_team_id')
+        .eq('game_id', gameNumber.toString())
+        .single();
+
+      if (gameError) throw gameError;
+
+      // Determine which team ID represents TSV Neuenstadt
+      const isTSVNeuenstadtHome = gameData.home_team_name?.toLowerCase().includes('neuenstadt');
+      const tsvNeuenstadtTeamId = isTSVNeuenstadtHome ? gameData.home_team_id : gameData.away_team_id;
+
+      if (!tsvNeuenstadtTeamId) {
+        console.warn('Could not determine TSV Neuenstadt team ID for game:', gameNumber);
+        return [];
+      }
+
+      console.log(`Game ${gameNumber}: TSV Neuenstadt team ID is ${tsvNeuenstadtTeamId}`);
+
       const { data, error } = await supabase
         .from('box_scores')
         .select(`
@@ -38,7 +58,7 @@ export class MinutesService {
           team_id
         `)
         .eq('game_id', gameNumber.toString())
-        .eq('team_id', '168416') // Only TSV Neuenstadt players
+        .eq('team_id', tsvNeuenstadtTeamId) // Only TSV Neuenstadt players
         .not('player_slug', 'is', null)
         .gt('points', 0) // Only players who actually played
         .order('player_last_name, player_first_name');
@@ -99,11 +119,33 @@ export class MinutesService {
     playersNeedingMinutes: number;
   }> {
     try {
+      // First, get the game info to determine which team is TSV Neuenstadt
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('home_team_name, away_team_name, home_team_id, away_team_id')
+        .eq('game_id', gameNumber.toString())
+        .single();
+
+      if (gameError) throw gameError;
+
+      // Determine which team ID represents TSV Neuenstadt
+      const isTSVNeuenstadtHome = gameData.home_team_name?.toLowerCase().includes('neuenstadt');
+      const tsvNeuenstadtTeamId = isTSVNeuenstadtHome ? gameData.home_team_id : gameData.away_team_id;
+
+      if (!tsvNeuenstadtTeamId) {
+        console.warn('Could not determine TSV Neuenstadt team ID for game:', gameNumber);
+        return {
+          totalMinutes: 0,
+          playersWithMinutes: 0,
+          playersNeedingMinutes: 0
+        };
+      }
+
       const { data, error } = await supabase
         .from('box_scores')
         .select('minutes_played, points, player_slug')
         .eq('game_id', gameNumber.toString())
-        .eq('team_id', '168416') // Only TSV Neuenstadt players
+        .eq('team_id', tsvNeuenstadtTeamId) // Only TSV Neuenstadt players
         .not('player_slug', 'is', null)
         .gt('points', 0);
 
@@ -148,7 +190,7 @@ export class MinutesService {
       const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
       const { data: allGames, error: allGamesError } = await supabase
         .from('games')
-        .select('game_id, home_team_name, away_team_name, game_date')
+        .select('game_id, home_team_name, away_team_name, home_team_id, away_team_id, game_date')
         .or('home_team_name.ilike.%TSV Neuenstadt%,away_team_name.ilike.%TSV Neuenstadt%')
         .lte('game_date', today) // Only include games up to today (hide future games)
         .order('game_date', { ascending: false });
@@ -158,22 +200,61 @@ export class MinutesService {
       console.log('All TSV Neuenstadt games (past/present):', allGames?.length || 0);
       console.log('Sample game IDs from games table:', allGames?.slice(0, 3).map(g => ({ id: g.game_id, date: g.game_date })));
 
-      // Try multiple approaches to find box scores
+      // Create a map for quick game info lookup including TSV Neuenstadt team ID
+      const gameInfoMap = new Map<string, {
+        homeTeam: string;
+        awayTeam: string;
+        gameDate: string;
+        tsvNeuenstadtTeamId: string;
+      }>();
+      
+      (allGames || []).forEach(game => {
+        // Determine which team ID represents TSV Neuenstadt for this game
+        const isTSVNeuenstadtHome = game.home_team_name?.toLowerCase().includes('neuenstadt');
+        const tsvNeuenstadtTeamId = isTSVNeuenstadtHome ? game.home_team_id : game.away_team_id;
+        
+        gameInfoMap.set(game.game_id, {
+          homeTeam: game.home_team_name,
+          awayTeam: game.away_team_name,
+          gameDate: game.game_date,
+          tsvNeuenstadtTeamId: tsvNeuenstadtTeamId || ''
+        });
+      });
+
+      // Try multiple approaches to find box scores with correct TSV Neuenstadt team filtering
       let boxScoresData = [];
       
-      // Approach 1: Try with exact game_id matching and team_id = '168416'
+      // Get all TSV Neuenstadt team IDs from games
+      const tsvTeamIds = new Set<string>();
+      (allGames || []).forEach(game => {
+        const isTSVNeuenstadtHome = game.home_team_name?.toLowerCase().includes('neuenstadt');
+        const tsvTeamId = isTSVNeuenstadtHome ? game.home_team_id : game.away_team_id;
+        if (tsvTeamId) {
+          tsvTeamIds.add(tsvTeamId);
+        }
+      });
+      
+      console.log('TSV Neuenstadt team IDs found:', Array.from(tsvTeamIds));
+      
+      // Approach 1: Try with exact game_id matching and correct TSV team IDs
       const gameIds = allGames?.map(g => g.game_id) || [];
       const { data: boxScores1, error: boxScoresError1 } = await supabase
         .from('box_scores')
-        .select('game_id, player_slug, points, minutes_played')
-        .eq('team_id', '168416')
+        .select('game_id, player_slug, points, minutes_played, team_id')
+        .in('team_id', Array.from(tsvTeamIds))
         .not('player_slug', 'is', null)
         .in('game_id', gameIds);
 
       if (!boxScoresError1 && boxScores1 && boxScores1.length > 0) {
+        // Filter to only include TSV Neuenstadt players by checking team_id against game info
+        const filteredBoxScores = boxScores1.filter(row => {
+          const gameInfo = gameInfoMap.get(row.game_id.toString());
+          return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
+        });
+        
         // Deduplicate by player_slug and game_id before counting
         const uniquePlayers = new Map<string, any>();
-        boxScores1.forEach(row => {
+        filteredBoxScores.forEach(row => {
           const key = `${row.game_id}-${row.player_slug}`;
           if (!uniquePlayers.has(key)) {
             uniquePlayers.set(key, row);
@@ -181,22 +262,28 @@ export class MinutesService {
         });
         
         boxScoresData = Array.from(uniquePlayers.values());
-        console.log('Found box scores with team_id=168416 (deduplicated):', boxScoresData.length);
+        console.log('Found box scores with correct TSV team filtering (deduplicated):', boxScoresData.length);
       }
 
       // Approach 2: Try with team_id as string 'tsv-neuenstadt'
       if (boxScoresData.length === 0) {
         const { data: boxScores2, error: boxScoresError2 } = await supabase
           .from('box_scores')
-          .select('game_id, player_slug, points, minutes_played')
+          .select('game_id, player_slug, points, minutes_played, team_id')
           .eq('team_id', 'tsv-neuenstadt')
           .not('player_slug', 'is', null)
           .in('game_id', gameIds);
 
         if (!boxScoresError2 && boxScores2 && boxScores2.length > 0) {
+          // Filter to only include TSV Neuenstadt players by checking against game info
+          const filteredBoxScores = boxScores2.filter(row => {
+            const gameInfo = gameInfoMap.get(row.game_id.toString());
+            return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
+          });
+          
           // Deduplicate by player_slug and game_id
           const uniquePlayers = new Map<string, any>();
-          boxScores2.forEach(row => {
+          filteredBoxScores.forEach(row => {
             const key = `${row.game_id}-${row.player_slug}`;
             if (!uniquePlayers.has(key)) {
               uniquePlayers.set(key, row);
@@ -204,11 +291,11 @@ export class MinutesService {
           });
           
           boxScoresData = Array.from(uniquePlayers.values());
-          console.log('Found box scores with team_id=tsv-neuenstadt (deduplicated):', boxScoresData.length);
+          console.log('Found box scores with team_id=tsv-neuenstadt (filtered and deduplicated):', boxScoresData.length);
         }
       }
 
-      // Approach 3: Try without team_id filter at all
+      // Approach 3: Try without team_id filter at all, then filter for TSV Neuenstadt players
       if (boxScoresData.length === 0) {
         const { data: boxScores3, error: boxScoresError3 } = await supabase
           .from('box_scores')
@@ -217,9 +304,15 @@ export class MinutesService {
           .in('game_id', gameIds);
 
         if (!boxScoresError3 && boxScores3 && boxScores3.length > 0) {
+          // Filter to only include TSV Neuenstadt players by checking team_id against game info
+          const filteredBoxScores = boxScores3.filter(row => {
+            const gameInfo = gameInfoMap.get(row.game_id.toString());
+            return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
+          });
+          
           // Deduplicate by player_slug and game_id
           const uniquePlayers = new Map<string, any>();
-          boxScores3.forEach(row => {
+          filteredBoxScores.forEach(row => {
             const key = `${row.game_id}-${row.player_slug}`;
             if (!uniquePlayers.has(key)) {
               uniquePlayers.set(key, row);
@@ -227,12 +320,12 @@ export class MinutesService {
           });
           
           boxScoresData = Array.from(uniquePlayers.values());
-          console.log('Found box scores without team_id filter (deduplicated):', boxScoresData.length);
-          console.log('Team IDs found:', [...new Set(boxScoresData.map(row => row.team_id))]);
+          console.log('Found box scores without team_id filter (filtered for TSV and deduplicated):', boxScoresData.length);
+          console.log('Team IDs found after filtering:', [...new Set(boxScoresData.map(row => row.team_id))]);
         }
       }
 
-      // Approach 4: Try getting all box scores and match by game_id as number
+      // Approach 4: Try getting all box scores and match by game_id as number, then filter for TSV
       if (boxScoresData.length === 0) {
         const gameIdsAsNumbers = gameIds.map(id => parseInt(id)).filter(id => !isNaN(id));
         const { data: boxScores4, error: boxScoresError4 } = await supabase
@@ -242,9 +335,15 @@ export class MinutesService {
           .in('game_id', gameIdsAsNumbers);
 
         if (!boxScoresError4 && boxScores4 && boxScores4.length > 0) {
+          // Filter to only include TSV Neuenstadt players by checking team_id against game info
+          const filteredBoxScores = boxScores4.filter(row => {
+            const gameInfo = gameInfoMap.get(row.game_id.toString());
+            return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
+          });
+          
           // Deduplicate by player_slug and game_id
           const uniquePlayers = new Map<string, any>();
-          boxScores4.forEach(row => {
+          filteredBoxScores.forEach(row => {
             const key = `${row.game_id}-${row.player_slug}`;
             if (!uniquePlayers.has(key)) {
               uniquePlayers.set(key, row);
@@ -252,11 +351,11 @@ export class MinutesService {
           });
           
           boxScoresData = Array.from(uniquePlayers.values());
-          console.log('Found box scores with numeric game_ids (deduplicated):', boxScoresData.length);
+          console.log('Found box scores with numeric game_ids (filtered for TSV and deduplicated):', boxScoresData.length);
         }
       }
 
-      // Approach 5: Get ALL box scores and see what we have
+      // Approach 5: Get ALL box scores and see what we have, then filter for TSV
       if (boxScoresData.length === 0) {
         const { data: allBoxScores, error: allBoxScoresError } = await supabase
           .from('box_scores')
@@ -269,11 +368,16 @@ export class MinutesService {
           console.log('Sample game IDs from box_scores:', [...new Set(allBoxScores.slice(0, 10).map(row => row.game_id))]);
           console.log('Sample team IDs from box_scores:', [...new Set(allBoxScores.slice(0, 10).map(row => row.team_id))]);
           
-          // Try to find matches manually
+          // Try to find matches manually and filter for TSV Neuenstadt players
           const matchingGames = allBoxScores.filter(row => 
-            gameIds.includes(row.game_id.toString()) || 
+            (gameIds.includes(row.game_id.toString()) || 
             gameIds.includes(row.game_id) ||
-            gameIds.map(id => parseInt(id)).includes(parseInt(row.game_id))
+            gameIds.map(id => parseInt(id)).includes(parseInt(row.game_id))) &&
+            // Additional filter for TSV Neuenstadt players
+            (() => {
+              const gameInfo = gameInfoMap.get(row.game_id.toString());
+              return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
+            })()
           );
           
           if (matchingGames.length > 0) {
@@ -287,7 +391,7 @@ export class MinutesService {
             });
             
             boxScoresData = Array.from(uniquePlayers.values());
-            console.log('Found manually matched box scores (deduplicated):', boxScoresData.length);
+            console.log('Found manually matched box scores (filtered for TSV and deduplicated):', boxScoresData.length);
           }
         }
       }
@@ -308,21 +412,6 @@ export class MinutesService {
           console.log(`  Game ${gameId}: ${count} players`);
         });
       }
-
-      // Create a map for quick game info lookup
-      const gameInfoMap = new Map<string, {
-        homeTeam: string;
-        awayTeam: string;
-        gameDate: string;
-      }>();
-      
-      (allGames || []).forEach(game => {
-        gameInfoMap.set(game.game_id, {
-          homeTeam: game.home_team_name,
-          awayTeam: game.away_team_name,
-          gameDate: game.game_date
-        });
-      });
 
       // Group by game and count unique players
       const gameStats = new Map<string, { 
