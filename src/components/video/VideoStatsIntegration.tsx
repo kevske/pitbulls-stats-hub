@@ -9,7 +9,7 @@ import { useVideoStatsIntegration } from '@/hooks/useVideoStatsIntegration';
 import { useStats } from '@/contexts/StatsContext';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
-import { jsonbinStorage } from '@/lib/jsonbinStorage';
+import { VideoProjectService } from '@/lib/videoProjectService';
 import { extractStatsFromVideoData } from '@/services/statsExtraction';
 
 interface VideoStatsIntegrationProps {
@@ -21,7 +21,7 @@ interface VideoStatsIntegrationProps {
 export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onIntegrationComplete }: VideoStatsIntegrationProps) {
   const { integrateVideoData, isIntegrating, integrationError } = useVideoStatsIntegration();
   const { refresh: refreshStatsHub, games } = useStats();
-  
+
   const [gameNumber, setGameNumber] = useState(urlGameNumber || '');
   const [isLoadingGameInfo, setIsLoadingGameInfo] = useState(false);
   const [validityCheck, setValidityCheck] = useState<{
@@ -35,13 +35,12 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
   const getGameInfo = async (gameNum: number) => {
     setIsLoadingGameInfo(true);
     try {
-      // Load from MasterBin index
-      const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
-      
-      if (masterBinData?.games?.[gameNum.toString()]) {
-        const gameBinId = masterBinData.games[gameNum.toString()]['1']; // Get first video
-        const gameData = await jsonbinStorage.readBin(gameBinId) as any;
-        
+      // Load from Supabase
+      const projects = await VideoProjectService.getProjectsForGame(gameNum.toString());
+
+      if (projects && projects.length > 0) {
+        const gameData = projects[0]?.data;
+
         return {
           homeTeam: gameData?.metadata?.homeTeam || 'Pitbulls',
           awayTeam: gameData?.metadata?.awayTeam || 'Opponent',
@@ -49,8 +48,8 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
           gameType: gameData?.metadata?.gameType || 'Heim'
         };
       }
-      
-      // Fallback to games context if MasterBin doesn't have it
+
+      // Fallback to games context if Supabase doesn't have it
       const gameFromContext = games.find(g => g.gameNumber === gameNum);
       if (gameFromContext) {
         return {
@@ -60,7 +59,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
           gameType: gameFromContext.homeTeam === 'Pitbulls' ? 'Heim' : 'Auswärts'
         };
       }
-      
+
       return null;
     } catch (error) {
       console.error('Failed to load game info:', error);
@@ -74,31 +73,32 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
   const performValidityCheck = async (gameNum: number) => {
     console.log('Performing validity check for game:', gameNum);
     if (!gameNum) return;
-    
+
     try {
       // Get game info from games context (Google Sheets data)
       const gameFromContext = games.find(g => g.gameNumber === gameNum);
       console.log('Game from context:', gameFromContext);
-      
-      // Get all videos for this game from MasterBin
-      const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
+
+      // Get all videos for this game from Supabase
+      const projects = await VideoProjectService.getProjectsForGame(gameNum.toString());
       let totalTaggedPoints = 0;
-      
-      if (masterBinData?.games?.[gameNum.toString()]) {
-        const gameVideos = masterBinData.games[gameNum.toString()];
-        console.log('Game videos:', gameVideos);
-        
+
+      if (projects && projects.length > 0) {
+        console.log('Game videos:', projects.length);
+
         // Fetch and process each video in the playlist
-        for (const [videoNum, binId] of Object.entries(gameVideos)) {
-          try {
-            const videoData = await jsonbinStorage.readBin(binId) as SaveData;
-            if (videoData?.events) {
-              const extractedStats = extractStatsFromVideoData(videoData);
-              totalTaggedPoints += extractedStats.teamStats.totalPoints;
-              console.log(`Video ${videoNum} points:`, extractedStats.teamStats.totalPoints);
-            }
-          } catch (error) {
-            console.error(`Failed to load video ${videoNum}:`, error);
+        for (const project of projects) {
+          if (project.data && project.data.events) {
+            // Construct pseudo-SaveData for extraction
+            const tempData: any = {
+              events: project.data.events,
+              players: project.data.players || [],
+              metadata: project.data.metadata || {}
+            };
+
+            const extractedStats = extractStatsFromVideoData(tempData);
+            totalTaggedPoints += extractedStats.teamStats.totalPoints;
+            console.log(`Video ${project.video_index} points:`, extractedStats.teamStats.totalPoints);
           }
         }
       } else {
@@ -106,9 +106,9 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
         const extractedStats = extractStatsFromVideoData(saveData);
         totalTaggedPoints = extractedStats.teamStats.totalPoints;
       }
-      
+
       console.log('Total tagged points from all videos:', totalTaggedPoints);
-      
+
       if (!gameFromContext?.finalScore) {
         // Show test validity check even without game score
         setValidityCheck({
@@ -119,21 +119,21 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
         });
         return;
       }
-      
+
       // Extract Pitbulls' score from final score
       // Assuming format like "89-76" where first number is Pitbulls
       const scoreParts = gameFromContext.finalScore.split('-');
       const pitbullsScore = parseInt(scoreParts[0]) || 0;
-      
+
       // Calculate percentage accuracy
       const percentage = pitbullsScore > 0 ? Math.round((totalTaggedPoints / pitbullsScore) * 100) : 0;
-      
+
       // Determine status
       let status: 'excellent' | 'good' | 'poor' | 'unknown' = 'unknown';
       if (percentage >= 90) status = 'excellent';
       else if (percentage >= 75) status = 'good';
       else status = 'poor';
-      
+
       console.log('Setting validity check:', { actualScore: gameFromContext.finalScore, taggedPoints: totalTaggedPoints, percentage, status });
       setValidityCheck({
         actualScore: gameFromContext.finalScore,
@@ -164,7 +164,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
     }
 
     const gameInfo = await getGameInfo(Number(gameNumber));
-    
+
     const result = await integrateVideoData(saveData, Number(gameNumber), {
       homeTeam: gameInfo?.homeTeam || 'Pitbulls',
       awayTeam: gameInfo?.awayTeam || 'Opponent',
@@ -175,10 +175,10 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
 
     if (result.success) {
       toast.success(`Successfully integrated ${result.gameLogs.length} player stats into Stats Hub!`);
-      
+
       // Refresh the stats hub to show new data
       await refreshStatsHub();
-      
+
       onIntegrationComplete?.(result);
     } else {
       toast.error(`Integration failed: ${result.error}`);
@@ -202,12 +202,12 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
           <Badge variant="secondary">{eventCount} events</Badge>
           <Badge variant="secondary">{playerCount} players</Badge>
           {validityCheck && (
-            <Badge 
+            <Badge
               className={
                 validityCheck.status === 'excellent' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                validityCheck.status === 'good' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                validityCheck.status === 'unknown' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' :
-                'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                  validityCheck.status === 'good' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                    validityCheck.status === 'unknown' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' :
+                      'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
               }
             >
               {validityCheck.status === 'excellent' && <CheckCircle className="h-3 w-3 mr-1" />}
@@ -242,7 +242,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
           )}
         </div>
 
-        
+
         {/* Auto-detection Info */}
         <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-2 rounded">
           <div className="flex items-center gap-1 mb-1">
