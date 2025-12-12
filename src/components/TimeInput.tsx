@@ -62,16 +62,16 @@ const TimeInput: React.FC<TimeInputProps> = ({
     if (digitsOnly.length === 0) {
       formattedValue = "--:--";
     } else if (digitsOnly.length === 1) {
-      // Single digit: 0X:--
-      formattedValue = `0${digitsOnly}:--`;
+      // Single digit: X-:-- (first digit goes to tens place of minutes)
+      formattedValue = `${digitsOnly}-:--`;
     } else if (digitsOnly.length === 2) {
       // Two digits: XX:--
       formattedValue = `${digitsOnly}:--`;
     } else if (digitsOnly.length === 3) {
-      // Three digits: XX:0X
+      // Three digits: XX:X-
       const minutes = digitsOnly.slice(0, 2);
       const seconds = digitsOnly.slice(2);
-      formattedValue = `${minutes}:0${seconds}`;
+      formattedValue = `${minutes}:${seconds}-`;
     } else if (digitsOnly.length === 4) {
       // Four digits: XX:XX
       const minutes = digitsOnly.slice(0, 2);
@@ -88,7 +88,7 @@ const TimeInput: React.FC<TimeInputProps> = ({
       let seconds = 0;
       
       if (digitsOnly.length === 1) {
-        minutes = parseInt(digitsOnly);
+        minutes = parseInt(digitsOnly) * 10; // First digit is tens place of minutes
         seconds = 0;
       } else if (digitsOnly.length === 2) {
         minutes = parseInt(digitsOnly);
