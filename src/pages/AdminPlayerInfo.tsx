@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useToast } from '../hooks/use-toast';
-import { Pencil, Trophy, Plus, Save, X, User, Users, Settings, History } from 'lucide-react';
+import { Pencil, Trophy, Plus, Save, X, User, Users, Settings, History, Database, RefreshCw } from 'lucide-react';
 
 interface PlayerFormProps {
   formData: Partial<PlayerInfo>;
@@ -346,6 +346,36 @@ const AdminPlayerInfo: React.FC = () => {
 
 
 
+  // Migration State
+  const [isMigrationOpen, setIsMigrationOpen] = useState(false);
+  const [migrationStatus, setMigrationStatus] = useState<'idle' | 'running' | 'completed' | 'error'>('idle');
+  const [migrationLogs, setMigrationLogs] = useState<string[]>([]);
+
+  const handleMigration = async () => {
+    setMigrationStatus('running');
+    setMigrationLogs(['Starting migration...']);
+
+    try {
+      const { MigrationService } = await import('../lib/migrationService');
+      await MigrationService.migrateAllData((msg) => {
+        setMigrationLogs(prev => [...prev, msg]);
+      });
+      setMigrationStatus('completed');
+      toast({
+        title: 'Migration Completed',
+        description: 'Video projects migrated successfully.',
+      });
+    } catch (error) {
+      setMigrationStatus('error');
+      setMigrationLogs(prev => [...prev, `Error: ${(error as Error).message}`]);
+      toast({
+        title: 'Migration Failed',
+        description: 'Check logs for details.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -369,6 +399,49 @@ const AdminPlayerInfo: React.FC = () => {
               <p className="text-gray-600">Spielerprofile und Informationen verwalten</p>
             </div>
             <div className="flex gap-2">
+              <Dialog open={isMigrationOpen} onOpenChange={setIsMigrationOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50">
+                    <Database className="h-4 w-4 mr-2" />
+                    Migrate Videos
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Migrate Video Projects from JSONBin to Supabase</DialogTitle>
+                    <DialogDescription>
+                      This will read all video data from JSONBin and save it to the new Supabase table.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-4 my-4">
+                    <div className="bg-slate-100 dark:bg-slate-900 p-4 rounded-md h-64 overflow-y-auto font-mono text-xs">
+                      {migrationLogs.length === 0 ? (
+                        <span className="text-muted-foreground">Ready to start migration...</span>
+                      ) : (
+                        migrationLogs.map((log, i) => (
+                          <div key={i} className="mb-1">{log}</div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      onClick={handleMigration}
+                      disabled={migrationStatus === 'running'}
+                    >
+                      {migrationStatus === 'running' ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Migrating...
+                        </>
+                      ) : 'Start Migration'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               <Button
                 variant="outline"
                 onClick={() => window.location.href = '/admin/audit-logs'}
