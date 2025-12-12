@@ -482,6 +482,19 @@ export class MinutesService {
         } else {
           console.log('Error finding TSV players for game 2786687:', testBoxScoresError);
         }
+
+        // Let's also check ALL box scores for this game to see what's there
+        const { data: allBoxScoresForGame, error: allBoxScoresError } = await supabase
+          .from('box_scores')
+          .select('player_first_name, player_last_name, player_slug, team_id, points, minutes_played')
+          .eq('game_id', '2786687');
+
+        if (!allBoxScoresError && allBoxScoresForGame) {
+          console.log('ALL box scores for game 2786687:', allBoxScoresForGame.length);
+          console.log('Team IDs in this game:', [...new Set(allBoxScoresForGame.map(bs => bs.team_id))]);
+          console.log('Players with slug:', allBoxScoresForGame.filter(bs => bs.player_slug).length);
+          console.log('Sample all players:', allBoxScoresForGame.slice(0, 5).map(p => `${p.player_first_name} ${p.player_last_name} (team: ${p.team_id}): ${p.points} pts`));
+        }
       }
 
       // Also include games that don't have any box_scores yet (all players need minutes)
