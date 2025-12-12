@@ -236,13 +236,12 @@ export class MinutesService {
       
       console.log('TSV Neuenstadt team IDs found:', Array.from(tsvTeamIds));
       
-      // Approach 1: Try with exact game_id matching and correct TSV team IDs
+      // Approach 1: Try with exact game_id matching and correct TSV team IDs (removed player_slug requirement, added player names)
       const gameIds = allGames?.map(g => g.game_id) || [];
       const { data: boxScores1, error: boxScoresError1 } = await supabase
         .from('box_scores')
-        .select('game_id, player_slug, points, minutes_played, team_id')
+        .select('game_id, player_slug, points, minutes_played, team_id, player_first_name, player_last_name')
         .in('team_id', Array.from(tsvTeamIds))
-        .not('player_slug', 'is', null)
         .in('game_id', gameIds);
 
       if (!boxScoresError1 && boxScores1 && boxScores1.length > 0) {
@@ -252,10 +251,10 @@ export class MinutesService {
           return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
         });
         
-        // Deduplicate by player_slug and game_id before counting
+        // Deduplicate by player name and game_id before counting (since player_slug may be null)
         const uniquePlayers = new Map<string, any>();
         filteredBoxScores.forEach(row => {
-          const key = `${row.game_id}-${row.player_slug}`;
+          const key = `${row.game_id}-${row.player_first_name}-${row.player_last_name}`;
           if (!uniquePlayers.has(key)) {
             uniquePlayers.set(key, row);
           }
@@ -265,13 +264,12 @@ export class MinutesService {
         console.log('Found box scores with correct TSV team filtering (deduplicated):', boxScoresData.length);
       }
 
-      // Approach 2: Try with team_id as string 'tsv-neuenstadt'
+      // Approach 2: Try with team_id as string 'tsv-neuenstadt' (removed player_slug requirement)
       if (boxScoresData.length === 0) {
         const { data: boxScores2, error: boxScoresError2 } = await supabase
           .from('box_scores')
-          .select('game_id, player_slug, points, minutes_played, team_id')
+          .select('game_id, player_slug, points, minutes_played, team_id, player_first_name, player_last_name')
           .eq('team_id', 'tsv-neuenstadt')
-          .not('player_slug', 'is', null)
           .in('game_id', gameIds);
 
         if (!boxScoresError2 && boxScores2 && boxScores2.length > 0) {
@@ -281,10 +279,10 @@ export class MinutesService {
             return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
           });
           
-          // Deduplicate by player_slug and game_id
+          // Deduplicate by player name and game_id (since player_slug may be null)
           const uniquePlayers = new Map<string, any>();
           filteredBoxScores.forEach(row => {
-            const key = `${row.game_id}-${row.player_slug}`;
+            const key = `${row.game_id}-${row.player_first_name}-${row.player_last_name}`;
             if (!uniquePlayers.has(key)) {
               uniquePlayers.set(key, row);
             }
@@ -295,12 +293,11 @@ export class MinutesService {
         }
       }
 
-      // Approach 3: Try without team_id filter at all, then filter for TSV Neuenstadt players
+      // Approach 3: Try without team_id filter at all, then filter for TSV Neuenstadt players (removed player_slug requirement)
       if (boxScoresData.length === 0) {
         const { data: boxScores3, error: boxScoresError3 } = await supabase
           .from('box_scores')
-          .select('game_id, player_slug, points, minutes_played, team_id')
-          .not('player_slug', 'is', null)
+          .select('game_id, player_slug, points, minutes_played, team_id, player_first_name, player_last_name')
           .in('game_id', gameIds);
 
         if (!boxScoresError3 && boxScores3 && boxScores3.length > 0) {
@@ -310,10 +307,10 @@ export class MinutesService {
             return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
           });
           
-          // Deduplicate by player_slug and game_id
+          // Deduplicate by player name and game_id (since player_slug may be null)
           const uniquePlayers = new Map<string, any>();
           filteredBoxScores.forEach(row => {
-            const key = `${row.game_id}-${row.player_slug}`;
+            const key = `${row.game_id}-${row.player_first_name}-${row.player_last_name}`;
             if (!uniquePlayers.has(key)) {
               uniquePlayers.set(key, row);
             }
@@ -325,13 +322,12 @@ export class MinutesService {
         }
       }
 
-      // Approach 4: Try getting all box scores and match by game_id as number, then filter for TSV
+      // Approach 4: Try getting all box scores and match by game_id as number, then filter for TSV (removed player_slug requirement)
       if (boxScoresData.length === 0) {
         const gameIdsAsNumbers = gameIds.map(id => parseInt(id)).filter(id => !isNaN(id));
         const { data: boxScores4, error: boxScoresError4 } = await supabase
           .from('box_scores')
-          .select('game_id, player_slug, points, minutes_played, team_id')
-          .not('player_slug', 'is', null)
+          .select('game_id, player_slug, points, minutes_played, team_id, player_first_name, player_last_name')
           .in('game_id', gameIdsAsNumbers);
 
         if (!boxScoresError4 && boxScores4 && boxScores4.length > 0) {
@@ -341,10 +337,10 @@ export class MinutesService {
             return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
           });
           
-          // Deduplicate by player_slug and game_id
+          // Deduplicate by player name and game_id (since player_slug may be null)
           const uniquePlayers = new Map<string, any>();
           filteredBoxScores.forEach(row => {
-            const key = `${row.game_id}-${row.player_slug}`;
+            const key = `${row.game_id}-${row.player_first_name}-${row.player_last_name}`;
             if (!uniquePlayers.has(key)) {
               uniquePlayers.set(key, row);
             }
@@ -355,12 +351,11 @@ export class MinutesService {
         }
       }
 
-      // Approach 5: Get ALL box scores and see what we have, then filter for TSV
+      // Approach 5: Get ALL box scores and see what we have, then filter for TSV (removed player_slug requirement)
       if (boxScoresData.length === 0) {
         const { data: allBoxScores, error: allBoxScoresError } = await supabase
           .from('box_scores')
-          .select('game_id, player_slug, points, minutes_played, team_id')
-          .not('player_slug', 'is', null)
+          .select('game_id, player_slug, points, minutes_played, team_id, player_first_name, player_last_name')
           .limit(50); // Limit to avoid too much data
 
         if (!allBoxScoresError && allBoxScores && allBoxScores.length > 0) {
@@ -381,10 +376,10 @@ export class MinutesService {
           );
           
           if (matchingGames.length > 0) {
-            // Deduplicate the matching games
+            // Deduplicate the matching games by player name (since player_slug may be null)
             const uniquePlayers = new Map<string, any>();
             matchingGames.forEach(row => {
-              const key = `${row.game_id}-${row.player_slug}`;
+              const key = `${row.game_id}-${row.player_first_name}-${row.player_last_name}`;
               if (!uniquePlayers.has(key)) {
                 uniquePlayers.set(key, row);
               }
@@ -419,13 +414,13 @@ export class MinutesService {
         needingMinutes: number; 
       }>();
       
-      // Use a Set to track unique players per game
+      // Use a Set to track unique players per game (using player names since slug may be null)
       const uniquePlayersPerGame = new Map<string, Set<string>>();
       const playersNeedingMinutesPerGame = new Map<string, Set<string>>();
       
       (boxScoresData || []).forEach(row => {
         const gameId = row.game_id.toString(); // Ensure string key
-        const playerSlug = row.player_slug;
+        const playerKey = `${row.player_first_name}-${row.player_last_name}`;
         
         // Initialize sets if not exists
         if (!uniquePlayersPerGame.has(gameId)) {
@@ -434,11 +429,11 @@ export class MinutesService {
         }
         
         // Add to unique players set
-        uniquePlayersPerGame.get(gameId)!.add(playerSlug);
+        uniquePlayersPerGame.get(gameId)!.add(playerKey);
         
         // Add to needing minutes set if minutes are 0 or null
         if ((row.minutes_played || 0) === 0) {
-          playersNeedingMinutesPerGame.get(gameId)!.add(playerSlug);
+          playersNeedingMinutesPerGame.get(gameId)!.add(playerKey);
         }
       });
 
@@ -468,13 +463,12 @@ export class MinutesService {
           tsv_team_id: tsvNeuenstadtTeamId
         });
 
-        // Test box scores for this game with our team ID
+        // Test box scores for this game with our team ID (removed player_slug requirement)
         const { data: testBoxScores, error: testBoxScoresError } = await supabase
           .from('box_scores')
           .select('player_first_name, player_last_name, player_slug, team_id, points, minutes_played')
           .eq('game_id', '2786687')
-          .eq('team_id', tsvNeuenstadtTeamId)
-          .not('player_slug', 'is', null);
+          .eq('team_id', tsvNeuenstadtTeamId);
 
         if (!testBoxScoresError && testBoxScores) {
           console.log('Found TSV Neuenstadt players for game 2786687:', testBoxScores.length);
