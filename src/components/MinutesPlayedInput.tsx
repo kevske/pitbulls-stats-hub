@@ -11,7 +11,7 @@ import TimeInput from '@/components/TimeInput';
 
 interface PlayerMinutes {
   playerId: string;
-  minutes: number;
+  seconds: number;
 }
 
 interface MinutesPlayedInputProps {
@@ -58,7 +58,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
           .filter(player => player.playerSlug != null) // Filter out null playerSlugs
           .map(player => ({
             playerId: player.playerSlug,
-            minutes: player.minutes
+            seconds: player.minutes * 60 // Convert minutes to seconds
           }));
         
         console.log('Filtered component data:', componentData);
@@ -83,18 +83,16 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
   }, [gameNumber]);
 
   const handleMinutesChange = (playerId: string, seconds: number) => {
-    // Convert seconds to minutes for storage (we'll store as minutes for now to maintain compatibility)
-    const minutes = Math.floor(seconds / 60);
-    
-    // Validate minutes (should be between 0 and 60 for a basketball game with possible overtime)
-    if (minutes < 0 || minutes > 60) {
-      toast.error('Minuten müssen zwischen 0 und 60 liegen');
+    // Validate total time (should be reasonable for a basketball game)
+    const totalMinutes = seconds / 60;
+    if (totalMinutes < 0 || totalMinutes > 60) {
+      toast.error('Spielzeit muss zwischen 0 und 60 Minuten liegen');
       return;
     }
 
     setPlayerMinutes(prev => 
       prev.map(pm => 
-        pm.playerId === playerId ? { ...pm, minutes: minutes } : pm
+        pm.playerId === playerId ? { ...pm, seconds: seconds } : pm
       )
     );
   };
@@ -103,16 +101,20 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
     setSaving(true);
     
     try {
-      // Validate that at least one player has minutes > 0
-      const hasValidMinutes = playerMinutes.some(pm => pm.minutes > 0);
-      if (!hasValidMinutes) {
+      // Validate that at least one player has time > 0
+      const hasValidTime = playerMinutes.some(pm => pm.seconds > 0);
+      if (!hasValidTime) {
         toast.error('Mindestens ein Spieler muss mehr als 0 Minuten haben');
         setSaving(false);
         return;
       }
 
-      // Save to database using the service
-      const success = await MinutesService.updatePlayerMinutes(gameNumber, playerMinutes);
+      // Save to database using the service (convert back to minutes for the service)
+      const serviceData = playerMinutes.map(pm => ({
+        playerId: pm.playerId,
+        minutes: Math.floor(pm.seconds / 60)
+      }));
+      const success = await MinutesService.updatePlayerMinutes(gameNumber, serviceData);
       
       if (success) {
         toast.success(`Minuten für Spiel ${gameNumber} erfolgreich gespeichert!`);
@@ -158,7 +160,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
   };
 
   const getTotalMinutes = () => {
-    return playerMinutes.reduce((sum, pm) => sum + pm.minutes, 0);
+    return playerMinutes.reduce((sum, pm) => sum + Math.floor(pm.seconds / 60), 0);
   };
 
   if (loading) {
@@ -198,7 +200,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {playerMinutes.filter(pm => pm.playerId != null).map(({ playerId, minutes }) => (
+          {playerMinutes.filter(pm => pm.playerId != null).map(({ playerId, seconds }) => (
                 <div key={playerId || `unknown-${Math.random()}`} className="space-y-2">
                   <Label htmlFor={`minutes-${playerId}`} className="text-sm font-medium">
                     <div className="flex items-center gap-2">
@@ -211,7 +213,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
                   <div className="flex items-center gap-2">
                     <TimeInput
                       id={`minutes-${playerId}`}
-                      value={minutes * 60} // Convert minutes to seconds for TimeInput
+                      value={seconds} // Already in seconds
                       onChange={(seconds) => handleMinutesChange(playerId, seconds)}
                       className=""
                     />
