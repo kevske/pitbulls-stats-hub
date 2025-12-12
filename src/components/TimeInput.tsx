@@ -79,17 +79,13 @@ const TimeInput: React.FC<TimeInputProps> = ({
     
     setDisplayValue(formattedValue);
     
-    // Only convert to seconds when we have complete input (4 digits or 2 digits for minutes only)
-    if (digitsOnly.length === 2) {
-      // Only minutes entered, treat as MM:00
-      const minutes = parseInt(digitsOnly) || 0;
-      const totalSeconds = minutes * 60;
-      onChange(totalSeconds);
-    } else if (digitsOnly.length === 4) {
+    // Only convert to seconds when we have complete input (4 digits only)
+    if (digitsOnly.length === 4) {
       // Complete time entered
       const totalSeconds = timeDisplayToSeconds(formattedValue);
       onChange(totalSeconds);
     }
+    // For partial input (1-3 digits), don't update the value yet
   };
 
   // Handle keypresses for better UX
