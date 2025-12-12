@@ -45,7 +45,16 @@ export class MinutesService {
 
       if (error) throw error;
 
-      return (data || []).map(row => ({
+      // Get unique players by grouping by player_slug and taking the first occurrence
+      const uniquePlayers = new Map<string, any>();
+      
+      (data || []).forEach(row => {
+        if (!uniquePlayers.has(row.player_slug)) {
+          uniquePlayers.set(row.player_slug, row);
+        }
+      });
+
+      return Array.from(uniquePlayers.values()).map(row => ({
         playerId: row.player_slug,
         playerSlug: row.player_slug,
         firstName: row.player_first_name,
@@ -92,7 +101,7 @@ export class MinutesService {
     try {
       const { data, error } = await supabase
         .from('box_scores')
-        .select('minutes_played, points')
+        .select('minutes_played, points, player_slug')
         .eq('game_id', gameNumber.toString())
         .eq('team_id', '168416') // Only TSV Neuenstadt players
         .not('player_slug', 'is', null)
@@ -100,7 +109,16 @@ export class MinutesService {
 
       if (error) throw error;
 
-      const players = data || [];
+      // Get unique players by player_slug
+      const uniquePlayers = new Map<string, any>();
+      
+      (data || []).forEach(row => {
+        if (!uniquePlayers.has(row.player_slug)) {
+          uniquePlayers.set(row.player_slug, row);
+        }
+      });
+
+      const players = Array.from(uniquePlayers.values());
       const totalMinutes = players.reduce((sum, player) => sum + (player.minutes_played || 0), 0);
       const playersWithMinutes = players.filter(player => (player.minutes_played || 0) > 0).length;
       const playersNeedingMinutes = players.filter(player => (player.minutes_played || 0) === 0).length;
@@ -126,7 +144,7 @@ export class MinutesService {
     totalPlayers: number;
   }>> {
     try {
-      // Get box_scores data first - only for TSV Neuenstadt players
+      // Get unique players per game with their minutes status - only for TSV Neuenstadt players
       const { data: boxScoresData, error: boxScoresError } = await supabase
         .from('box_scores')
         .select('game_id, player_slug, points, minutes_played')
@@ -160,23 +178,42 @@ export class MinutesService {
         });
       });
 
-      // Group by game and count
+      // Group by game and count unique players
       const gameStats = new Map<string, { 
         totalPlayers: number; 
         needingMinutes: number; 
       }>();
       
+      // Use a Set to track unique players per game
+      const uniquePlayersPerGame = new Map<string, Set<string>>();
+      const playersNeedingMinutesPerGame = new Map<string, Set<string>>();
+      
       (boxScoresData || []).forEach(row => {
         const gameId = row.game_id;
-        const current = gameStats.get(gameId) || { 
-          totalPlayers: 0, 
-          needingMinutes: 0
-        };
-        current.totalPlayers++;
-        if ((row.minutes_played || 0) === 0) {
-          current.needingMinutes++;
+        const playerSlug = row.player_slug;
+        
+        // Initialize sets if not exists
+        if (!uniquePlayersPerGame.has(gameId)) {
+          uniquePlayersPerGame.set(gameId, new Set());
+          playersNeedingMinutesPerGame.set(gameId, new Set());
         }
-        gameStats.set(gameId, current);
+        
+        // Add to unique players set
+        uniquePlayersPerGame.get(gameId)!.add(playerSlug);
+        
+        // Add to needing minutes set if minutes are 0 or null
+        if ((row.minutes_played || 0) === 0) {
+          playersNeedingMinutesPerGame.get(gameId)!.add(playerSlug);
+        }
+      });
+
+      // Convert sets to counts
+      uniquePlayersPerGame.forEach((players, gameId) => {
+        const needingMinutes = playersNeedingMinutesPerGame.get(gameId) || new Set();
+        gameStats.set(gameId, {
+          totalPlayers: players.size,
+          needingMinutes: needingMinutes.size
+        });
       });
 
       // Convert to expected format
