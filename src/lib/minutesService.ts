@@ -59,18 +59,18 @@ export class MinutesService {
         `)
         .eq('game_id', gameNumber.toString())
         .eq('team_id', tsvNeuenstadtTeamId) // Only TSV Neuenstadt players
-        .not('player_slug', 'is', null)
         .gt('points', 0) // Only players who actually played
         .order('player_last_name, player_first_name');
 
       if (error) throw error;
 
-      // Get unique players by grouping by player_slug and taking the first occurrence
+      // Get unique players by grouping by player name and taking the first occurrence (since player_slug may be null)
       const uniquePlayers = new Map<string, any>();
       
       (data || []).forEach(row => {
-        if (!uniquePlayers.has(row.player_slug)) {
-          uniquePlayers.set(row.player_slug, row);
+        const playerKey = `${row.player_first_name}-${row.player_last_name}`;
+        if (!uniquePlayers.has(playerKey)) {
+          uniquePlayers.set(playerKey, row);
         }
       });
 
@@ -143,20 +143,20 @@ export class MinutesService {
 
       const { data, error } = await supabase
         .from('box_scores')
-        .select('minutes_played, points, player_slug')
+        .select('minutes_played, points, player_slug, player_first_name, player_last_name')
         .eq('game_id', gameNumber.toString())
         .eq('team_id', tsvNeuenstadtTeamId) // Only TSV Neuenstadt players
-        .not('player_slug', 'is', null)
-        .gt('points', 0);
+        .gt('points', 0); // Only players who actually played
 
       if (error) throw error;
 
-      // Get unique players by player_slug
+      // Get unique players by player name (since player_slug may be null)
       const uniquePlayers = new Map<string, any>();
       
       (data || []).forEach(row => {
-        if (!uniquePlayers.has(row.player_slug)) {
-          uniquePlayers.set(row.player_slug, row);
+        const playerKey = `${row.player_first_name}-${row.player_last_name}`;
+        if (!uniquePlayers.has(playerKey)) {
+          uniquePlayers.set(playerKey, row);
         }
       });
 
