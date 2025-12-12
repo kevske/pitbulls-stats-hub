@@ -16,6 +16,208 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useToast } from '../hooks/use-toast';
 import { Pencil, Trophy, Plus, Save, X, User, Users, Settings, History } from 'lucide-react';
 
+interface PlayerFormProps {
+  formData: Partial<PlayerInfo>;
+  setFormData: React.Dispatch<React.SetStateAction<Partial<PlayerInfo>>>;
+  isEdit?: boolean;
+  onCancel: () => void;
+  onSubmit: () => void;
+}
+
+const PlayerForm: React.FC<PlayerFormProps> = ({
+  formData,
+  setFormData,
+  isEdit = false,
+  onCancel,
+  onSubmit
+}) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <Label htmlFor="player_slug">Spieler-Slug *</Label>
+        <Input
+          id="player_slug"
+          value={formData.player_slug || ''}
+          onChange={(e) => setFormData(prev => ({ ...prev, player_slug: e.target.value }))}
+          placeholder="z.B., abdullah-ari"
+          disabled={isEdit}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label htmlFor="first_name">Vorname *</Label>
+          <Input
+            id="first_name"
+            value={formData.first_name || ''}
+            onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+            placeholder="Vorname"
+          />
+        </div>
+        <div>
+          <Label htmlFor="last_name">Nachname *</Label>
+          <Input
+            id="last_name"
+            value={formData.last_name || ''}
+            onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+            placeholder="Nachname"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <Label htmlFor="email">E-Mail (für Login)</Label>
+        <Input
+          id="email"
+          type="email"
+          value={formData.email || ''}
+          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+          placeholder="spieler@example.com"
+        />
+      </div>
+      <div>
+        <Label htmlFor="jersey_number">Trikotnummer</Label>
+        <Input
+          id="jersey_number"
+          type="number"
+          value={formData.jersey_number || ''}
+          onChange={(e) => setFormData(prev => ({ ...prev, jersey_number: e.target.value ? parseInt(e.target.value) : undefined }))}
+          placeholder="23"
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <Label htmlFor="position">Position</Label>
+        <Select value={formData.position || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, position: value || undefined }))}>
+          <SelectTrigger>
+            <SelectValue placeholder="Position auswählen" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="PG">Point Guard</SelectItem>
+            <SelectItem value="SG">Shooting Guard</SelectItem>
+            <SelectItem value="SF">Small Forward</SelectItem>
+            <SelectItem value="PF">Power Forward</SelectItem>
+            <SelectItem value="C">Center</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label htmlFor="height">Größe</Label>
+        <Input
+          id="height"
+          value={formData.height || ''}
+          onChange={(e) => setFormData(prev => ({ ...prev, height: e.target.value }))}
+          placeholder="6'2&quot;"
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <Label htmlFor="weight">Gewicht (kg)</Label>
+        <Input
+          id="weight"
+          type="number"
+          value={formData.weight || ''}
+          onChange={(e) => setFormData(prev => ({ ...prev, weight: e.target.value ? parseInt(e.target.value) : undefined }))}
+          placeholder="80"
+        />
+      </div>
+      <div>
+        <Label htmlFor="birth_date">Geburtsdatum</Label>
+        <Input
+          id="birth_date"
+          type="date"
+          value={formData.birth_date || ''}
+          onChange={(e) => setFormData(prev => ({ ...prev, birth_date: e.target.value || undefined }))}
+        />
+      </div>
+      <div>
+        <Label htmlFor="nationality">Nationalität</Label>
+        <Input
+          id="nationality"
+          value={formData.nationality || ''}
+          onChange={(e) => setFormData(prev => ({ ...prev, nationality: e.target.value }))}
+          placeholder="Deutsch"
+        />
+      </div>
+    </div>
+
+    <div>
+      <Label htmlFor="bio">Biografie</Label>
+      <Textarea
+        id="bio"
+        value={formData.bio || ''}
+        onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+        placeholder="Spielerbiografie..."
+        rows={4}
+      />
+    </div>
+
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <Label htmlFor="instagram">Instagram</Label>
+        <Input
+          id="instagram"
+          value={formData.social_links?.instagram || ''}
+          onChange={(e) => setFormData(prev => ({
+            ...prev,
+            social_links: { ...prev.social_links, instagram: e.target.value }
+          }))}
+          placeholder="@username"
+        />
+      </div>
+      <div>
+        <Label htmlFor="twitter">Twitter</Label>
+        <Input
+          id="twitter"
+          value={formData.social_links?.twitter || ''}
+          onChange={(e) => setFormData(prev => ({
+            ...prev,
+            social_links: { ...prev.social_links, twitter: e.target.value }
+          }))}
+          placeholder="@username"
+        />
+      </div>
+      <div>
+        <Label htmlFor="website">Website</Label>
+        <Input
+          id="website"
+          value={formData.social_links?.website || ''}
+          onChange={(e) => setFormData(prev => ({
+            ...prev,
+            social_links: { ...prev.social_links, website: e.target.value }
+          }))}
+          placeholder="https://example.com"
+        />
+      </div>
+    </div>
+
+    <div className="flex items-center space-x-2">
+      <Switch
+        id="is_active"
+        checked={formData.is_active ?? true}
+        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
+      />
+      <Label htmlFor="is_active">Aktiver Spieler</Label>
+    </div>
+
+    <div className="flex justify-end gap-2">
+      <Button variant="outline" onClick={onCancel}>
+        Abbrechen
+      </Button>
+      <Button onClick={onSubmit}>
+        <Save className="h-4 w-4 mr-2" />
+        {isEdit ? 'Spieler aktualisieren' : 'Neuen Spieler erstellen'}
+      </Button>
+    </div>
+  </div>
+);
+
 const AdminPlayerInfo: React.FC = () => {
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +277,7 @@ const AdminPlayerInfo: React.FC = () => {
       setIsCreateDialogOpen(false);
       setFormData({});
       loadPlayers();
-      
+
       toast({
         title: 'Success',
         description: 'Player created successfully.',
@@ -98,7 +300,7 @@ const AdminPlayerInfo: React.FC = () => {
       setEditingPlayer(null);
       setFormData({});
       loadPlayers();
-      
+
       toast({
         title: 'Success',
         description: 'Player updated successfully.',
@@ -117,7 +319,7 @@ const AdminPlayerInfo: React.FC = () => {
     try {
       await PlayerInfoService.updatePlayer(id, { is_active: false });
       loadPlayers();
-      
+
       toast({
         title: 'Erfolg',
         description: 'Spieler archiviert.',
@@ -142,193 +344,7 @@ const AdminPlayerInfo: React.FC = () => {
     setFormData({});
   };
 
-  const PlayerForm: React.FC<{ isEdit?: boolean }> = ({ isEdit = false }) => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="player_slug">Spieler-Slug *</Label>
-          <Input
-            id="player_slug"
-            value={formData.player_slug || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, player_slug: e.target.value }))}
-            placeholder="z.B., abdullah-ari"
-            disabled={isEdit}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label htmlFor="first_name">Vorname *</Label>
-            <Input
-              id="first_name"
-              value={formData.first_name || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-              placeholder="Vorname"
-            />
-          </div>
-          <div>
-            <Label htmlFor="last_name">Nachname *</Label>
-            <Input
-              id="last_name"
-              value={formData.last_name || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-              placeholder="Nachname"
-            />
-          </div>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="email">E-Mail (für Login)</Label>
-          <Input
-            id="email"
-            type="email"
-            value={formData.email || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            placeholder="spieler@example.com"
-          />
-        </div>
-        <div>
-          <Label htmlFor="jersey_number">Trikotnummer</Label>
-          <Input
-            id="jersey_number"
-            type="number"
-            value={formData.jersey_number || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, jersey_number: e.target.value ? parseInt(e.target.value) : undefined }))}
-            placeholder="23"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="position">Position</Label>
-          <Select value={formData.position || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, position: value || undefined }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Position auswählen" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="PG">Point Guard</SelectItem>
-              <SelectItem value="SG">Shooting Guard</SelectItem>
-              <SelectItem value="SF">Small Forward</SelectItem>
-              <SelectItem value="PF">Power Forward</SelectItem>
-              <SelectItem value="C">Center</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="height">Größe</Label>
-          <Input
-            id="height"
-            value={formData.height || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, height: e.target.value }))}
-            placeholder="6'2&quot;"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="weight">Gewicht (kg)</Label>
-          <Input
-            id="weight"
-            type="number"
-            value={formData.weight || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, weight: e.target.value ? parseInt(e.target.value) : undefined }))}
-            placeholder="80"
-          />
-        </div>
-        <div>
-          <Label htmlFor="birth_date">Geburtsdatum</Label>
-          <Input
-            id="birth_date"
-            type="date"
-            value={formData.birth_date || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, birth_date: e.target.value || undefined }))}
-          />
-        </div>
-        <div>
-          <Label htmlFor="nationality">Nationalität</Label>
-          <Input
-            id="nationality"
-            value={formData.nationality || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, nationality: e.target.value }))}
-            placeholder="Deutsch"
-          />
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="bio">Biografie</Label>
-        <Textarea
-          id="bio"
-          value={formData.bio || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-          placeholder="Spielerbiografie..."
-          rows={4}
-        />
-      </div>
-
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="instagram">Instagram</Label>
-          <Input
-            id="instagram"
-            value={formData.social_links?.instagram || ''}
-            onChange={(e) => setFormData(prev => ({
-              ...prev,
-              social_links: { ...prev.social_links, instagram: e.target.value }
-            }))}
-            placeholder="@username"
-          />
-        </div>
-        <div>
-          <Label htmlFor="twitter">Twitter</Label>
-          <Input
-            id="twitter"
-            value={formData.social_links?.twitter || ''}
-            onChange={(e) => setFormData(prev => ({
-              ...prev,
-              social_links: { ...prev.social_links, twitter: e.target.value }
-            }))}
-            placeholder="@username"
-          />
-        </div>
-        <div>
-          <Label htmlFor="website">Website</Label>
-          <Input
-            id="website"
-            value={formData.social_links?.website || ''}
-            onChange={(e) => setFormData(prev => ({
-              ...prev,
-              social_links: { ...prev.social_links, website: e.target.value }
-            }))}
-            placeholder="https://example.com"
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="is_active"
-          checked={formData.is_active ?? true}
-          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
-        />
-        <Label htmlFor="is_active">Aktiver Spieler</Label>
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={isEdit ? cancelEdit : () => setIsCreateDialogOpen(false)}>
-          Abbrechen
-        </Button>
-        <Button onClick={isEdit ? handleUpdatePlayer : handleCreatePlayer}>
-          <Save className="h-4 w-4 mr-2" />
-          {isEdit ? 'Spieler aktualisieren' : 'Neuen Spieler erstellen'}
-        </Button>
-      </div>
-    </div>
-  );
 
   if (loading) {
     return (
@@ -374,146 +390,158 @@ const AdminPlayerInfo: React.FC = () => {
                       Füge einen neuen Spieler zur Datenbank hinzu. Gib seine Informationen unten ein.
                     </DialogDescription>
                   </DialogHeader>
-                  <PlayerForm />
+                  <PlayerForm
+                    formData={formData}
+                    setFormData={setFormData}
+                    onCancel={() => setIsCreateDialogOpen(false)}
+                    onSubmit={handleCreatePlayer}
+                    isEdit={false}
+                  />
                 </DialogContent>
               </Dialog>
             </div>
           </div>
         </div>
 
-      <div className="grid gap-4">
-        {players.map((player) => (
-          <Card key={player.id}>
-            <CardContent className="p-6">
-              {editingPlayer?.id === player.id ? (
-                <PlayerForm isEdit />
-              ) : (
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-4">
-                      <h3 className="text-xl font-semibold">
-                        {player.first_name} {player.last_name}
-                      </h3>
-                      <Badge variant={player.is_active ? "default" : "secondary"}>
-                        {player.is_active ? "Aktiv" : "Inaktiv"}
-                      </Badge>
-                      {player.jersey_number && (
-                        <Badge variant="outline">#{player.jersey_number}</Badge>
+        <div className="grid gap-4">
+          {players.map((player) => (
+            <Card key={player.id}>
+              <CardContent className="p-6">
+                {editingPlayer?.id === player.id ? (
+                  <PlayerForm
+                    formData={formData}
+                    setFormData={setFormData}
+                    onCancel={cancelEdit}
+                    onSubmit={handleUpdatePlayer}
+                    isEdit={true}
+                  />
+                ) : (
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-4 mb-4">
+                        <h3 className="text-xl font-semibold">
+                          {player.first_name} {player.last_name}
+                        </h3>
+                        <Badge variant={player.is_active ? "default" : "secondary"}>
+                          {player.is_active ? "Aktiv" : "Inaktiv"}
+                        </Badge>
+                        {player.jersey_number && (
+                          <Badge variant="outline">#{player.jersey_number}</Badge>
+                        )}
+                        {player.position && (
+                          <Badge variant="outline">{player.position}</Badge>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                        {player.height && (
+                          <div>
+                            <span className="font-medium">Größe:</span> {player.height}
+                          </div>
+                        )}
+                        {player.weight && (
+                          <div>
+                            <span className="font-medium">Gewicht:</span> {player.weight} kg
+                          </div>
+                        )}
+                        {player.birth_date && (
+                          <div>
+                            <span className="font-medium">Geburtsdatum:</span> {new Date(player.birth_date).toLocaleDateString()}
+                          </div>
+                        )}
+                        {player.email && (
+                          <div>
+                            <span className="font-medium">E-Mail:</span> {player.email}
+                          </div>
+                        )}
+                        {player.nationality && (
+                          <div>
+                            <span className="font-medium">Nationalität:</span> {player.nationality}
+                          </div>
+                        )}
+                        <div>
+                          <span className="font-medium">Slug:</span> {player.player_slug}
+                        </div>
+                      </div>
+
+                      {player.bio && (
+                        <div className="mt-4">
+                          <p className="text-sm text-gray-600">{player.bio}</p>
+                        </div>
                       )}
-                      {player.position && (
-                        <Badge variant="outline">{player.position}</Badge>
+
+
+                      {(player.social_links?.instagram || player.social_links?.twitter || player.social_links?.website) && (
+                        <div className="mt-4">
+                          <h4 className="font-medium text-sm mb-2">Soziale Links:</h4>
+                          <div className="flex gap-4 text-sm">
+                            {player.social_links.instagram && (
+                              <span>IG: {player.social_links.instagram}</span>
+                            )}
+                            {player.social_links.twitter && (
+                              <span>Twitter: {player.social_links.twitter}</span>
+                            )}
+                            {player.social_links.website && (
+                              <span>Web: {player.social_links.website}</span>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                      {player.height && (
-                        <div>
-                          <span className="font-medium">Größe:</span> {player.height}
-                        </div>
-                      )}
-                      {player.weight && (
-                        <div>
-                          <span className="font-medium">Gewicht:</span> {player.weight} kg
-                        </div>
-                      )}
-                      {player.birth_date && (
-                        <div>
-                          <span className="font-medium">Geburtsdatum:</span> {new Date(player.birth_date).toLocaleDateString()}
-                        </div>
-                      )}
-                      {player.email && (
-                        <div>
-                          <span className="font-medium">E-Mail:</span> {player.email}
-                        </div>
-                      )}
-                      {player.nationality && (
-                        <div>
-                          <span className="font-medium">Nationalität:</span> {player.nationality}
-                        </div>
-                      )}
-                      <div>
-                        <span className="font-medium">Slug:</span> {player.player_slug}
-                      </div>
+
+                    <div className="flex gap-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => startEdit(player)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Trophy className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Spieler archivieren</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Möchtest du {player.first_name} {player.last_name} archivieren? Der Spieler wird inaktiv, aber die Daten bleiben erhalten.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleAchievePlayer(player.id)}>
+                              Archivieren
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
-
-                    {player.bio && (
-                      <div className="mt-4">
-                        <p className="text-sm text-gray-600">{player.bio}</p>
-                      </div>
-                    )}
-
-
-                    {(player.social_links?.instagram || player.social_links?.twitter || player.social_links?.website) && (
-                      <div className="mt-4">
-                        <h4 className="font-medium text-sm mb-2">Soziale Links:</h4>
-                        <div className="flex gap-4 text-sm">
-                          {player.social_links.instagram && (
-                            <span>IG: {player.social_links.instagram}</span>
-                          )}
-                          {player.social_links.twitter && (
-                            <span>Twitter: {player.social_links.twitter}</span>
-                          )}
-                          {player.social_links.website && (
-                            <span>Web: {player.social_links.website}</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
 
-                  <div className="flex gap-2 ml-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => startEdit(player)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Trophy className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Spieler archivieren</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Möchtest du {player.first_name} {player.last_name} archivieren? Der Spieler wird inaktiv, aber die Daten bleiben erhalten.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleAchievePlayer(player.id)}>
-                            Archivieren
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-
-        {players.length === 0 && (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <User className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">Keine Spieler gefunden</h3>
-              <p className="text-gray-600 mb-4">
-                Beginne damit, deinen ersten Spieler zur Datenbank hinzuzufügen.
-              </p>
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Ersten Spieler hinzufügen
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+          {players.length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <User className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-semibold mb-2">Keine Spieler gefunden</h3>
+                <p className="text-gray-600 mb-4">
+                  Beginne damit, deinen ersten Spieler zur Datenbank hinzuzufügen.
+                </p>
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ersten Spieler hinzufügen
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
-    </div>
     </AuthGuard>
   );
 };

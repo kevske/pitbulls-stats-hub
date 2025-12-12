@@ -94,15 +94,21 @@ export class MinutesService {
   // Update seconds for multiple players in a game
   static async updatePlayerMinutes(gameNumber: number, playerMinutes: Array<{playerId: string, minutes: number}>): Promise<boolean> {
     try {
-      console.log('Updating player minutes:', playerMinutes);
+      console.log('=== STARTING SAVE OPERATION ===');
+      console.log('Game number:', gameNumber);
+      console.log('Player minutes data:', playerMinutes);
       
       // Update each player's minutes individually
       for (const { playerId, minutes } of playerMinutes) {
-        const { error } = await supabase
+        console.log(`Updating player ${playerId} with minutes: ${minutes}`);
+        const { error, data } = await supabase
           .from('box_scores')
           .update({ minutes_played: minutes })
           .eq('game_id', gameNumber.toString())
-          .eq('player_slug', playerId);
+          .eq('player_slug', playerId)
+          .select();
+          
+        console.log(`Update result for ${playerId}:`, { error, data });
           
         if (error) {
           console.error('Error updating player:', playerId, error);
@@ -110,9 +116,10 @@ export class MinutesService {
         }
       }
 
+      console.log('=== SAVE OPERATION COMPLETED SUCCESSFULLY ===');
       return true;
     } catch (error) {
-      console.error('Error updating player minutes:', error);
+      console.error('=== SAVE OPERATION FAILED ===', error);
       throw error;
     }
   }
