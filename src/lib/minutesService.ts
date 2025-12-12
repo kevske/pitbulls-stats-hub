@@ -120,7 +120,7 @@ export class MinutesService {
     totalPlayers: number;
   }>> {
     try {
-      // First get all box_scores with their game_ids
+      // Get box_scores data first
       const { data: boxScoresData, error: boxScoresError } = await supabase
         .from('box_scores')
         .select('game_id, player_slug, points, minutes_played')
@@ -129,37 +129,17 @@ export class MinutesService {
 
       if (boxScoresError) throw boxScoresError;
 
-      // Get unique game_ids from box_scores
-      const uniqueGameIds = [...new Set(boxScoresData?.map(row => row.game_id) || [])];
-
-      // Fetch game dates from games table
-      const { data: gamesData, error: gamesError } = await supabase
-        .from('games')
-        .select('gameNumber, game_date, game_time')
-        .in('gameNumber', uniqueGameIds.map(id => parseInt(id) || 0));
-
-      if (gamesError) throw gamesError;
-
-      // Create a map of gameNumber to gameDate
-      const gameDateMap = new Map<number, string>();
-      gamesData?.forEach(game => {
-        gameDateMap.set(game.gameNumber, game.game_date);
-      });
-
       // Group by game and count
       const gameStats = new Map<string, { 
         totalPlayers: number; 
         needingMinutes: number; 
-        gameDate?: string;
       }>();
       
       (boxScoresData || []).forEach(row => {
         const gameId = row.game_id;
-        const gameNumber = parseInt(gameId) || 0;
         const current = gameStats.get(gameId) || { 
           totalPlayers: 0, 
-          needingMinutes: 0, 
-          gameDate: gameDateMap.get(gameNumber)
+          needingMinutes: 0
         };
         current.totalPlayers++;
         if ((row.minutes_played || 0) === 0) {
@@ -172,17 +152,10 @@ export class MinutesService {
       return Array.from(gameStats.entries())
         .map(([gameId, stats]) => ({
           gameNumber: parseInt(gameId) || 0,
-          gameDate: stats.gameDate,
           playersNeedingMinutes: stats.needingMinutes,
           totalPlayers: stats.totalPlayers
         }))
-        .sort((a, b) => {
-          // Sort by date if available, otherwise by gameNumber
-          if (a.gameDate && b.gameDate) {
-            return new Date(b.gameDate).getTime() - new Date(a.gameDate).getTime();
-          }
-          return b.gameNumber - a.gameNumber;
-        });
+        .sort((a, b) => b.gameNumber - a.gameNumber);
     } catch (error) {
       console.error('Error getting games needing minutes:', error);
       throw error;
