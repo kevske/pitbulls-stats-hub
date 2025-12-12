@@ -97,10 +97,10 @@ export class MinutesService {
       const updates = playerMinutes.map(({ playerId, minutes }) => ({
         game_id: gameNumber.toString(),
         player_slug: playerId,
-        seconds_played: minutes * 60 // Convert minutes to seconds for storage
+        minutes_played: minutes // Store decimal minutes directly
       }));
 
-      // Update each player's seconds
+      // Update each player's minutes
       const { error } = await supabase
         .from('box_scores')
         .upsert(updates, { onConflict: 'game_id,player_slug' });
@@ -109,7 +109,7 @@ export class MinutesService {
 
       return true;
     } catch (error) {
-      console.error('Error updating player seconds:', error);
+      console.error('Error updating player minutes:', error);
       throw error;
     }
   }
@@ -145,7 +145,7 @@ export class MinutesService {
 
       const { data, error } = await supabase
         .from('box_scores')
-        .select('seconds_played, points, player_slug, player_first_name, player_last_name')
+        .select('minutes_played, points, player_slug, player_first_name, player_last_name')
         .eq('game_id', gameNumber.toString())
         .eq('team_id', tsvNeuenstadtTeamId) // Only TSV Neuenstadt players
         .gt('points', 0); // Only players who actually played
@@ -165,10 +165,9 @@ export class MinutesService {
       });
 
       const players = Array.from(uniquePlayers.values());
-      const totalSeconds = players.reduce((sum, player) => sum + (player.seconds_played || 0), 0);
-      const totalMinutes = Math.floor(totalSeconds / 60);
-      const playersWithMinutes = players.filter(player => (player.seconds_played || 0) > 0).length;
-      const playersNeedingMinutes = players.filter(player => (player.seconds_played || 0) === 0).length;
+      const totalMinutes = players.reduce((sum, player) => sum + (player.minutes_played || 0), 0);
+      const playersWithMinutes = players.filter(player => (player.minutes_played || 0) > 0).length;
+      const playersNeedingMinutes = players.filter(player => (player.minutes_played || 0) === 0).length;
 
       return {
         totalMinutes,
