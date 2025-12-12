@@ -32,7 +32,7 @@ const VideoEditor = () => {
   const videoUrl = searchParams.get('video');
 
 
-  // JSONBin storage removed - using Supabase VideoProjectService check
+
 
 
   const [videoId, setVideoId] = useState('');

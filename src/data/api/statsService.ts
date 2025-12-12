@@ -316,24 +316,24 @@ async function fetchCSV<T>(url: string, transform: (data: any[]) => T[], forceRe
 async function loadStatsFromGitHub(): Promise<{ games: GameStats[]; playerStats: PlayerGameLog[]; playerTotals: PlayerStats[] } | null> {
   try {
     console.log('Attempting to load stats from GitHub...');
-    
+
     // Try to load the index file first
     const response = await fetch('/data/index.json');
     if (!response.ok) {
       console.log('GitHub data not found, falling back to JSONBin');
       return null;
     }
-    
+
     const indexData = await response.json();
     console.log(`Found ${indexData.totalGames} games in GitHub data`);
-    
+
     // For now, return null and let the existing CSV-based system work
     // In the future, we can transform the GitHub data to match the expected format
     console.log('GitHub data structure found, but using CSV system for now');
     return null;
-    
+
   } catch (error) {
-    console.log('Failed to load from GitHub, using JSONBin fallback:', error);
+    console.log('Failed to load from GitHub:', error);
     return null;
   }
 }
@@ -346,9 +346,9 @@ export async function fetchAllData(forceRefresh = false): Promise<{ games: GameS
     if (githubData) {
       return githubData;
     }
-    
-    // Fallback to existing CSV + JSONBin system
-    console.log('Using CSV + JSONBin data source');
+
+    // Fallback to existing CSV system
+    console.log('Using CSV data source');
     const [games, playerGameLogs, totalsRows, bioRows] = await Promise.all([
       fetchCSV(config.data.csvUrls.games, transformGameData, forceRefresh),
       fetchCSV<PlayerGameLogRow>(config.data.csvUrls.playerGameLogs, (rows) => rows as any[], forceRefresh),
