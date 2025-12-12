@@ -19,7 +19,9 @@ const TimeInput: React.FC<TimeInputProps> = ({
   disabled = false
 }) => {
   const [displayValue, setDisplayValue] = useState("--:--");
+  const [isTyping, setIsTyping] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Convert seconds to mm:ss format
   const secondsToTimeDisplay = (totalSeconds: number): string => {
@@ -46,6 +48,13 @@ const TimeInput: React.FC<TimeInputProps> = ({
 
   // Handle input changes - simple 4 digit input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsTyping(true);
+    
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
     let inputValue = e.target.value;
     
     // Remove any non-digit characters
@@ -104,6 +113,11 @@ const TimeInput: React.FC<TimeInputProps> = ({
       const totalSeconds = minutes * 60 + seconds;
       onChange(totalSeconds);
     }
+    
+    // Set timeout to reset typing flag after user stops typing
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 1000);
   };
 
   // Handle keypresses for better UX
@@ -121,12 +135,24 @@ const TimeInput: React.FC<TimeInputProps> = ({
 
   // Update display when value changes externally
   useEffect(() => {
+    // Don't update while user is actively typing
+    if (isTyping) return;
+    
     const newDisplayValue = secondsToTimeDisplay(value);
-    // Only update if the current display is not during active input
+    // Only update if the current display is different
     if (displayValue !== newDisplayValue) {
       setDisplayValue(newDisplayValue);
     }
-  }, [value]);
+  }, [value, isTyping]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <Input
