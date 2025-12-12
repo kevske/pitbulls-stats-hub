@@ -134,8 +134,9 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                 </h3>
                 <div className="space-y-3">
                   {gamesNeedingMinutes
-                    .filter(game => game.playersNeedingMinutes > 0)
+                    .filter(game => game.playersNeedingMinutes > 0 || game.totalPlayers === 0)
                     .map((game) => {
+                      const displayText = game.totalPlayers === 0 ? 'Keine Daten' : `${game.playersNeedingMinutes} Spieler`;
                       return (
                         <Card 
                           key={game.gameNumber}
@@ -147,7 +148,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                               <span>{game.gameDate || `Spiel ${game.gameNumber}`}</span>
                               <Button variant="outline" size="sm" className="border-orange-300">
                                 <Clock className="h-4 w-4 mr-2" />
-                                {game.playersNeedingMinutes} Spieler
+                                {displayText}
                               </Button>
                             </CardTitle>
                           </CardHeader>
@@ -161,10 +162,10 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                               </div>
                               <div className="text-right">
                                 <div className="text-sm text-orange-600 font-medium">
-                                  {game.playersNeedingMinutes} von {game.totalPlayers} Spielern
+                                  {game.totalPlayers === 0 ? 'Boxscore fehlt' : `${game.playersNeedingMinutes} von ${game.totalPlayers} Spielern`}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                  brauchen Minuten
+                                  {game.totalPlayers === 0 ? 'Spielerdaten benötigt' : 'brauchen Minuten'}
                                 </div>
                               </div>
                             </div>

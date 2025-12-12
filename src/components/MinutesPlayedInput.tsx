@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useStats } from '@/contexts/StatsContext';
 import { MinutesService, PlayerMinutesData } from '@/lib/minutesService';
 import { Save, Clock, Users, AlertCircle } from 'lucide-react';
+import TimeInput from '@/components/TimeInput';
 
 interface PlayerMinutes {
   playerId: string;
@@ -60,18 +61,19 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
     loadPlayerMinutes();
   }, [gameNumber]);
 
-  const handleMinutesChange = (playerId: string, minutes: string) => {
-    const minutesNum = parseInt(minutes) || 0;
+  const handleMinutesChange = (playerId: string, seconds: number) => {
+    // Convert seconds to minutes for storage (we'll store as minutes for now to maintain compatibility)
+    const minutes = Math.floor(seconds / 60);
     
     // Validate minutes (should be between 0 and 60 for a basketball game with possible overtime)
-    if (minutesNum < 0 || minutesNum > 60) {
+    if (minutes < 0 || minutes > 60) {
       toast.error('Minuten müssen zwischen 0 und 60 liegen');
       return;
     }
 
     setPlayerMinutes(prev => 
       prev.map(pm => 
-        pm.playerId === playerId ? { ...pm, minutes: minutesNum } : pm
+        pm.playerId === playerId ? { ...pm, minutes: minutes } : pm
       )
     );
   };
@@ -113,7 +115,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
 
   const getPlayerName = (playerId: string) => {
     // Try to get player name from our local players data first
-    const player = players.find(p => p.id === playerId || p.slug === playerId);
+    const player = players.find(p => p.id === playerId);
     if (player) {
       return `${player.firstName} ${player.lastName}`;
     }
@@ -128,7 +130,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
   };
 
   const getPlayerJerseyNumber = (playerId: string) => {
-    const player = players.find(p => p.id === playerId || p.slug === playerId);
+    const player = players.find(p => p.id === playerId);
     return player?.jerseyNumber || '?';
   };
 
@@ -178,18 +180,13 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
                     </div>
                   </Label>
                   <div className="flex items-center gap-2">
-                    <Input
+                    <TimeInput
                       id={`minutes-${playerId}`}
-                      type="number"
-                      min="0"
-                      max="60"
-                      step="1"
-                      value={minutes || ''}
-                      onChange={(e) => handleMinutesChange(playerId, e.target.value)}
-                      placeholder="Minuten"
-                      className="w-24"
+                      value={minutes * 60} // Convert minutes to seconds for TimeInput
+                      onChange={(seconds) => handleMinutesChange(playerId, seconds)}
+                      className=""
                     />
-                    <span className="text-sm text-muted-foreground">Min</span>
+                    <span className="text-sm text-muted-foreground">mm:ss</span>
                   </div>
                 </div>
               ))}

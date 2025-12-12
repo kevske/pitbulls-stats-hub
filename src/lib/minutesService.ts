@@ -144,24 +144,30 @@ export class MinutesService {
     totalPlayers: number;
   }>> {
     try {
-      // Get unique players per game with their minutes status - only for TSV Neuenstadt players
+      // First, get all games from the database that involve TSV Neuenstadt
+      const { data: allGames, error: allGamesError } = await supabase
+        .from('games')
+        .select('game_id, home_team_name, away_team_name, game_date')
+        .or('home_team_name.ilike.%TSV Neuenstadt%,away_team_name.ilike.%TSV Neuenstadt%')
+        .order('game_date', { ascending: false });
+
+      if (allGamesError) throw allGamesError;
+
+      console.log('All TSV Neuenstadt games:', allGames?.length || 0);
+
+      // Get box_scores data for all these games - only for TSV Neuenstadt players
+      const gameIds = allGames?.map(g => g.game_id) || [];
       const { data: boxScoresData, error: boxScoresError } = await supabase
         .from('box_scores')
         .select('game_id, player_slug, points, minutes_played')
         .eq('team_id', '168416') // Only TSV Neuenstadt players
         .not('player_slug', 'is', null)
-        .gt('points', 0); // Only players who actually played
+        .gt('points', 0) // Only players who actually played
+        .in('game_id', gameIds);
 
       if (boxScoresError) throw boxScoresError;
 
-      // Get game information from database for team names
-      const gameIds = [...new Set((boxScoresData || []).map(row => row.game_id))];
-      const { data: gamesData, error: gamesError } = await supabase
-        .from('games')
-        .select('game_id, home_team_name, away_team_name, game_date')
-        .in('game_id', gameIds);
-
-      if (gamesError) throw gamesError;
+      console.log('Box scores records found:', boxScoresData?.length || 0);
 
       // Create a map for quick game info lookup
       const gameInfoMap = new Map<string, {
@@ -170,7 +176,7 @@ export class MinutesService {
         gameDate: string;
       }>();
       
-      (gamesData || []).forEach(game => {
+      (allGames || []).forEach(game => {
         gameInfoMap.set(game.game_id, {
           homeTeam: game.home_team_name,
           awayTeam: game.away_team_name,
@@ -215,6 +221,18 @@ export class MinutesService {
           needingMinutes: needingMinutes.size
         });
       });
+
+      // Also include games that don't have any box_scores yet (all players need minutes)
+      (allGames || []).forEach(game => {
+        if (!gameStats.has(game.game_id)) {
+          gameStats.set(game.game_id, {
+            totalPlayers: 0, // No players recorded yet
+            needingMinutes: 0 // Will be handled differently in UI
+          });
+        }
+      });
+
+      console.log('Final game stats count:', gameStats.size);
 
       // Convert to expected format
       return Array.from(gameStats.entries())
