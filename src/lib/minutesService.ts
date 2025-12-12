@@ -108,7 +108,11 @@ export class MinutesService {
           .eq('player_slug', playerId)
           .select();
           
-        console.log(`Update result for ${playerId}:`, { error, data });
+        console.log(`Update result for ${playerId}:`, { 
+          error, 
+          data: data || 'No data returned',
+          dataLength: data?.length || 0
+        });
           
         if (error) {
           console.error('Error updating player:', playerId, error);

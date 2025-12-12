@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { extractStatsFromVideoData, PlayerGameStats, TeamGameStats, ExtractedGameStats } from '@/services/statsExtraction';
 import { useState, useEffect } from 'react';
-import { jsonbinStorage } from '@/lib/jsonbinStorage';
+import { VideoProjectService } from '@/lib/videoProjectService';
 import { useSearchParams } from 'react-router-dom';
 
 interface StatisticsProps {
@@ -39,24 +39,18 @@ export function Statistics({ events, players = DEFAULT_PLAYERS }: StatisticsProp
     // Whole game stats - fetch all videos from playlist
     setIsLoadingWholeGame(true);
     try {
-      const masterBinData = await jsonbinStorage.readBin('693897a8ae596e708f8ea7c2') as { games: Record<string, Record<string, string>> } | null;
-      
-      if (masterBinData?.games?.[gameNumber]) {
+      const projects = await VideoProjectService.getProjectsForGame(gameNumber);
+
+      if (projects && projects.length > 0) {
         let allEvents: TaggedEvent[] = [];
-        const gameVideos = masterBinData.games[gameNumber];
-        
+
         // Fetch all videos in the playlist
-        for (const [videoNum, binId] of Object.entries(gameVideos)) {
-          try {
-            const videoData = await jsonbinStorage.readBin(binId) as any;
-            if (videoData?.events) {
-              allEvents = [...allEvents, ...videoData.events];
-            }
-          } catch (error) {
-            console.error(`Failed to load video ${videoNum}:`, error);
+        for (const project of projects) {
+          if (project.data && project.data.events) {
+            allEvents = [...allEvents, ...project.data.events];
           }
         }
-        
+
         return extractStatsFromVideoData({
           version: '1.0.0',
           timestamp: new Date().toISOString(),
@@ -182,7 +176,7 @@ export function Statistics({ events, players = DEFAULT_PLAYERS }: StatisticsProp
                   )}
                 </div>
               </div>
-              
+
               {/* Shooting Stats */}
               {(player.fieldGoalsAttempted > 0 || player.freeThrowsAttempted > 0) && (
                 <div className="grid grid-cols-3 gap-2 text-xs mb-2">
