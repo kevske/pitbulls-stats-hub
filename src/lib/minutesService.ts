@@ -158,35 +158,103 @@ export class MinutesService {
       console.log('All TSV Neuenstadt games (past/present):', allGames?.length || 0);
       console.log('Sample game IDs from games table:', allGames?.slice(0, 3).map(g => ({ id: g.game_id, date: g.game_date })));
 
-      // Get box_scores data for all these games - only for TSV Neuenstadt players
+      // Try multiple approaches to find box scores
+      let boxScoresData = [];
+      
+      // Approach 1: Try with exact game_id matching and team_id = '168416'
       const gameIds = allGames?.map(g => g.game_id) || [];
-      const { data: boxScoresData, error: boxScoresError } = await supabase
+      const { data: boxScores1, error: boxScoresError1 } = await supabase
         .from('box_scores')
         .select('game_id, player_slug, points, minutes_played')
-        .eq('team_id', '168416') // Only TSV Neuenstadt players
+        .eq('team_id', '168416')
         .not('player_slug', 'is', null)
-        .gt('points', 0) // Only players who actually played
+        .gt('points', 0)
         .in('game_id', gameIds);
 
-      if (boxScoresError) throw boxScoresError;
+      if (!boxScoresError1 && boxScores1 && boxScores1.length > 0) {
+        boxScoresData = boxScores1;
+        console.log('Found box scores with team_id=168416:', boxScores1.length);
+      }
 
-      console.log('Box scores records found:', boxScoresData?.length || 0);
-      console.log('Sample game IDs from box_scores:', [...new Set((boxScoresData || []).slice(0, 5).map(row => row.game_id))]);
-
-      // If we're not getting matches, try a different approach - get all box_scores and match later
-      let allBoxScoresData = boxScoresData;
-      if (!boxScoresData || boxScoresData.length === 0) {
-        console.log('No box scores found with game_id matching, trying to get all box scores...');
-        const { data: allBoxScores, error: allBoxScoresError } = await supabase
+      // Approach 2: Try with team_id as string 'tsv-neuenstadt'
+      if (boxScoresData.length === 0) {
+        const { data: boxScores2, error: boxScoresError2 } = await supabase
           .from('box_scores')
           .select('game_id, player_slug, points, minutes_played')
-          .eq('team_id', '168416')
+          .eq('team_id', 'tsv-neuenstadt')
           .not('player_slug', 'is', null)
-          .gt('points', 0);
+          .gt('points', 0)
+          .in('game_id', gameIds);
 
-        if (allBoxScoresError) throw allBoxScoresError;
-        allBoxScoresData = allBoxScores;
-        console.log('All box scores records:', allBoxScoresData?.length || 0);
+        if (!boxScoresError2 && boxScores2 && boxScores2.length > 0) {
+          boxScoresData = boxScores2;
+          console.log('Found box scores with team_id=tsv-neuenstadt:', boxScores2.length);
+        }
+      }
+
+      // Approach 3: Try without team_id filter at all
+      if (boxScoresData.length === 0) {
+        const { data: boxScores3, error: boxScoresError3 } = await supabase
+          .from('box_scores')
+          .select('game_id, player_slug, points, minutes_played, team_id')
+          .not('player_slug', 'is', null)
+          .gt('points', 0)
+          .in('game_id', gameIds);
+
+        if (!boxScoresError3 && boxScores3 && boxScores3.length > 0) {
+          boxScoresData = boxScores3;
+          console.log('Found box scores without team_id filter:', boxScores3.length);
+          console.log('Team IDs found:', [...new Set(boxScores3.map(row => row.team_id))]);
+        }
+      }
+
+      // Approach 4: Try getting all box scores and match by game_id as number
+      if (boxScoresData.length === 0) {
+        const gameIdsAsNumbers = gameIds.map(id => parseInt(id)).filter(id => !isNaN(id));
+        const { data: boxScores4, error: boxScoresError4 } = await supabase
+          .from('box_scores')
+          .select('game_id, player_slug, points, minutes_played, team_id')
+          .not('player_slug', 'is', null)
+          .gt('points', 0)
+          .in('game_id', gameIdsAsNumbers);
+
+        if (!boxScoresError4 && boxScores4 && boxScores4.length > 0) {
+          boxScoresData = boxScores4;
+          console.log('Found box scores with numeric game_ids:', boxScores4.length);
+        }
+      }
+
+      // Approach 5: Get ALL box scores and see what we have
+      if (boxScoresData.length === 0) {
+        const { data: allBoxScores, error: allBoxScoresError } = await supabase
+          .from('box_scores')
+          .select('game_id, player_slug, points, minutes_played, team_id')
+          .not('player_slug', 'is', null)
+          .gt('points', 0)
+          .limit(50); // Limit to avoid too much data
+
+        if (!allBoxScoresError && allBoxScores && allBoxScores.length > 0) {
+          console.log('Sample of ALL box scores:', allBoxScores.length);
+          console.log('Sample game IDs from box_scores:', [...new Set(allBoxScores.slice(0, 10).map(row => row.game_id))]);
+          console.log('Sample team IDs from box_scores:', [...new Set(allBoxScores.slice(0, 10).map(row => row.team_id))]);
+          
+          // Try to find matches manually
+          const matchingGames = allBoxScores.filter(row => 
+            gameIds.includes(row.game_id.toString()) || 
+            gameIds.includes(row.game_id) ||
+            gameIds.map(id => parseInt(id)).includes(parseInt(row.game_id))
+          );
+          
+          if (matchingGames.length > 0) {
+            boxScoresData = matchingGames;
+            console.log('Found manually matched box scores:', matchingGames.length);
+          }
+        }
+      }
+
+      console.log('Final box scores count:', boxScoresData.length);
+      if (boxScoresData.length > 0) {
+        console.log('Sample box scores:', boxScoresData.slice(0, 3));
       }
 
       // Create a map for quick game info lookup
@@ -214,8 +282,8 @@ export class MinutesService {
       const uniquePlayersPerGame = new Map<string, Set<string>>();
       const playersNeedingMinutesPerGame = new Map<string, Set<string>>();
       
-      (allBoxScoresData || []).forEach(row => {
-        const gameId = row.game_id;
+      (boxScoresData || []).forEach(row => {
+        const gameId = row.game_id.toString(); // Ensure string key
         const playerSlug = row.player_slug;
         
         // Initialize sets if not exists
