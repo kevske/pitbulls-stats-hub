@@ -23,25 +23,54 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER update_video_projects_timestamp
-  BEFORE UPDATE ON video_projects
-  FOR EACH ROW
-  EXECUTE FUNCTION update_video_projects_updated_at();
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_video_projects_timestamp') THEN
+        CREATE TRIGGER update_video_projects_timestamp
+          BEFORE UPDATE ON video_projects
+          FOR EACH ROW
+          EXECUTE FUNCTION update_video_projects_updated_at();
+    END IF;
+END $$;
 
 -- Create policies
+DO $$
+BEGIN
+    -- Allow public select
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'video_projects' AND policyname = 'Allow public select'
+    ) THEN
+        CREATE POLICY "Allow public select" ON video_projects FOR SELECT USING (true);
+    END IF;
 
--- Allow anonymous read access (anyone can view the projects)
-CREATE POLICY "Allow anonymous read access" ON video_projects
-  FOR SELECT USING (true);
+    -- Allow public insert
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'video_projects' AND policyname = 'Allow public insert'
+    ) THEN
+        CREATE POLICY "Allow public insert" ON video_projects FOR INSERT WITH CHECK (true);
+    END IF;
 
--- Allow authenticated insert (logged in users can create projects)
-CREATE POLICY "Allow authenticated insert" ON video_projects
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+    -- Allow public update
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'video_projects' AND policyname = 'Allow public update'
+    ) THEN
+        CREATE POLICY "Allow public update" ON video_projects FOR UPDATE USING (true);
+    END IF;
 
--- Allow authenticated update (logged in users can update projects)
-CREATE POLICY "Allow authenticated update" ON video_projects
-  FOR UPDATE USING (auth.role() = 'authenticated');
+    -- Allow public delete
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'video_projects' AND policyname = 'Allow public delete'
+    ) THEN
+        CREATE POLICY "Allow public delete" ON video_projects FOR DELETE USING (true);
+    END IF;
+END $$;
 
--- Allow authenticated delete (logged in users can delete projects)
-CREATE POLICY "Allow authenticated delete" ON video_projects
-  FOR DELETE USING (auth.role() = 'authenticated');
+-- Add to realtime publication if it exists
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE video_projects;
+  END IF;
+END $$;

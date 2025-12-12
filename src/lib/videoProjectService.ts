@@ -19,6 +19,7 @@ export interface SaveData {
     timestamp: string;
     lastModified: string;
     metadata?: any;
+    version: string; // Required for compatibility with saveLoad.ts
 }
 
 export interface VideoProject {
@@ -120,7 +121,8 @@ export class VideoProjectService {
                 players: projectData.players || [],
                 metadata: projectData.metadata,
                 timestamp: project.created_at,
-                lastModified: project.updated_at
+                lastModified: project.updated_at,
+                version: '1.0.0' // Set default version
             };
         } catch (error) {
             console.error('VideoProjectService.loadProject error:', error);
