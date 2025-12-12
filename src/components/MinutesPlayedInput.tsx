@@ -58,10 +58,11 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
           .filter(player => player.playerSlug != null) // Filter out null playerSlugs
           .map(player => ({
             playerId: player.playerSlug,
-            seconds: player.minutes * 60 // Convert minutes to seconds
+            seconds: player.minutes * 60 // Convert decimal minutes to seconds
           }));
         
-        console.log('Filtered component data:', componentData);
+        console.log('Original player data (minutes):', playersData.map(p => ({ id: p.playerSlug, minutes: p.minutes })));
+        console.log('Converted component data (seconds):', componentData);
         console.log('Players filtered out:', playersData.length - componentData.length);
         
         setPlayerMinutes(componentData);
