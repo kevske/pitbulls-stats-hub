@@ -134,7 +134,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                 </h3>
                 <div className="space-y-3">
                   {gamesNeedingMinutes
-                    .filter(game => game.playersNeedingMinutes > 0 || game.totalPlayers === 0)
+                    .filter(game => game.totalPlayers === 0 || game.playersNeedingMinutes > 0)
                     .map((game) => {
                       const displayText = game.totalPlayers === 0 ? 'Keine Daten' : `${game.playersNeedingMinutes} Spieler`;
                       return (
@@ -178,7 +178,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
             )}
 
             {/* Games with complete minutes */}
-            {gamesNeedingMinutes.filter(game => game.playersNeedingMinutes === 0).length > 0 && (
+            {gamesNeedingMinutes.filter(game => game.totalPlayers > 0 && game.playersNeedingMinutes === 0).length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-green-600">
                   <Clock className="h-5 w-5" />
@@ -186,7 +186,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                 </h3>
                 <div className="space-y-3">
                   {gamesNeedingMinutes
-                    .filter(game => game.playersNeedingMinutes === 0)
+                    .filter(game => game.totalPlayers > 0 && game.playersNeedingMinutes === 0)
                     .map((game) => {
                       return (
                         <Card 
