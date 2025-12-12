@@ -38,6 +38,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
         
         // Get players who need minutes data for this game
         const playersData = await MinutesService.getPlayersNeedingMinutes(gameNumber);
+        console.log('Raw players data:', playersData);
         
         // Get summary data
         const summaryData = await MinutesService.getGameMinutesSummary(gameNumber);
@@ -50,6 +51,9 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
             playerId: player.playerSlug,
             minutes: player.minutes
           }));
+        
+        console.log('Filtered component data:', componentData);
+        console.log('Players filtered out:', playersData.length - componentData.length);
         
         setPlayerMinutes(componentData);
       } catch (error) {
@@ -142,13 +146,27 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
     return playerMinutes.reduce((sum, pm) => sum + pm.minutes, 0);
   };
 
-  if (playerMinutes.length === 0) {
+  if (loading) {
     return (
       <Card>
         <CardContent className="p-6">
           <div className="text-center text-muted-foreground">
             <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Lade Spielerdaten...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (playerMinutes.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-muted-foreground">
+            <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Keine Spielerdaten für dieses Spiel gefunden.</p>
+            <p className="text-sm">Dieses Spiel hat möglicherweise keine Boxscore-Daten in der Datenbank.</p>
           </div>
         </CardContent>
       </Card>
@@ -164,16 +182,8 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {playerMinutes.length === 0 ? (
-          <div className="text-center text-muted-foreground p-6">
-            <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Keine Spielerdaten für dieses Spiel gefunden.</p>
-            <p className="text-sm">Dieses Spiel hat möglicherweise keine Boxscore-Daten in der Datenbank.</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {playerMinutes.filter(pm => pm.playerId != null).map(({ playerId, minutes }) => (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {playerMinutes.filter(pm => pm.playerId != null).map(({ playerId, minutes }) => (
                 <div key={playerId || `unknown-${Math.random()}`} className="space-y-2">
                   <Label htmlFor={`minutes-${playerId}`} className="text-sm font-medium">
                     <div className="flex items-center gap-2">
@@ -242,8 +252,6 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
                 {saving ? 'Speichern...' : 'Minuten speichern'}
               </Button>
             </div>
-          </>
-        )}
       </CardContent>
     </Card>
   );
