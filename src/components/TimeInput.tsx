@@ -103,7 +103,11 @@ const TimeInput: React.FC<TimeInputProps> = ({
 
   // Update display when value changes externally
   useEffect(() => {
-    setDisplayValue(secondsToTimeDisplay(value));
+    const newDisplayValue = secondsToTimeDisplay(value);
+    // Only update if the current display is a complete time or empty, not during active input
+    if (!displayValue.includes('X') && displayValue !== newDisplayValue) {
+      setDisplayValue(newDisplayValue);
+    }
   }, [value]);
 
   return (
