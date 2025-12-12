@@ -121,12 +121,14 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
     }
     
     // If not found in local data, try to extract from slug
-    const parts = playerId.split('-');
-    if (parts.length >= 2) {
-      return `${parts[0].charAt(0).toUpperCase() + parts[0].slice(1)} ${parts[1].charAt(0).toUpperCase() + parts[1].slice(1)}`;
+    if (playerId && playerId.includes('-')) {
+      const parts = playerId.split('-');
+      if (parts.length >= 2) {
+        return `${parts[0].charAt(0).toUpperCase() + parts[0].slice(1)} ${parts[1].charAt(0).toUpperCase() + parts[1].slice(1)}`;
+      }
     }
     
-    return playerId;
+    return playerId || 'Unbekannter Spieler';
   };
 
   const getPlayerJerseyNumber = (playerId: string) => {
