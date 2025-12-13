@@ -30,6 +30,9 @@ class BasketballBundCrawler:
         if not all([self.supabase_url, self.supabase_key, self.league_id]):
             raise ValueError("Missing required environment variables")
         
+        # Clean and validate the Supabase URL
+        self.supabase_url = self.clean_url(self.supabase_url)
+        
         # Initialize Supabase client
         self.supabase: Client = create_client(self.supabase_url, self.supabase_key)
         
@@ -45,6 +48,24 @@ class BasketballBundCrawler:
             'Content-Type': 'application/json',
             'User-Agent': 'BasketballBund-Crawler/1.0'
         })
+    
+    def clean_url(self, url):
+        """Clean and validate URL by removing non-printable characters"""
+        if not url:
+            return url
+        
+        # Remove newlines, tabs, and other non-printable characters
+        cleaned = ''.join(char for char in url if char.isprintable())
+        
+        # Remove leading/trailing whitespace
+        cleaned = cleaned.strip()
+        
+        # Ensure URL starts with https:// if not already present
+        if cleaned and not cleaned.startswith(('http://', 'https://')):
+            cleaned = 'https://' + cleaned
+        
+        logger.info(f"Cleaned URL: {cleaned}")
+        return cleaned
     
     def fetch_league_data(self):
         """Fetch league data from basketball-bund.net API"""
