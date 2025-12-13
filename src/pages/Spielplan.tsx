@@ -276,14 +276,23 @@ const Spielplan: React.FC = () => {
       console.log('Fetching league comparison for:', { opponentTeamId, opponentTeamName });
       
       // Since standings table doesn't exist, calculate league stats from game data
-      // Fetch all completed games to calculate team statistics
+      // Fetch all games with scores to calculate team statistics (more reliable than status)
       const { data: allGames, error: gamesError } = await supabase
         .from('games')
         .select('*')
-        .eq('status', 'finished')
+        .not('home_score', 'is', null)
+        .not('away_score', 'is', null)
         .order('game_date', { ascending: false });
 
       console.log('All games for league stats:', { allGames, error: gamesError, count: allGames?.length });
+      
+      // Also check what game statuses exist
+      const { data: allGamesWithStatus, error: statusError } = await supabase
+        .from('games')
+        .select('status, home_score, away_score, home_team_name, away_team_name')
+        .limit(10);
+      
+      console.log('Sample game statuses and scores:', allGamesWithStatus);
 
       if (gamesError || !allGames || allGames.length === 0) {
         console.log('No completed games found for league stats');
