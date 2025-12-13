@@ -278,15 +278,17 @@ export class MinutesService {
       const boxScoresData = Array.from(uniquePlayers.values());
       console.log('Found TSV Neuenstadt box scores:', boxScoresData.length);
 
-      // Group by game and count unique players
+      // Group by game and count unique players, also calculate total minutes
       const gameStats = new Map<string, { 
         totalPlayers: number; 
-        needingMinutes: number; 
+        needingMinutes: number;
+        totalMinutes: number;
       }>();
       
       // Use a Set to track unique players per game (using player names since slug may be null)
       const uniquePlayersPerGame = new Map<string, Set<string>>();
       const playersNeedingMinutesPerGame = new Map<string, Set<string>>();
+      const gameMinutesPerGame = new Map<string, number>();
       
       (boxScoresData || []).forEach(row => {
         const gameId = row.game_id.toString(); // Ensure string key
@@ -296,10 +298,14 @@ export class MinutesService {
         if (!uniquePlayersPerGame.has(gameId)) {
           uniquePlayersPerGame.set(gameId, new Set());
           playersNeedingMinutesPerGame.set(gameId, new Set());
+          gameMinutesPerGame.set(gameId, 0);
         }
         
         // Add to unique players set
         uniquePlayersPerGame.get(gameId)!.add(playerKey);
+        
+        // Add to total minutes
+        gameMinutesPerGame.set(gameId, (gameMinutesPerGame.get(gameId) || 0) + (row.minutes_played || 0));
         
         // Add to needing minutes set if minutes are null/undefined (truly missing data)
         if (row.minutes_played === null || row.minutes_played === undefined) {
@@ -307,12 +313,23 @@ export class MinutesService {
         }
       });
 
-      // Convert sets to counts
+      // Convert sets to counts and apply 200 minutes rule
       uniquePlayersPerGame.forEach((players, gameId) => {
         const needingMinutes = playersNeedingMinutesPerGame.get(gameId) || new Set();
+        const totalMinutes = gameMinutesPerGame.get(gameId) || 0;
+        
+        // A game needs minutes if:
+        // 1. Some players have no data at all, OR
+        // 2. Total minutes is not exactly 200 (allowing 1 minute tolerance)
+        const hasMissingData = needingMinutes.size > 0;
+        const isInvalidTotal = Math.abs(totalMinutes - 200) > 1;
+        
+        const finalNeedingMinutes = (hasMissingData || isInvalidTotal) ? players.size : 0;
+        
         gameStats.set(gameId, {
           totalPlayers: players.size,
-          needingMinutes: needingMinutes.size
+          needingMinutes: finalNeedingMinutes,
+          totalMinutes: totalMinutes
         });
       });
 
@@ -321,7 +338,8 @@ export class MinutesService {
         if (!gameStats.has(game.game_id)) {
           gameStats.set(game.game_id, {
             totalPlayers: 0, // No players recorded yet
-            needingMinutes: 0 // Will be handled differently in UI
+            needingMinutes: 0, // Will be handled differently in UI
+            totalMinutes: 0 // No minutes recorded yet
           });
         }
       });
