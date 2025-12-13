@@ -40,11 +40,12 @@ export function VideoPlayerWithLogs({ gameNumber, youtubeLink }: VideoPlayerWith
             setVideoId(undefined);
         } else {
             // Assume it's a video ID if nothing else matches and it's not a url
-            if (!youtubeLink.includes('http')) {
-                setVideoId(youtubeLink);
-                setPlaylistId(undefined);
-            }
+            setVideoId(youtubeLink);
+            setPlaylistId(undefined);
         }
+
+        // Initial load for the first video
+        loadEvents(1);
     }, [youtubeLink]);
 
     const loadEvents = async (index: number) => {
