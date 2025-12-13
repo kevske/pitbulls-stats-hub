@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit, Plus, Loader2 } from "lucide-react";
+import { Edit, Plus, Loader2, Tag } from "lucide-react";
 import { VideoPlayerWithLogs } from "@/components/video/VideoPlayerWithLogs";
 import { VideoProjectService } from "@/lib/videoProjectService";
 import { toast } from "sonner";
@@ -168,6 +168,16 @@ const Videos = () => {
                     gameNumber={game.gameNumber}
                     youtubeLink={videoData.link}
                   />
+                  
+                  {/* Video Tagger Button */}
+                  <div className="mt-4">
+                    <Link to={`/video-editor?game=${game.gameNumber}&video=${getEmbedUrl(videoData.link)}`}>
+                      <Button className="gap-2">
+                        <Tag className="w-4 h-4" />
+                        Im Video Tagger öffnen
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               );
             })}
