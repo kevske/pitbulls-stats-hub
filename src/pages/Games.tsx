@@ -295,7 +295,7 @@ const Games: React.FC = () => {
                     </div>
 
                     {/* Video Link - if available */}
-                    {game.youtubeLink && (
+                    {(game.youtubeLink || (game.videoData && game.videoData.length > 0)) && (
                       <div className="pt-3">
                         <button
                           onClick={(e) => {

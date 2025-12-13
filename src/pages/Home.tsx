@@ -15,10 +15,12 @@ const Home = () => {
   const navigate = useNavigate();
   const { games, players, gameLogs, loading, error } = useStats();
 
-  // Get the last game (game with highest gameNumber)
+  // Get the last game (game with highest tsv_game_number that has a result)
   const lastGame = useMemo(() => {
     if (!games.length) return null;
-    return [...games].sort((a, b) => b.gameNumber - a.gameNumber)[0];
+    return [...games]
+      .filter(g => g.finalScore && g.finalScore !== '-') // Only games with results
+      .sort((a, b) => b.gameNumber - a.gameNumber)[0];
   }, [games]);
 
   // Parse the final score into home and away scores
@@ -57,9 +59,9 @@ const Home = () => {
   const streak = useMemo(() => {
     if (!games.length) return null;
 
-    // Sort games by date descending (latest first)
+    // Sort games by tsv_game_number descending (latest first) and only include games with results
     const sortedGames = [...games]
-      .filter(g => g.finalScore) // Only finished games
+      .filter(g => g.finalScore && g.finalScore !== '-') // Only finished games
       .sort((a, b) => b.gameNumber - a.gameNumber);
 
     if (sortedGames.length === 0) return null;
