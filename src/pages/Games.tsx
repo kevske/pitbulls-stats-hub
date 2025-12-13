@@ -36,7 +36,22 @@ const Games: React.FC = () => {
 
   const formatGameDate = (dateString: string) => {
     try {
-      const date = parse(dateString, 'dd.MM.yyyy HH:mm', new Date());
+      // Handle different date formats from Supabase
+      let date: Date;
+      
+      // Try ISO format first (from Supabase)
+      if (dateString.includes('T') || dateString.includes('-')) {
+        date = new Date(dateString);
+      } else {
+        // Try DD.MM.YYYY HH:mm format (old format)
+        date = parse(dateString, 'dd.MM.yyyy HH:mm', new Date());
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return dateString; // Return original if parsing fails
+      }
+      
       return format(date, 'EEEE, dd.MM.yyyy - HH:mm', { locale: de });
     } catch (e) {
       return dateString;
