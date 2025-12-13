@@ -152,7 +152,8 @@ const Videos = () => {
         ) : (
           <div className="space-y-12 mb-16">
             {gamesWithVideos.map((game) => {
-              // Get all video links for this game
+              // Get video data for this game
+              const videoData = game.videoData || [];
               const videoLinks = game.youtubeLinks || (game.youtubeLink ? [game.youtubeLink] : []);
               
               return (
@@ -166,29 +167,44 @@ const Videos = () => {
                     )}
                   </h2>
                   
-                  {/* Display all videos for this game */}
+                  {/* Display videos for this game */}
                   <div className="space-y-6">
-                    {videoLinks.map((videoLink, index) => (
+                    {videoData.map((video, index) => (
                       <div key={index} className="w-full bg-secondary rounded-lg p-4 shadow-lg">
                         {videoLinks.length > 1 && (
                           <div className="mb-3">
                             <span className="text-sm font-medium text-muted-foreground">
-                              Video {index + 1} von {videoLinks.length}
+                              Video {video.videoIndex + 1} von {videoLinks.length}
                             </span>
                           </div>
                         )}
-                        <VideoPlayerWithLogs
-                          gameNumber={game.gameNumber}
-                          youtubeLink={videoLink}
-                        />
-                        <div className="mt-4">
-                          <Link to={`/video-editor?game=${game.gameNumber}&video=${getEmbedUrl(videoLink)}`}>
-                            <Button variant="outline" className="flex items-center gap-2">
-                              <Edit className="w-4 h-4" />
-                              Video im Stats-Logger öffnen
-                            </Button>
-                          </Link>
+                        
+                        {/* Video embed */}
+                        <div className="aspect-video mb-4">
+                          <iframe
+                            src={video.link.replace('watch?v=', 'embed/').replace('playlist?list=', 'embed/videoseries?list=')}
+                            className="w-full h-full rounded-lg"
+                            allowFullScreen
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          />
                         </div>
+                        
+                        {/* Event tags display */}
+                        {video.events && video.events.length > 0 && (
+                          <div className="mt-4">
+                            <h4 className="text-sm font-semibold mb-2">Event Tags:</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {video.events.map((event, eventIndex) => (
+                                <span 
+                                  key={eventIndex}
+                                  className="px-2 py-1 bg-primary/10 text-primary rounded text-xs"
+                                >
+                                  {event.type || 'Event'} {event.time ? `@ ${event.time}` : ''}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
