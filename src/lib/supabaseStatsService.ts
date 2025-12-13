@@ -123,7 +123,10 @@ export class SupabaseStatsService {
 
       if (error) throw error;
       const map = gameNumberMap || new Map();
-      return (data || []).map(row => transformSupabaseGameLog(row, map));
+      return (data || []).map(row => {
+        const map = gameNumberMap || new Map();
+        return transformSupabaseGameLog(row, map);
+      });
     } catch (error) {
       console.error('Error fetching game logs from Supabase:', error);
       throw error;
@@ -140,7 +143,10 @@ export class SupabaseStatsService {
         .order('game_id');
 
       if (error) throw error;
-      return (data || []).map(transformSupabaseGameLog);
+      return (data || []).map(row => {
+        const map = new Map(); // Empty map since we don't have gameNumber mapping here
+        return transformSupabaseGameLog(row, map);
+      });
     } catch (error) {
       console.error('Error fetching player game logs from Supabase:', error);
       throw error;
