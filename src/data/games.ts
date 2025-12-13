@@ -9,6 +9,13 @@ export interface GamePlayerStats {
   minutesPlayed: number;
 }
 
+export interface QuarterScores {
+  firstQuarter: { home: number; away: number };
+  halftime: { home: number; away: number };
+  thirdQuarter: { home: number; away: number };
+  final: { home: number; away: number };
+}
+
 export interface Game {
   id: string;
   date: string; // ISO format
@@ -16,6 +23,7 @@ export interface Game {
   location: "home" | "away";
   result: "win" | "loss";
   playerStats: GamePlayerStats[];
+  quarterScores?: QuarterScores; // Optional quarter-by-quarter scores
 }
 
 export const games: Game[] = [
