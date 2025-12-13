@@ -358,6 +358,11 @@ class BasketballBundCrawler:
                             cells = row.find_all('td')
                             logger.info(f"Row {j} has {len(cells)} total cells (fallback)")
                         
+                        # Debug: show all cell content for the first few rows
+                        if j < 3:
+                            cell_texts = [cell.get_text(strip=True) for cell in cells]
+                            logger.info(f"Row {j} cell content: {cell_texts}")
+                        
                         if len(cells) >= 9:  # Should have enough columns for quarter data
                             # Extract quarter scores from columns 6, 7, 8 (0-indexed)
                             first_quarter = cells[6].get_text(strip=True)
@@ -367,18 +372,22 @@ class BasketballBundCrawler:
                             
                             logger.info(f"Quarter data - Q1: {first_quarter}, HT: {halftime}, Q3: {third_quarter}, Final: {final_score}")
                             
-                            # Parse the score pairs (format: "home : away")
-                            quarter_scores = {
-                                'first_quarter_home': self.parse_score_pair(first_quarter, 'home'),
-                                'first_quarter_away': self.parse_score_pair(first_quarter, 'away'),
-                                'halftime_home': self.parse_score_pair(halftime, 'home'),
-                                'halftime_away': self.parse_score_pair(halftime, 'away'),
-                                'third_quarter_home': self.parse_score_pair(third_quarter, 'home'),
-                                'third_quarter_away': self.parse_score_pair(third_quarter, 'away')
-                            }
-                            
-                            logger.info(f"Extracted quarter scores for game {game_id}: {quarter_scores}")
-                            return quarter_scores
+                            # Only process if we have actual score data (not headers)
+                            if ':' in first_quarter or ':' in halftime or ':' in third_quarter:
+                                # Parse the score pairs (format: "home : away")
+                                quarter_scores = {
+                                    'first_quarter_home': self.parse_score_pair(first_quarter, 'home'),
+                                    'first_quarter_away': self.parse_score_pair(first_quarter, 'away'),
+                                    'halftime_home': self.parse_score_pair(halftime, 'home'),
+                                    'halftime_away': self.parse_score_pair(halftime, 'away'),
+                                    'third_quarter_home': self.parse_score_pair(third_quarter, 'home'),
+                                    'third_quarter_away': self.parse_score_pair(third_quarter, 'away')
+                                }
+                                
+                                logger.info(f"Extracted quarter scores for game {game_id}: {quarter_scores}")
+                                return quarter_scores
+                            else:
+                                logger.info(f"Row {j} contains headers, not score data - skipping")
                         else:
                             logger.warning(f"Row {j} has insufficient cells ({len(cells)}), expected >= 9")
             
