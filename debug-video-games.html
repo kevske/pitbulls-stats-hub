@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Video Games</title>
+</head>
+<body>
+    <h1>Debug Video Games Loading</h1>
+    <div id="output"></div>
+    
+    <script>
+        // Simple test to check video games loading
+        async function debugVideoGames() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>Loading debug data...</p>';
+            
+            try {
+                // This would need to be adapted to work in browser environment
+                // For now, let's just check what we can from the current page
+                console.log('Checking current page for game data...');
+                
+                // Look for any game elements on the current page
+                const gameElements = document.querySelectorAll('[data-game-number]') || 
+                                   document.querySelectorAll('.game-card') ||
+                                   document.querySelectorAll('div');
+                
+                output.innerHTML = `
+                    <h2>Debug Results:</h2>
+                    <p>Found ${gameElements.length} potential game elements</p>
+                    <p>Check browser console for detailed logging</p>
+                    <p>Open the Games page to see video link debugging output</p>
+                `;
+                
+            } catch (error) {
+                output.innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Run debug when page loads
+        window.addEventListener('load', debugVideoGames);
+    </script>
+</body>
+</html>
