@@ -152,61 +152,45 @@ const Videos = () => {
         ) : (
           <div className="space-y-12 mb-16">
             {gamesWithVideos.map((game) => {
-              // Get video data for this game
-              const videoData = game.videoData || [];
-              const videoLinks = game.youtubeLinks || (game.youtubeLink ? [game.youtubeLink] : []);
+              // Get video data for this game (now single video per game)
+              const videoData = game.videoData?.[0]; // Get first (and only) video
+              
+              if (!videoData) return null; // Skip if no video data
               
               return (
                 <div key={game.gameNumber}>
                   <h2 className="text-2xl font-semibold mb-4">
                     Spieltag {game.gameNumber}: {game.homeTeam} vs {game.awayTeam}
-                    {videoLinks.length > 1 && (
-                      <span className="ml-2 text-sm text-muted-foreground">
-                        ({videoLinks.length} Videos)
-                      </span>
-                    )}
                   </h2>
                   
-                  {/* Display videos for this game */}
-                  <div className="space-y-6">
-                    {videoData.map((video, index) => (
-                      <div key={index} className="w-full bg-secondary rounded-lg p-4 shadow-lg">
-                        {videoLinks.length > 1 && (
-                          <div className="mb-3">
-                            <span className="text-sm font-medium text-muted-foreground">
-                              Video {video.videoIndex + 1} von {videoLinks.length}
+                  {/* Single video embed */}
+                  <div className="w-full bg-secondary rounded-lg p-4 shadow-lg">
+                    {/* Video embed */}
+                    <div className="aspect-video mb-4">
+                      <iframe
+                        src={videoData.link.replace('watch?v=', 'embed/').replace('playlist?list=', 'embed/videoseries?list=')}
+                        className="w-full h-full rounded-lg"
+                        allowFullScreen
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      />
+                    </div>
+                    
+                    {/* Event tags display */}
+                    {videoData.events && videoData.events.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-semibold mb-2">Event Tags:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {videoData.events.map((event, eventIndex) => (
+                            <span 
+                              key={eventIndex}
+                              className="px-2 py-1 bg-primary/10 text-primary rounded text-xs"
+                            >
+                              {event.type || 'Event'} {event.time ? `@ ${event.time}` : ''}
                             </span>
-                          </div>
-                        )}
-                        
-                        {/* Video embed */}
-                        <div className="aspect-video mb-4">
-                          <iframe
-                            src={video.link.replace('watch?v=', 'embed/').replace('playlist?list=', 'embed/videoseries?list=')}
-                            className="w-full h-full rounded-lg"
-                            allowFullScreen
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          />
+                          ))}
                         </div>
-                        
-                        {/* Event tags display */}
-                        {video.events && video.events.length > 0 && (
-                          <div className="mt-4">
-                            <h4 className="text-sm font-semibold mb-2">Event Tags:</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {video.events.map((event, eventIndex) => (
-                                <span 
-                                  key={eventIndex}
-                                  className="px-2 py-1 bg-primary/10 text-primary rounded text-xs"
-                                >
-                                  {event.type || 'Event'} {event.time ? `@ ${event.time}` : ''}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               );
