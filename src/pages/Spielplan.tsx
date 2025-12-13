@@ -275,57 +275,99 @@ const Spielplan: React.FC = () => {
     try {
       console.log('Fetching league comparison for:', { opponentTeamId, opponentTeamName });
       
-      // Fetch all standings data for the league
-      const { data: standings, error } = await supabase
-        .from('standings')
+      // Since standings table doesn't exist, calculate league stats from game data
+      // Fetch all completed games to calculate team statistics
+      const { data: allGames, error: gamesError } = await supabase
+        .from('games')
         .select('*')
-        .eq('league_id', '1') // Assuming league_id is '1' for the main league
-        .order('position', { ascending: true });
+        .eq('status', 'finished')
+        .order('game_date', { ascending: false });
 
-      console.log('Standings query result:', { standings, error, count: standings?.length });
+      console.log('All games for league stats:', { allGames, error: gamesError, count: allGames?.length });
 
-      if (error || !standings || standings.length === 0) {
-        console.log('No standings data found');
+      if (gamesError || !allGames || allGames.length === 0) {
+        console.log('No completed games found for league stats');
         return null;
       }
 
-      // Find the opponent team's standing
-      const opponentStanding = standings.find(s => s.team_id === opponentTeamId);
-      console.log('Looking for team with ID:', opponentTeamId, 'in standings:', standings.map(s => ({ id: s.team_id, name: s.team_name })));
-      
-      if (!opponentStanding) {
-        console.log('Opponent standing not found for team:', opponentTeamId);
+      // Calculate team statistics from game data
+      const teamStats = new Map<string, { pointsFor: number; pointsAgainst: number; games: number; wins: number; losses: number }>();
+
+      allGames.forEach(game => {
+        if (game.home_score && game.away_score) {
+          // Home team stats
+          const homeStats = teamStats.get(game.home_team_id) || { pointsFor: 0, pointsAgainst: 0, games: 0, wins: 0, losses: 0 };
+          homeStats.pointsFor += game.home_score;
+          homeStats.pointsAgainst += game.away_score;
+          homeStats.games += 1;
+          if (game.home_score > game.away_score) homeStats.wins += 1;
+          else homeStats.losses += 1;
+          teamStats.set(game.home_team_id, homeStats);
+
+          // Away team stats
+          const awayStats = teamStats.get(game.away_team_id) || { pointsFor: 0, pointsAgainst: 0, games: 0, wins: 0, losses: 0 };
+          awayStats.pointsFor += game.away_score;
+          awayStats.pointsAgainst += game.home_score;
+          awayStats.games += 1;
+          if (game.away_score > game.home_score) awayStats.wins += 1;
+          else awayStats.losses += 1;
+          teamStats.set(game.away_team_id, awayStats);
+        }
+      });
+
+      console.log('Calculated team stats:', Array.from(teamStats.entries()));
+
+      // Find opponent team stats
+      const opponentStats = teamStats.get(opponentTeamId);
+      if (!opponentStats || opponentStats.games < 3) {
+        console.log('Opponent stats not found or insufficient games:', opponentTeamId);
         return null;
       }
 
-      // Calculate league averages
-      const totalTeams = standings.length;
-      const avgPointsFor = standings.reduce((sum, s) => sum + s.points_for, 0) / totalTeams;
-      const avgPointsAgainst = standings.reduce((sum, s) => sum + s.points_against, 0) / totalTeams;
-      
+      // Calculate league averages (only include teams with 3+ games)
+      const qualifiedTeams = Array.from(teamStats.values()).filter(stats => stats.games >= 3);
+      if (qualifiedTeams.length < 2) {
+        console.log('Not enough qualified teams for comparison');
+        return null;
+      }
+
+      const avgPointsFor = qualifiedTeams.reduce((sum, stats) => sum + (stats.pointsFor / stats.games), 0) / qualifiedTeams.length;
+      const avgPointsAgainst = qualifiedTeams.reduce((sum, stats) => sum + (stats.pointsAgainst / stats.games), 0) / qualifiedTeams.length;
+
       // Find league leaders
-      const pointsLeader = standings.reduce((max, s) => s.points_for > max.points_for ? s : max);
-      const defenseLeader = standings.reduce((min, s) => s.points_against < min.points_against ? s : min);
-      const diffLeader = standings.reduce((max, s) => s.scoring_difference > max.scoring_difference ? s : max);
+      const pointsLeader = Array.from(teamStats.entries()).reduce((max, [teamId, stats]) => {
+        const avgPoints = stats.pointsFor / stats.games;
+        const maxAvgPoints = max[1].pointsFor / max[1].games;
+        return avgPoints > maxAvgPoints ? [teamId, stats] : max;
+      });
+
+      const defenseLeader = Array.from(teamStats.entries()).reduce((min, [teamId, stats]) => {
+        const avgPointsAgainst = stats.pointsAgainst / stats.games;
+        const minAvgPointsAgainst = min[1].pointsAgainst / min[1].games;
+        return avgPointsAgainst < minAvgPointsAgainst ? [teamId, stats] : min;
+      });
 
       const insights: string[] = [];
 
-      // Check if opponent leads league in any category
-      if (opponentStanding.team_id === pointsLeader.team_id) {
-        insights.push(`${opponentTeamName} führt die Liga mit ${opponentStanding.points_for} Punkten pro Spiel`);
+      // Calculate opponent averages
+      const opponentAvgPointsFor = opponentStats.pointsFor / opponentStats.games;
+      const opponentAvgPointsAgainst = opponentStats.pointsAgainst / opponentStats.games;
+
+      // Check if opponent leads league in scoring
+      if (opponentTeamId === pointsLeader[0]) {
+        insights.push(`${opponentTeamName} führt die Liga mit ${opponentAvgPointsFor.toFixed(1)} Punkten pro Spiel`);
       }
-      if (opponentStanding.team_id === defenseLeader.team_id) {
-        insights.push(`${opponentTeamName} hat die beste Defense mit nur ${opponentStanding.points_against} Gegnerpunkten pro Spiel`);
-      }
-      if (opponentStanding.team_id === diffLeader.team_id) {
-        insights.push(`${opponentTeamName} hat den besten Punktedifferenz (+${opponentStanding.scoring_difference})`);
+
+      // Check if opponent leads league in defense
+      if (opponentTeamId === defenseLeader[0]) {
+        insights.push(`${opponentTeamName} hat die beste Defense mit nur ${opponentAvgPointsAgainst.toFixed(1)} Gegnerpunkten pro Spiel`);
       }
 
       // Check if opponent is significantly above/below league averages
-      const pointsForPercentage = ((opponentStanding.points_for - avgPointsFor) / avgPointsFor) * 100;
-      const pointsAgainstPercentage = ((opponentStanding.points_against - avgPointsAgainst) / avgPointsAgainst) * 100;
+      const pointsForPercentage = ((opponentAvgPointsFor - avgPointsFor) / avgPointsFor) * 100;
+      const pointsAgainstPercentage = ((opponentAvgPointsAgainst - avgPointsAgainst) / avgPointsAgainst) * 100;
 
-      if (Math.abs(pointsForPercentage) > 20) {
+      if (Math.abs(pointsForPercentage) > 15) {
         if (pointsForPercentage > 0) {
           insights.push(`${opponentTeamName} scoret ${Math.abs(Math.round(pointsForPercentage))}% mehr als der Ligadurchschnitt`);
         } else {
@@ -333,7 +375,7 @@ const Spielplan: React.FC = () => {
         }
       }
 
-      if (Math.abs(pointsAgainstPercentage) > 20) {
+      if (Math.abs(pointsAgainstPercentage) > 15) {
         if (pointsAgainstPercentage < 0) {
           insights.push(`${opponentTeamName} erlaubt ${Math.abs(Math.round(pointsAgainstPercentage))}% weniger Punkte als der Ligadurchschnitt`);
         } else {
@@ -341,14 +383,16 @@ const Spielplan: React.FC = () => {
         }
       }
 
-      // Check position in standings
-      if (opponentStanding.position <= 3) {
-        insights.push(`${opponentTeamName} ist auf Platz ${opponentStanding.position} der Tabelle`);
-      } else if (opponentStanding.position >= totalTeams - 2) {
-        insights.push(`${opponentTeamName} ist auf dem vorletzten oder letzten Platz der Tabelle`);
+      // Check win percentage
+      const winPercentage = (opponentStats.wins / opponentStats.games) * 100;
+      if (winPercentage >= 75) {
+        insights.push(`${opponentTeamName} hat eine Siegquote von ${Math.round(winPercentage)}%`);
+      } else if (winPercentage <= 25) {
+        insights.push(`${opponentTeamName} hat eine Siegquote von nur ${Math.round(winPercentage)}%`);
       }
 
-      return insights.length > 0 ? insights[0] : null; // Return only the most significant insight
+      console.log('Generated insights:', insights);
+      return insights.length > 0 ? insights[0] : null;
     } catch (error) {
       console.error('Error fetching league comparison:', error);
       return null;
