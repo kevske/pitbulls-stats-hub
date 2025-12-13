@@ -179,6 +179,9 @@ class BasketballBundCrawler:
             
             soup = BeautifulSoup(response.content, 'html.parser')
             
+            # Extract quarter scores first
+            quarter_scores = self.extract_quarter_scores(soup, game_id)
+            
             # Extract player statistics from both teams
             home_team_id = str(game_data.get('homeTeam', {}).get('teamPermanentId', ''))
             away_team_id = str(game_data.get('guestTeam', {}).get('teamPermanentId', ''))
@@ -192,6 +195,10 @@ class BasketballBundCrawler:
             # Parse away team statistics  
             away_stats = self.parse_player_stats(soup, away_team_id, 'gast', game_id)
             box_score_entries.extend(away_stats)
+            
+            # Store quarter scores in the games table if found
+            if quarter_scores:
+                self.update_game_with_quarter_scores(game_id, quarter_scores)
             
             return box_score_entries
             
@@ -285,6 +292,92 @@ class BasketballBundCrawler:
             return int(value) if value and value.strip() else 0
         except (ValueError, AttributeError):
             return 0
+    
+    def extract_quarter_scores(self, soup, game_id):
+        """Extract quarter scores from the HTML page"""
+        try:
+            quarter_scores = {}
+            
+            # Find the results table with quarter data
+            tables = soup.find_all('table', class_='sportView')
+            
+            for table in tables:
+                # Look for table with quarter headers
+                headers = table.find_all('td', class_='sportViewHeader')
+                header_texts = [h.get_text(strip=True) for h in headers]
+                
+                if '1.&nbsp;Viertel' in header_texts and 'Halbzeit' in header_texts and '3.&nbsp;Viertel' in header_texts:
+                    # Find data rows
+                    rows = table.find_all('tr', class_=lambda x: x and x.startswith('sportItem'))
+                    
+                    for row in rows:
+                        cells = row.find_all('td', class_=lambda x: x and x.startswith('sportItem'))
+                        
+                        if len(cells) >= 9:  # Should have enough columns for quarter data
+                            # Extract quarter scores from columns 6, 7, 8 (0-indexed)
+                            first_quarter = cells[6].get_text(strip=True)
+                            halftime = cells[7].get_text(strip=True)
+                            third_quarter = cells[8].get_text(strip=True)
+                            final_score = cells[5].get_text(strip=True)  # Endstand column
+                            
+                            # Parse the score pairs (format: "home : away")
+                            quarter_scores = {
+                                'first_quarter_home': self.parse_score_pair(first_quarter, 'home'),
+                                'first_quarter_away': self.parse_score_pair(first_quarter, 'away'),
+                                'halftime_home': self.parse_score_pair(halftime, 'home'),
+                                'halftime_away': self.parse_score_pair(halftime, 'away'),
+                                'third_quarter_home': self.parse_score_pair(third_quarter, 'home'),
+                                'third_quarter_away': self.parse_score_pair(third_quarter, 'away')
+                            }
+                            
+                            logger.info(f"Extracted quarter scores for game {game_id}: {quarter_scores}")
+                            return quarter_scores
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error extracting quarter scores for game {game_id}: {e}")
+            return None
+    
+    def parse_score_pair(self, score_text, team):
+        """Parse a score pair like '14 : 14' and return the specified team's score"""
+        try:
+            if not score_text or ':' not in score_text:
+                return None
+            
+            parts = score_text.split(':')
+            if len(parts) != 2:
+                return None
+            
+            home_score = self.safe_int(parts[0].strip())
+            away_score = self.safe_int(parts[1].strip())
+            
+            return home_score if team == 'home' else away_score
+            
+        except Exception as e:
+            logger.warning(f"Error parsing score pair '{score_text}': {e}")
+            return None
+    
+    def update_game_with_quarter_scores(self, game_id, quarter_scores):
+        """Update the games table with quarter scores"""
+        try:
+            update_data = {
+                'quarter_scores': quarter_scores,
+                'updated_at': datetime.now(timezone.utc).isoformat()
+            }
+            
+            result = self.supabase.table('games').update(update_data).eq('game_id', game_id).execute()
+            
+            if result.data:
+                logger.info(f"Updated game {game_id} with quarter scores")
+                return True
+            else:
+                logger.warning(f"No game found with ID {game_id} to update quarter scores")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error updating game {game_id} with quarter scores: {e}")
+            return False
     
     def extract_teams_from_data(self, standings, games):
         """Extract unique teams from standings and games"""
