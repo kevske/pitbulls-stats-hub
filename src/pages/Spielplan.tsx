@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/lib/supabase';
-import { Game, DangerousPlayer, GameWithDangerousPlayers, BoxScore } from '@/types/supabase';
+import { Game, DangerousPlayer, GameWithDangerousPlayers, BoxScore, Standing } from '@/types/supabase';
 import { format, parseISO, isAfter, addDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Calendar, Clock, MapPin, AlertTriangle, TrendingUp, Target, Award } from 'lucide-react';
@@ -14,6 +14,7 @@ const Spielplan: React.FC = () => {
   const [games, setGames] = useState<GameWithDangerousPlayers[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [leagueComparisons, setLeagueComparisons] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     fetchGamesAndDangerousPlayers();
@@ -162,12 +163,18 @@ const Spielplan: React.FC = () => {
 
       if (gamesError) throw gamesError;
 
-      // For each game, get dangerous players from the opponent team
+      // For each game, get dangerous players from the opponent team and league comparison
       const gamesWithDangerousPlayers: GameWithDangerousPlayers[] = await Promise.all(
         gamesData.map(async (game: Game) => {
           const opponentTeamName = game.home_team_name === 'TSV Neuenstadt' ? game.away_team_name : game.home_team_name;
           const opponentTeamId = game.home_team_name === 'TSV Neuenstadt' ? game.away_team_id : game.home_team_id;
           const allPlayerStats = await getDangerousPlayers(opponentTeamName, opponentTeamId, game.id);
+          
+          // Get league comparison for this opponent
+          const leagueComparison = await getLeagueComparisonInfo(opponentTeamId, opponentTeamName);
+          if (leagueComparison) {
+            setLeagueComparisons(prev => new Map(prev.set(game.id, leagueComparison)));
+          }
           
           // Select top 3 dangerous players based on new logic
           const top3Players = selectTop3DangerousPlayers(allPlayerStats);
@@ -260,6 +267,82 @@ const Spielplan: React.FC = () => {
     }
     
     return null;
+  };
+
+  const getLeagueComparisonInfo = async (opponentTeamId: string, opponentTeamName: string) => {
+    try {
+      // Fetch all standings data for the league
+      const { data: standings, error } = await supabase
+        .from('standings')
+        .select('*')
+        .eq('league_id', '1') // Assuming league_id is '1' for the main league
+        .order('position', { ascending: true });
+
+      if (error || !standings || standings.length === 0) {
+        return null;
+      }
+
+      // Find the opponent team's standing
+      const opponentStanding = standings.find(s => s.team_id === opponentTeamId);
+      if (!opponentStanding) {
+        return null;
+      }
+
+      // Calculate league averages
+      const totalTeams = standings.length;
+      const avgPointsFor = standings.reduce((sum, s) => sum + s.points_for, 0) / totalTeams;
+      const avgPointsAgainst = standings.reduce((sum, s) => sum + s.points_against, 0) / totalTeams;
+      
+      // Find league leaders
+      const pointsLeader = standings.reduce((max, s) => s.points_for > max.points_for ? s : max);
+      const defenseLeader = standings.reduce((min, s) => s.points_against < min.points_against ? s : min);
+      const diffLeader = standings.reduce((max, s) => s.scoring_difference > max.scoring_difference ? s : max);
+
+      const insights: string[] = [];
+
+      // Check if opponent leads league in any category
+      if (opponentStanding.team_id === pointsLeader.team_id) {
+        insights.push(`${opponentTeamName} führt die Liga mit ${opponentStanding.points_for} Punkten pro Spiel`);
+      }
+      if (opponentStanding.team_id === defenseLeader.team_id) {
+        insights.push(`${opponentTeamName} hat die beste Defense mit nur ${opponentStanding.points_against} Gegnerpunkten pro Spiel`);
+      }
+      if (opponentStanding.team_id === diffLeader.team_id) {
+        insights.push(`${opponentTeamName} hat den besten Punktedifferenz (+${opponentStanding.scoring_difference})`);
+      }
+
+      // Check if opponent is significantly above/below league averages
+      const pointsForPercentage = ((opponentStanding.points_for - avgPointsFor) / avgPointsFor) * 100;
+      const pointsAgainstPercentage = ((opponentStanding.points_against - avgPointsAgainst) / avgPointsAgainst) * 100;
+
+      if (Math.abs(pointsForPercentage) > 20) {
+        if (pointsForPercentage > 0) {
+          insights.push(`${opponentTeamName} scoret ${Math.abs(Math.round(pointsForPercentage))}% mehr als der Ligadurchschnitt`);
+        } else {
+          insights.push(`${opponentTeamName} scoret ${Math.abs(Math.round(pointsForPercentage))}% weniger als der Ligadurchschnitt`);
+        }
+      }
+
+      if (Math.abs(pointsAgainstPercentage) > 20) {
+        if (pointsAgainstPercentage < 0) {
+          insights.push(`${opponentTeamName} erlaubt ${Math.abs(Math.round(pointsAgainstPercentage))}% weniger Punkte als der Ligadurchschnitt`);
+        } else {
+          insights.push(`${opponentTeamName} erlaubt ${Math.abs(Math.round(pointsAgainstPercentage))}% mehr Punkte als der Ligadurchschnitt`);
+        }
+      }
+
+      // Check position in standings
+      if (opponentStanding.position <= 3) {
+        insights.push(`${opponentTeamName} ist auf Platz ${opponentStanding.position} der Tabelle`);
+      } else if (opponentStanding.position >= totalTeams - 2) {
+        insights.push(`${opponentTeamName} ist auf dem vorletzten oder letzten Platz der Tabelle`);
+      }
+
+      return insights.length > 0 ? insights[0] : null; // Return only the most significant insight
+    } catch (error) {
+      console.error('Error fetching league comparison:', error);
+      return null;
+    }
   };
 
   const selectTop3DangerousPlayers = (allPlayerStats: DangerousPlayer[]): DangerousPlayer[] => {
@@ -583,6 +666,17 @@ const Spielplan: React.FC = () => {
                               <AlertTriangle className="w-4 h-4" />
                               <span className="font-medium">
                                 {getFoulOutInfo(game.dangerous_players_extended || game.dangerous_players)}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {leagueComparisons.get(game.id) && (
+                          <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                            <div className="flex items-center gap-2 text-sm text-purple-800">
+                              <TrendingUp className="w-4 h-4" />
+                              <span className="font-medium">
+                                {leagueComparisons.get(game.id)}
                               </span>
                             </div>
                           </div>

@@ -137,6 +137,24 @@ export interface AuditLog {
   user_agent?: string;
 }
 
+export interface Standing {
+  id: string;
+  team_id: string;
+  team_name: string;
+  league_id: string;
+  position: number;
+  games_played: number;
+  wins: number;
+  losses: number;
+  points: number;
+  points_for: number;
+  points_against: number;
+  scoring_difference: number;
+  scraped_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface GameWithDangerousPlayers extends Game {
   dangerous_players: DangerousPlayer[];
   dangerous_players_extended?: DangerousPlayer[];
