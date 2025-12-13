@@ -392,17 +392,24 @@ class BasketballBundCrawler:
     def parse_score_pair(self, score_text, team):
         """Parse a score pair like '14 : 14' and return the specified team's score"""
         try:
+            logger.info(f"Parsing score pair: '{score_text}' for team: {team}")
+            
             if not score_text or ':' not in score_text:
+                logger.warning(f"Invalid score format: '{score_text}' - no colon found or empty")
                 return None
             
             parts = score_text.split(':')
             if len(parts) != 2:
+                logger.warning(f"Invalid score format: '{score_text}' - expected 2 parts, got {len(parts)}")
                 return None
             
             home_score = self.safe_int(parts[0].strip())
             away_score = self.safe_int(parts[1].strip())
             
-            return home_score if team == 'home' else away_score
+            result = home_score if team == 'home' else away_score
+            logger.info(f"Parsed result: {result} (home: {home_score}, away: {away_score})")
+            
+            return result
             
         except Exception as e:
             logger.warning(f"Error parsing score pair '{score_text}': {e}")
