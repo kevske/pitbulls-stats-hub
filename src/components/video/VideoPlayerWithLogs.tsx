@@ -16,6 +16,7 @@ export function VideoPlayerWithLogs({ gameNumber, youtubeLink }: VideoPlayerWith
     const [events, setEvents] = useState<TaggedEvent[]>([]);
     const [currentTime, setCurrentTime] = useState(0);
     const youtubePlayerRef = useRef<YouTubePlayerRef>(null);
+    const lastLoadedIndex = useRef<number>(1);
 
     // Extract video/playlist IDs from URL
     useEffect(() => {
@@ -49,16 +50,22 @@ export function VideoPlayerWithLogs({ gameNumber, youtubeLink }: VideoPlayerWith
     }, [youtubeLink]);
 
     const loadEvents = async (index: number) => {
+        lastLoadedIndex.current = index;
         try {
+            console.log(`VideoPlayerWithLogs triggering load events for Game: ${gameNumber}, Index: ${index}`);
             // 1-based index for database
             const projectData = await VideoProjectService.loadProject(gameNumber.toString(), index);
-            if (projectData) {
+            console.log(`VideoPlayerWithLogs loaded data for Game: ${gameNumber}, Index: ${index}`, projectData);
+
+            if (projectData && projectData.events) {
+                console.log(`VideoPlayerWithLogs found ${projectData.events.length} events`);
                 setEvents(projectData.events);
             } else {
+                console.log(`VideoPlayerWithLogs found no events or no project data`);
                 setEvents([]);
             }
         } catch (error) {
-            console.error('Error loading events:', error);
+            console.error('VideoPlayerWithLogs Error loading events:', error);
             setEvents([]);
         }
     };
@@ -87,14 +94,21 @@ export function VideoPlayerWithLogs({ gameNumber, youtubeLink }: VideoPlayerWith
                     onVideoChange={handleVideoChange}
                 />
             </div>
-            <div className="h-full">
+            <div className="h-full flex flex-col gap-2">
                 <EventList
                     events={events}
                     onSeekTo={handleSeekTo}
                     currentTime={currentTime}
-                    className="h-full flex flex-col"
+                    className="flex-1 flex flex-col min-h-0"
                     scrollAreaClassName="flex-1 h-0"
                 />
+                <div className="text-xs text-muted-foreground p-2 border rounded border-border/50">
+                    Debug: Game {gameNumber} | Loading Index: {
+                        // We need to track the last loaded index
+                        currentTime > -1 ? (lastLoadedIndex.current || 1) : 1
+                    } | Events: {events.length}
+                    <button onClick={() => loadEvents(lastLoadedIndex.current || 1)} className="ml-2 underline">Reload</button>
+                </div>
             </div>
         </div>
     );
