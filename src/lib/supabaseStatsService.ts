@@ -35,6 +35,24 @@ export function transformSupabaseGameLog(row: any, gameNumberMap: Map<string, nu
   const minutesPlayed = Number(row.minutes_played) || 0;
   const threePointers = Number(row.three_pointers) || 0;
 
+  // Calculate gameType based on home/away team information
+  let gameType = '';
+  if (row.games) {
+    const homeTeam = row.games.home_team_name?.toLowerCase() || '';
+    const awayTeam = row.games.away_team_name?.toLowerCase() || '';
+    
+    if (homeTeam.includes('neuenstadt') || homeTeam.includes('pitbull')) {
+      gameType = 'Heim';
+    } else if (awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull')) {
+      gameType = 'Auswärts';
+    } else {
+      gameType = row.game_type || 'Unbekannt';
+    }
+  } else {
+    // Fallback to existing game_type if games join is not available
+    gameType = row.game_type || '';
+  }
+
   return {
     playerId: row.player_slug,
     gameNumber: gameNumberMap.get(row.game_id) || 0, // Use the mapped game number
@@ -50,7 +68,7 @@ export function transformSupabaseGameLog(row: any, gameNumberMap: Map<string, nu
     freeThrowAttemptsPer40: Number(row.free_throw_attempts_per_40) || 0,
     threePointersPer40: Number(row.three_pointers_per_40) || 0,
     foulsPer40: Number(row.fouls_per_40) || 0,
-    gameType: row.game_type || ''
+    gameType
   };
 }
 
@@ -124,9 +142,16 @@ export class SupabaseStatsService {
   // Get all player game logs
   static async fetchAllPlayerGameLogs(gameNumberMap?: Map<string, number>): Promise<PlayerGameLog[]> {
     try {
+      // Join with games table to get proper gameType calculation
       const { data, error } = await supabase
         .from('player_game_logs')
-        .select('*')
+        .select(`
+          *,
+          games (
+            home_team_name,
+            away_team_name
+          )
+        `)
         .order('player_slug, game_id');
 
       if (error) throw error;
@@ -144,9 +169,16 @@ export class SupabaseStatsService {
   // Get game logs for a specific player
   static async fetchPlayerGameLogs(playerSlug: string): Promise<PlayerGameLog[]> {
     try {
+      // Join with games table to get proper gameType calculation
       const { data, error } = await supabase
         .from('player_game_logs')
-        .select('*')
+        .select(`
+          *,
+          games (
+            home_team_name,
+            away_team_name
+          )
+        `)
         .eq('player_slug', playerSlug)
         .order('game_id');
 
