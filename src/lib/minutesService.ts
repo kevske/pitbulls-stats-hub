@@ -178,7 +178,7 @@ export class MinutesService {
       });
 
       const players = Array.from(uniquePlayers.values());
-      const totalMinutes = players.reduce((sum, player) => sum + (player.minutes_played || 0), 0);
+      const totalMinutes = Math.round((players.reduce((sum, player) => sum + (player.minutes_played || 0), 0)) * 1000) / 1000;
       const playersWithMinutes = players.filter(player => (player.minutes_played || 0) >= 0).length; // Include 0 minutes as "having minutes"
       const playersNeedingMinutes = players.filter(player => player.minutes_played === null || player.minutes_played === undefined).length; // Only count truly missing data
 
