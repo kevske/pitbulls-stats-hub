@@ -300,7 +300,7 @@ const Games: React.FC = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate('/videos');
+                            navigate(`/video-editor?game=${game.gameNumber}`);
                           }}
                           className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
                         >

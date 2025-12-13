@@ -20,7 +20,13 @@ const Home = () => {
     if (!games.length) return null;
     return [...games]
       .filter(g => g.finalScore && g.finalScore !== '-') // Only games with results
-      .filter(g => g.gameNumber <= 999) // Only TSV Neuenstadt games
+      .filter(g => {
+        // Only TSV Neuenstadt games - check if either team is TSV Neuenstadt or Pitbulls
+        const homeTeam = g.homeTeam?.toLowerCase() || '';
+        const awayTeam = g.awayTeam?.toLowerCase() || '';
+        return homeTeam.includes('neuenstadt') || homeTeam.includes('pitbull') ||
+               awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull');
+      })
       .sort((a, b) => b.gameNumber - a.gameNumber)[0];
   }, [games]);
 
@@ -63,7 +69,13 @@ const Home = () => {
     // Sort games by tsv_game_number descending (latest first) and only include TSV Neuenstadt games with results
     const sortedGames = [...games]
       .filter(g => g.finalScore && g.finalScore !== '-') // Only finished games
-      .filter(g => g.gameNumber <= 999) // Only TSV Neuenstadt games
+      .filter(g => {
+        // Only TSV Neuenstadt games - check if either team is TSV Neuenstadt or Pitbulls
+        const homeTeam = g.homeTeam?.toLowerCase() || '';
+        const awayTeam = g.awayTeam?.toLowerCase() || '';
+        return homeTeam.includes('neuenstadt') || homeTeam.includes('pitbull') ||
+               awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull');
+      })
       .sort((a, b) => b.gameNumber - a.gameNumber);
 
     if (sortedGames.length === 0) return null;
