@@ -56,7 +56,7 @@ export class VideoProjectService {
             };
 
             const payload = {
-                game_number: gameNumber.toString(),
+                tsv_game_number: gameNumber, // Use TSV_game_number directly
                 video_index: videoIndex,
                 video_id: videoId,
                 playlist_id: playlistId || null,
@@ -65,11 +65,11 @@ export class VideoProjectService {
             };
 
             // Upsert: Try to update if exists, otherwise insert
-            // We rely on the UNIQUE constraint on (game_number, video_index)
+            // We rely on the UNIQUE constraint on (tsv_game_number, video_index)
             const { data: savedProject, error } = await supabase
                 .from('video_projects')
                 .upsert(payload, {
-                    onConflict: 'game_number,video_index',
+                    onConflict: 'tsv_game_number,video_index',
                     ignoreDuplicates: false
                 })
                 .select()
@@ -90,12 +90,12 @@ export class VideoProjectService {
     /**
      * Load a video project from Supabase
      */
-    static async loadProject(gameNumber: string, videoIndex: number): Promise<SaveData | null> {
+    static async loadProject(gameNumber: number, videoIndex: number): Promise<SaveData | null> {
         try {
             const { data: project, error } = await supabase
                 .from('video_projects')
                 .select('*')
-                .eq('game_number', gameNumber)
+                .eq('tsv_game_number', gameNumber)
                 .eq('video_index', videoIndex)
                 .single();
 
@@ -113,7 +113,7 @@ export class VideoProjectService {
             const projectData = project.data as VideoProjectData['items'];
 
             return {
-                gameNumber: parseInt(project.game_number),
+                gameNumber: project.tsv_game_number,
                 videoIndex: project.video_index,
                 videoId: project.video_id,
                 playlistId: project.playlist_id,
@@ -133,12 +133,12 @@ export class VideoProjectService {
     /**
      * Get metadata info for a project (lightweight load)
      */
-    static async getProjectMeta(gameNumber: string, videoIndex: number): Promise<{ lastModified: string, id: string } | null> {
+    static async getProjectMeta(gameNumber: number, videoIndex: number): Promise<{ lastModified: string, id: string } | null> {
         try {
             const { data, error } = await supabase
                 .from('video_projects')
                 .select('id, updated_at')
-                .eq('game_number', gameNumber)
+                .eq('tsv_game_number', gameNumber)
                 .eq('video_index', videoIndex)
                 .single();
 
@@ -156,24 +156,29 @@ export class VideoProjectService {
     /**
      * Get all video projects for a specific game
      */
-    static async getProjectsForGame(gameNumber: string): Promise<VideoProject[]> {
-        try {
-            const { data, error } = await supabase
-                .from('video_projects')
-                .select('*')
-                .eq('game_number', gameNumber)
-                .order('video_index', { ascending: true });
+    static async getProjectsForGame(gameNumber: number): Promise<VideoProject[]> {
+        const { data, error } = await supabase
+            .from('video_projects')
+            .select('*')
+            .eq('tsv_game_number', gameNumber) // Use TSV_game_number
+            .order('video_index', { ascending: true });
 
-            if (error) throw error;
-
-            return data.map(item => ({
-                ...item,
-                data: item.data
-            })) as VideoProject[];
-        } catch (error) {
-            console.error('VideoProjectService.getProjectsForGame error:', error);
+        if (error) {
+            console.error('Error fetching projects for game:', error);
             return [];
         }
+
+        // Transform the data to match VideoProject interface
+        return data.map(project => ({
+            id: project.id,
+            game_number: project.tsv_game_number?.toString() || '',
+            video_index: project.video_index,
+            video_id: project.video_id,
+            playlist_id: project.playlist_id,
+            data: project.data,
+            created_at: project.created_at,
+            updated_at: project.updated_at
+        }));
     }
 
     /**
@@ -181,7 +186,7 @@ export class VideoProjectService {
      */
     static async addVideoToGame(gameNumber: number, videoId: string, playlistId?: string): Promise<string | null> {
         // First, get existing videos for this game to determine the next index
-        const existingProjects = await this.getProjectsForGame(gameNumber.toString());
+        const existingProjects = await this.getProjectsForGame(gameNumber);
         const nextIndex = existingProjects.length; // Use the length as the next index
         
         return this.saveProject({

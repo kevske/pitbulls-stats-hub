@@ -225,9 +225,9 @@ export class SupabaseStatsService {
       const videoMap = new Map<number, string[]>();
       if (videoProjects) {
         videoProjects.forEach((vp: any) => {
-          const gameNumber = parseInt(vp.game_number); // Convert to number for TSV games
+          const gameNumber = vp.tsv_game_number; // Use TSV_game_number directly
           
-          if (!isNaN(gameNumber)) {
+          if (gameNumber && !isNaN(gameNumber)) {
             // Construct youtube link
             let link = '';
             if (vp.video_id) {
