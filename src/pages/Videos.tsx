@@ -63,7 +63,7 @@ const Videos = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto max-w-4xl p-4">
+      <div className="container mx-auto max-w-[98vw] px-2 py-4">
         <div className="mb-6">
           <div>
             <h1 className="text-4xl font-bold text-primary mb-2">Letzte Spiele</h1>

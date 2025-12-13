@@ -84,7 +84,7 @@ export function VideoPlayerWithLogs({ gameNumber, youtubeLink }: VideoPlayerWith
     }, [gameNumber]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[85vh]">
             <div className="lg:col-span-2">
                 <YouTubePlayer
                     ref={youtubePlayerRef}
@@ -92,23 +92,17 @@ export function VideoPlayerWithLogs({ gameNumber, youtubeLink }: VideoPlayerWith
                     playlistId={playlistId}
                     onTimeUpdate={handleTimeUpdate}
                     onVideoChange={handleVideoChange}
+                    className="h-full"
                 />
             </div>
-            <div className="h-full flex flex-col gap-2">
+            <div className="h-full overflow-hidden">
                 <EventList
                     events={events}
                     onSeekTo={handleSeekTo}
                     currentTime={currentTime}
-                    className="flex-1 flex flex-col min-h-0"
+                    className="h-full flex flex-col"
                     scrollAreaClassName="flex-1 h-0"
                 />
-                <div className="text-xs text-muted-foreground p-2 border rounded border-border/50">
-                    Debug: Game {gameNumber} | Loading Index: {
-                        // We need to track the last loaded index
-                        currentTime > -1 ? (lastLoadedIndex.current || 1) : 1
-                    } | Events: {events.length}
-                    <button onClick={() => loadEvents(lastLoadedIndex.current || 1)} className="ml-2 underline">Reload</button>
-                </div>
             </div>
         </div>
     );
