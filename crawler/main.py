@@ -331,13 +331,32 @@ class BasketballBundCrawler:
                 
                 if '1.\xa0Viertel' in header_texts and 'Halbzeit' in header_texts and '3.\xa0Viertel' in header_texts:
                     logger.info(f"Found quarter scores table in table {i}")
-                    # Find data rows
+                    # Find data rows - try different approaches
+                    all_rows = table.find_all('tr')
+                    logger.info(f"Total rows in quarter table: {len(all_rows)}")
+                    
+                    # Debug: show all rows and their classes
+                    for k, row in enumerate(all_rows):
+                        row_class = row.get('class', [])
+                        logger.info(f"Row {k} class: {row_class}")
+                    
+                    # Try multiple row selection methods
                     rows = table.find_all('tr', class_=lambda x: x and x.startswith('sportItem'))
-                    logger.info(f"Found {len(rows)} data rows in quarter table")
+                    logger.info(f"Found {len(rows)} rows with sportItem* class")
+                    
+                    if len(rows) == 0:
+                        # Fallback: try all rows that aren't headers
+                        rows = [row for row in all_rows if not any('header' in str(cls).lower() for cls in row.get('class', []))]
+                        logger.info(f"Fallback: found {len(rows)} non-header rows")
                     
                     for j, row in enumerate(rows):
                         cells = row.find_all('td', class_=lambda x: x and x.startswith('sportItem'))
-                        logger.info(f"Row {j} has {len(cells)} cells")
+                        logger.info(f"Row {j} has {len(cells)} sportItem cells")
+                        
+                        # Fallback: try all cells if no sportItem cells found
+                        if len(cells) == 0:
+                            cells = row.find_all('td')
+                            logger.info(f"Row {j} has {len(cells)} total cells (fallback)")
                         
                         if len(cells) >= 9:  # Should have enough columns for quarter data
                             # Extract quarter scores from columns 6, 7, 8 (0-indexed)
