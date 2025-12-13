@@ -25,7 +25,7 @@ const TimeInput: React.FC<TimeInputProps> = ({
 
   // Convert seconds to mm:ss format
   const secondsToTimeDisplay = (totalSeconds: number): string => {
-    if (totalSeconds === 0) return "--:--";
+    if (totalSeconds === 0) return "00:00";
     
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;

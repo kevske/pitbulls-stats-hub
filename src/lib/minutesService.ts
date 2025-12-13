@@ -91,18 +91,19 @@ export class MinutesService {
   }
 
   // Update seconds for multiple players in a game
-  static async updatePlayerMinutes(gameNumber: number, playerMinutes: Array<{playerId: string, minutes: number}>): Promise<boolean> {
+  static async updatePlayerMinutes(gameNumber: number, playerSeconds: Array<{playerId: string, seconds: number}>): Promise<boolean> {
     try {
       console.log('=== STARTING SAVE OPERATION ===');
       console.log('Game number:', gameNumber);
-      console.log('Player minutes data:', playerMinutes);
+      console.log('Player seconds data:', playerSeconds);
       
-      // Update each player's minutes individually
-      for (const { playerId, minutes } of playerMinutes) {
-        console.log(`Updating player ${playerId} with minutes: ${minutes}`);
+      // Update each player's minutes individually (convert seconds to decimal for database)
+      for (const { playerId, seconds } of playerSeconds) {
+        const decimalMinutes = seconds / 60; // Convert to decimal for database storage
+        console.log(`Updating player ${playerId} with seconds: ${seconds}, decimal minutes: ${decimalMinutes}`);
         const { error, data } = await supabase
           .from('box_scores')
-          .update({ minutes_played: minutes })
+          .update({ minutes_played: decimalMinutes })
           .eq('game_id', gameNumber.toString())
           .eq('player_slug', playerId)
           .select();
@@ -178,8 +179,8 @@ export class MinutesService {
 
       const players = Array.from(uniquePlayers.values());
       const totalMinutes = players.reduce((sum, player) => sum + (player.minutes_played || 0), 0);
-      const playersWithMinutes = players.filter(player => (player.minutes_played || 0) > 0).length;
-      const playersNeedingMinutes = players.filter(player => (player.minutes_played || 0) === 0).length;
+      const playersWithMinutes = players.filter(player => (player.minutes_played || 0) >= 0).length; // Include 0 minutes as "having minutes"
+      const playersNeedingMinutes = players.filter(player => player.minutes_played === null || player.minutes_played === undefined).length; // Only count truly missing data
 
       return {
         totalMinutes,

@@ -58,7 +58,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
           .filter(player => player.playerSlug != null) // Filter out null playerSlugs
           .map(player => ({
             playerId: player.playerSlug,
-            seconds: player.minutes * 60 // Convert decimal minutes to seconds
+            seconds: Math.round(player.minutes * 60) // Convert decimal minutes to exact seconds
           }));
         
         console.log('Original player data (minutes):', playersData.map(p => ({ id: p.playerSlug, minutes: p.minutes })));
@@ -110,10 +110,10 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
         return;
       }
 
-      // Save to database using the service (convert seconds back to decimal minutes)
+      // Save to database using the service (store exact seconds as integer)
       const serviceData = playerMinutes.map(pm => ({
         playerId: pm.playerId,
-        minutes: pm.seconds / 60 // Keep decimal precision
+        seconds: pm.seconds // Store exact seconds as integer
       }));
       const success = await MinutesService.updatePlayerMinutes(gameNumber, serviceData);
       
