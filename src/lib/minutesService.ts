@@ -301,8 +301,8 @@ export class MinutesService {
         // Add to unique players set
         uniquePlayersPerGame.get(gameId)!.add(playerKey);
         
-        // Add to needing minutes set if minutes are 0 or null
-        if ((row.minutes_played || 0) === 0) {
+        // Add to needing minutes set if minutes are null/undefined (truly missing data)
+        if (row.minutes_played === null || row.minutes_played === undefined) {
           playersNeedingMinutesPerGame.get(gameId)!.add(playerKey);
         }
       });
