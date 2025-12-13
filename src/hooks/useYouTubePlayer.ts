@@ -63,10 +63,61 @@ interface UseYouTubePlayerOptions {
   onVideoChange?: (videoId: string, index: number) => void;
 }
 
-export function useYouTubePlayer({ 
-  videoId, 
-  playlistId, 
-  onTimeUpdate, 
+// Singleton promise to ensure we only load the API once and handle multiple requests correctly
+let apiLoadPromise: Promise<void> | null = null;
+
+const loadYouTubeAPISingleton = (): Promise<void> => {
+  if (typeof window === 'undefined') return Promise.resolve();
+
+  if (apiLoadPromise) return apiLoadPromise;
+
+  apiLoadPromise = new Promise<void>((resolve, reject) => {
+    if (window.YT && window.YT.Player) {
+      resolve();
+      return;
+    }
+
+    // Setup callback
+    const previousReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (previousReady) previousReady();
+      resolve();
+    };
+
+    // Check if script exists
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+    }
+
+    // Fallback polling in case script was already loaded but we missed the event
+    const interval = setInterval(() => {
+      if (window.YT && window.YT.Player) {
+        clearInterval(interval);
+        resolve();
+      }
+    }, 100);
+
+    // Timeout safety
+    setTimeout(() => {
+      clearInterval(interval);
+      if (!window.YT || !window.YT.Player) {
+        console.warn('YouTube API load timeout - keeping promise pending or resolving to attempt recovery');
+        if (window.YT && window.YT.Player) resolve();
+      }
+    }, 10000);
+  });
+
+  return apiLoadPromise;
+};
+
+
+export function useYouTubePlayer({
+  videoId,
+  playlistId,
+  onTimeUpdate,
   onStateChange,
   onPlaylistReady,
   onVideoChange,
@@ -81,48 +132,17 @@ export function useYouTubePlayer({
   const isNavigatingRef = useRef(false);
 
   const loadYouTubeAPI = useCallback(() => {
-    return new Promise<void>((resolve, reject) => {
-      if (window.YT && window.YT.Player) {
-        console.log('YouTube API already loaded');
-        resolve();
-        return;
-      }
-
-      console.log('Loading YouTube API...');
-      const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
-      if (existingScript) {
-        console.log('YouTube API script already exists, waiting for ready...');
-        window.onYouTubeIframeAPIReady = () => {
-          console.log('YouTube API ready via existing script');
-          resolve();
-        };
-        return;
-      }
-
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-      
-      window.onYouTubeIframeAPIReady = () => {
-        console.log('YouTube API ready via new script');
-        resolve();
-      };
-
-      // Add timeout in case API fails to load
-      const timeout = setTimeout(() => {
-        if (!window.YT || !window.YT.Player) {
-          console.error('YouTube API failed to load within timeout');
-          reject(new Error('YouTube API failed to load'));
-        }
-      }, 10000); // 10 second timeout
-    });
+    return loadYouTubeAPISingleton();
   }, []);
+
+
+
+
 
   const checkVideoChange = useCallback((player: YTPlayer) => {
     const playlist = player.getPlaylist();
     const currentIndex = player.getPlaylistIndex();
-    
+
     if (playlist && currentIndex !== lastVideoIndexRef.current) {
       lastVideoIndexRef.current = currentIndex;
       const currentVideoId = playlist[currentIndex];
@@ -141,7 +161,7 @@ export function useYouTubePlayer({
     }
 
     console.log('Initializing YouTube player:', { videoId, playlistId });
-    
+
     // Don't reinitialize if we already have a player with same playlist/video
     if (playerRef.current) {
       try {
@@ -189,7 +209,7 @@ export function useYouTubePlayer({
     }
 
     console.log('Creating YouTube player with config:', { videoId, playerVars });
-    
+
     try {
       const playerConfig: YTPlayerOptions = {
         playerVars,
@@ -197,7 +217,7 @@ export function useYouTubePlayer({
           onReady: (event) => {
             console.log('YouTube player ready:', event.target);
             setIsReady(true);
-            
+
             // If playlist, get the video list after a short delay
             if (playlistId) {
               setTimeout(() => {
@@ -231,7 +251,7 @@ export function useYouTubePlayer({
                   const time = playerRef.current.getCurrentTime();
                   setCurrentTime(time);
                   onTimeUpdate?.(time);
-                  
+
                   // Also check for video change periodically
                   if (playlistId) {
                     checkVideoChange(playerRef.current);
@@ -246,7 +266,7 @@ export function useYouTubePlayer({
           onError: (event) => {
             console.error('YouTube player error:', event.data);
             const errorCode = event.data;
-            
+
             switch (errorCode) {
               case 2:
                 console.error('Invalid parameter - check video/playlist ID');
@@ -270,7 +290,7 @@ export function useYouTubePlayer({
                       const retryPlayerVars = { ...playerVars };
                       delete retryPlayerVars.origin;
                       delete retryPlayerVars.widgetid;
-                      
+
                       playerRef.current = new window.YT.Player(containerRef.current, {
                         ...playerConfig,
                         playerVars: retryPlayerVars
@@ -285,12 +305,12 @@ export function useYouTubePlayer({
           }
         },
       };
-      
+
       // Only add videoId if it's not a playlist
       if (!playlistId && videoId) {
         playerConfig.videoId = videoId;
       }
-      
+
       console.log('Final player config:', playerConfig);
       playerRef.current = new window.YT.Player(containerRef.current, playerConfig);
     } catch (error) {
@@ -324,9 +344,9 @@ export function useYouTubePlayer({
       const playlist = playerRef.current.getPlaylist();
       const currentIndex = playerRef.current.getPlaylistIndex();
       console.log('Before playVideoAt - playlist length:', playlist?.length, 'current index:', currentIndex);
-      
+
       playerRef.current.playVideoAt(index);
-      
+
       setTimeout(() => {
         if (playerRef.current && typeof playerRef.current.getPlaylistIndex === 'function') {
           const newIndex = playerRef.current.getPlaylistIndex();
