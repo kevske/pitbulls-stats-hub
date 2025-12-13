@@ -317,60 +317,30 @@ class BasketballBundCrawler:
     def extract_quarter_scores(self, soup, game_id):
         """Extract quarter scores from the HTML page"""
         try:
-            quarter_scores = {}
-            
             # Find the results table with quarter data
             tables = soup.find_all('table', class_='sportView')
-            logger.info(f"Found {len(tables)} sportView tables for game {game_id}")
             
-            for i, table in enumerate(tables):
+            for table in tables:
                 # Look for table with quarter headers
                 headers = table.find_all('td', class_='sportViewHeader')
                 header_texts = [h.get_text(strip=True) for h in headers]
-                logger.info(f"Table {i} headers: {header_texts}")
                 
                 if '1.\xa0Viertel' in header_texts and 'Halbzeit' in header_texts and '3.\xa0Viertel' in header_texts:
-                    logger.info(f"Found quarter scores table in table {i}")
-                    # Find data rows - try different approaches
-                    all_rows = table.find_all('tr')
-                    logger.info(f"Total rows in quarter table: {len(all_rows)}")
-                    
-                    # Debug: show all rows and their classes
-                    for k, row in enumerate(all_rows):
-                        row_class = row.get('class', [])
-                        logger.info(f"Row {k} class: {row_class}")
-                    
-                    # Try multiple row selection methods
+                    # Find data rows with sportItem classes
                     rows = table.find_all('tr', class_=lambda x: x and ('sportItem' in str(x)))
-                    logger.info(f"Found {len(rows)} rows with sportItem* class")
                     
-                    if len(rows) == 0:
-                        # Fallback: try all rows that aren't headers
-                        rows = [row for row in all_rows if not any('header' in str(cls).lower() for cls in row.get('class', []))]
-                        logger.info(f"Fallback: found {len(rows)} non-header rows")
-                    
-                    for j, row in enumerate(rows):
+                    for row in rows:
                         cells = row.find_all('td', class_=lambda x: x and ('sportItem' in str(x)))
-                        logger.info(f"Row {j} has {len(cells)} sportItem cells")
                         
                         # Fallback: try all cells if no sportItem cells found
                         if len(cells) == 0:
                             cells = row.find_all('td')
-                            logger.info(f"Row {j} has {len(cells)} total cells (fallback)")
-                        
-                        # Debug: show all cell content for the first few rows
-                        if j < 3:
-                            cell_texts = [cell.get_text(strip=True) for cell in cells]
-                            logger.info(f"Row {j} cell content: {cell_texts}")
                         
                         if len(cells) >= 9:  # Should have enough columns for quarter data
                             # Extract quarter scores from columns 6, 7, 8 (0-indexed)
                             first_quarter = cells[6].get_text(strip=True)
                             halftime = cells[7].get_text(strip=True)
                             third_quarter = cells[8].get_text(strip=True)
-                            final_score = cells[5].get_text(strip=True)  # Endstand column
-                            
-                            logger.info(f"Quarter data - Q1: {first_quarter}, HT: {halftime}, Q3: {third_quarter}, Final: {final_score}")
                             
                             # Only process if we have actual score data (not headers)
                             if ':' in first_quarter or ':' in halftime or ':' in third_quarter:
@@ -386,12 +356,7 @@ class BasketballBundCrawler:
                                 
                                 logger.info(f"Extracted quarter scores for game {game_id}: {quarter_scores}")
                                 return quarter_scores
-                            else:
-                                logger.info(f"Row {j} contains headers, not score data - skipping")
-                        else:
-                            logger.warning(f"Row {j} has insufficient cells ({len(cells)}), expected >= 9")
             
-            logger.warning(f"No quarter scores table found for game {game_id}")
             return None
             
         except Exception as e:
@@ -401,24 +366,17 @@ class BasketballBundCrawler:
     def parse_score_pair(self, score_text, team):
         """Parse a score pair like '14 : 14' and return the specified team's score"""
         try:
-            logger.info(f"Parsing score pair: '{score_text}' for team: {team}")
-            
             if not score_text or ':' not in score_text:
-                logger.warning(f"Invalid score format: '{score_text}' - no colon found or empty")
                 return None
             
             parts = score_text.split(':')
             if len(parts) != 2:
-                logger.warning(f"Invalid score format: '{score_text}' - expected 2 parts, got {len(parts)}")
                 return None
             
             home_score = self.safe_int(parts[0].strip())
             away_score = self.safe_int(parts[1].strip())
             
-            result = home_score if team == 'home' else away_score
-            logger.info(f"Parsed result: {result} (home: {home_score}, away: {away_score})")
-            
-            return result
+            return home_score if team == 'home' else away_score
             
         except Exception as e:
             logger.warning(f"Error parsing score pair '{score_text}': {e}")

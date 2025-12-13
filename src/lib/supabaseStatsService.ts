@@ -65,15 +65,23 @@ export function transformSupabaseGame(row: any, index: number): GameStats {
   // For non-Neuenstadt games, use a different numbering or skip
   const gameNumber = isNeuenstadtGame ? index + 1 : 999 + index;
   
+  // Extract quarter scores from quarter_scores if available
+  const q1Score = row.quarter_scores ? 
+    `${row.quarter_scores.first_quarter_home || 0}:${row.quarter_scores.first_quarter_away || 0}` : '-';
+  const halfTimeScore = row.quarter_scores ? 
+    `${row.quarter_scores.halftime_home || 0}:${row.quarter_scores.halftime_away || 0}` : '-';
+  const q3Score = row.quarter_scores ? 
+    `${row.quarter_scores.third_quarter_home || 0}:${row.quarter_scores.third_quarter_away || 0}` : '-';
+  
   return {
     gameNumber,
     date: row.game_date,
     homeTeam: row.home_team_name,
     awayTeam: row.away_team_name,
     finalScore: row.home_score !== null && row.away_score !== null ? `${row.home_score}:${row.away_score}` : '-',
-    q1Score: '-', // Not available in Supabase yet
-    halfTimeScore: '-', // Not available in Supabase yet
-    q3Score: '-', // Not available in Supabase yet
+    q1Score,
+    halfTimeScore,
+    q3Score,
     youtubeLink: undefined, // Will be set later from video_projects
     boxScoreUrl: row.box_score_url
   };
