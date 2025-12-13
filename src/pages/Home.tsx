@@ -15,11 +15,12 @@ const Home = () => {
   const navigate = useNavigate();
   const { games, players, gameLogs, loading, error } = useStats();
 
-  // Get the last game (game with highest tsv_game_number that has a result)
+  // Get the last game (TSV Neuenstadt game with highest tsv_game_number that has a result)
   const lastGame = useMemo(() => {
     if (!games.length) return null;
     return [...games]
       .filter(g => g.finalScore && g.finalScore !== '-') // Only games with results
+      .filter(g => g.gameNumber <= 999) // Only TSV Neuenstadt games
       .sort((a, b) => b.gameNumber - a.gameNumber)[0];
   }, [games]);
 
@@ -59,9 +60,10 @@ const Home = () => {
   const streak = useMemo(() => {
     if (!games.length) return null;
 
-    // Sort games by tsv_game_number descending (latest first) and only include games with results
+    // Sort games by tsv_game_number descending (latest first) and only include TSV Neuenstadt games with results
     const sortedGames = [...games]
       .filter(g => g.finalScore && g.finalScore !== '-') // Only finished games
+      .filter(g => g.gameNumber <= 999) // Only TSV Neuenstadt games
       .sort((a, b) => b.gameNumber - a.gameNumber);
 
     if (sortedGames.length === 0) return null;
