@@ -31,7 +31,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
     status: 'excellent' | 'good' | 'poor' | 'unknown';
   } | null>(null);
 
-  // Auto-detect game info from Google Sheets mapping
+  // Auto-detect game info from Supabase database
   const getGameInfo = async (gameNum: number) => {
     setIsLoadingGameInfo(true);
     try {
@@ -75,7 +75,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
     if (!gameNum) return;
 
     try {
-      // Get game info from games context (Google Sheets data)
+      // Get game info from games context (Supabase data)
       const gameFromContext = games.find(g => g.gameNumber === gameNum);
       console.log('Game from context:', gameFromContext);
 
@@ -249,7 +249,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
             <Info className="h-3 w-3" />
             Auto-detection enabled
           </div>
-          Game details (teams, score, type) will be automatically extracted from Google Sheets mapping.
+          Game details (teams, score, type) will be automatically extracted from Supabase database.
         </div>
 
         {/* Integration Button */}

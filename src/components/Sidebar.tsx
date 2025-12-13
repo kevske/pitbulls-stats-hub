@@ -1,9 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Users, BarChart2, Film, Upload, X, RefreshCw, Check, AlertCircle, Trophy, Calendar } from 'lucide-react';
+import { Home, Users, BarChart2, Film, X, Trophy, Calendar } from 'lucide-react';
 import { useStats } from '@/contexts/StatsContext';
-import { formatDistanceToNow } from 'date-fns';
-import { de } from 'date-fns/locale';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -12,16 +10,8 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
-  const [refreshStatus, setRefreshStatus] = useState<'idle' | 'loading' | 'success' | 'error' | `reloading${number}`>('idle');
-  const refreshTimeoutRef = useRef<NodeJS.Timeout>();
   const location = useLocation();
-  const { refresh } = useStats();
 
-  // Set initial last refreshed time
-  useEffect(() => {
-    setLastRefreshed(new Date());
-  }, []);
 
   // Update mobile state on window resize
   useEffect(() => {
@@ -36,9 +26,6 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -46,7 +33,7 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     { to: '/', icon: Home, label: 'Home' },
     { to: '/players', icon: Users, label: 'Spieler' },
     { to: '/stats', icon: BarChart2, label: 'Statistiken' },
-    { to: '/games', icon: Trophy, label: 'Spiele' },
+    { to: '/games', icon: Trophy, label: 'Ergebnisse' },
     { to: '/spielplan', icon: Calendar, label: 'Spielplan' },
     { to: '/videos', icon: Film, label: 'Videos' },
   ];
@@ -106,86 +93,6 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
               );
             })}
           </nav>
-          
-          {/* Refresh Button in Menu */}
-          <div className="mt-auto pt-4 border-t border-border">
-            <button
-              onClick={async (e) => {
-                e.preventDefault();
-                setRefreshStatus('loading');
-                
-                // Start countdown
-                let countdown = 3;
-                const countdownInterval = setInterval(() => {
-                  setRefreshStatus(`reloading${countdown}`);
-                  countdown--;
-                  
-                  if (countdown < 0) {
-                    clearInterval(countdownInterval);
-                    // Force reload the page to ensure fresh data
-                    window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();
-                  }
-                }, 1000);
-                
-                // In the background, refresh the data
-                try {
-                  await refresh();
-                  setLastRefreshed(new Date());
-                } catch (error) {
-                  console.error('Failed to refresh data:', error);
-                  clearInterval(countdownInterval);
-                  setRefreshStatus('error');
-                  
-                  // Reset to idle after error
-                  refreshTimeoutRef.current = setTimeout(() => {
-                    setRefreshStatus('idle');
-                  }, 3000);
-                }
-              }}
-              disabled={typeof refreshStatus === 'string' && refreshStatus.startsWith('reloading')}
-              className={`w-full flex items-center px-4 py-3 rounded-lg transition-elegant text-left ${
-                refreshStatus === 'loading' || refreshStatus?.startsWith('reloading')
-                  ? 'text-primary animate-pulse'
-                  : refreshStatus === 'success'
-                  ? 'text-green-500'
-                  : refreshStatus === 'error'
-                  ? 'text-red-500'
-                  : 'text-foreground/70 hover:text-foreground hover:bg-accent'
-              }`}
-            >
-              {refreshStatus === 'loading' ? (
-                <>
-                  <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
-                  <span>Aktualisiere Daten...</span>
-                </>
-              ) : refreshStatus?.startsWith('reloading') ? (
-                <>
-                  <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
-                  <span>Lade neu in {refreshStatus.replace('reloading', '')}s</span>
-                </>
-              ) : refreshStatus === 'success' ? (
-                <>
-                  <Check className="w-5 h-5 mr-3" />
-                  <span>Erfolgreich aktualisiert</span>
-                </>
-              ) : refreshStatus === 'error' ? (
-                <>
-                  <AlertCircle className="w-5 h-5 mr-3" />
-                  <span>Fehler beim Aktualisieren</span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-5 h-5 mr-3" />
-                  <span>Daten aktualisieren</span>
-                </>
-              )}
-              {lastRefreshed && refreshStatus === 'idle' && (
-                <span className="ml-auto text-xs opacity-70">
-                  {formatDistanceToNow(lastRefreshed, { addSuffix: true, locale: de })}
-                </span>
-              )}
-            </button>
-          </div>
         </div>
       </aside>
     </>
