@@ -120,7 +120,7 @@ const GameDetail: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 text-center mb-6">
+            <div className="grid grid-cols-4 gap-4 text-center mb-6">
               <div>
                 <div className="text-sm text-gray-500">1. Viertel</div>
                 <div className="font-medium">{game.q1Score}</div>
@@ -132,6 +132,10 @@ const GameDetail: React.FC = () => {
               <div>
                 <div className="text-sm text-gray-500">3. Viertel</div>
                 <div className="font-medium">{game.q3Score}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">Endstand</div>
+                <div className="font-bold text-lg">{game.finalScore}</div>
               </div>
             </div>
 
