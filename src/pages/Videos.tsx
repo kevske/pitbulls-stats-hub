@@ -5,6 +5,7 @@ import PasswordProtection from "@/components/PasswordProtection";
 import { useStats } from "@/contexts/StatsContext";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
+import { VideoPlayerWithLogs } from "@/components/video/VideoPlayerWithLogs";
 
 // Helper function to convert YouTube URL to embed format
 const getEmbedUrl = (url: string): string => {
@@ -83,15 +84,10 @@ const Videos = () => {
                 <h2 className="text-2xl font-semibold mb-4">
                   Spieltag {game.gameNumber}: {game.homeTeam} vs {game.awayTeam}
                 </h2>
-                <div className="aspect-video w-full bg-secondary rounded-lg overflow-hidden shadow-lg">
-                  <iframe
-                    className="w-full h-full"
-                    src={getEmbedUrl(game.youtubeLink!)}
-                    title={`Spieltag ${game.gameNumber}: ${game.homeTeam} vs ${game.awayTeam}`}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    allowFullScreen
+                <div className="w-full bg-secondary rounded-lg p-4 shadow-lg">
+                  <VideoPlayerWithLogs
+                    gameNumber={game.gameNumber}
+                    youtubeLink={game.youtubeLink!}
                   />
                 </div>
                 <div className="mt-4">
