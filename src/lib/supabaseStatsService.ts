@@ -225,9 +225,21 @@ export class SupabaseStatsService {
       const videoMap = new Map<number, string[]>();
       if (videoProjects) {
         videoProjects.forEach((vp: any) => {
-          const gameNumber = vp.tsv_game_number; // Use TSV_game_number directly
+          // Handle both old and new table structures
+          let gameNumber: number | undefined;
           
-          if (gameNumber && !isNaN(gameNumber)) {
+          if (vp.tsv_game_number !== undefined && vp.tsv_game_number !== null) {
+            // New structure: use TSV_game_number directly
+            gameNumber = vp.tsv_game_number;
+          } else if (vp.game_number) {
+            // Old structure: convert game_number string to number
+            const parsedGameNumber = parseInt(vp.game_number);
+            if (!isNaN(parsedGameNumber)) {
+              gameNumber = parsedGameNumber;
+            }
+          }
+          
+          if (gameNumber !== undefined && !isNaN(gameNumber)) {
             // Construct youtube link
             let link = '';
             if (vp.video_id) {
