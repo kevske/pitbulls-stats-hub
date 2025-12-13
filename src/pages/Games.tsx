@@ -37,7 +37,36 @@ const Games: React.FC = () => {
     
     // Filter out upcoming games if toggle is enabled
     if (hideUpcoming) {
-      filtered = filtered.filter(game => game.finalScore && game.finalScore.trim() !== '');
+      filtered = filtered.filter(game => {
+        // First check if game has a final score (indicating it's been played)
+        if (!game.finalScore || game.finalScore.trim() === '') {
+          return false; // No final score means game hasn't been played
+        }
+        
+        // Additionally check if the game date is in the past or today
+        try {
+          let gameDate: Date;
+          
+          // Try ISO format first (from Supabase)
+          if (game.date.includes('T') || game.date.includes('-')) {
+            gameDate = new Date(game.date);
+          } else {
+            // Try DD.MM.YYYY HH:mm format (old format)
+            gameDate = parse(game.date, 'dd.MM.yyyy HH:mm', new Date());
+          }
+          
+          // Check if date is valid and not in the future
+          if (isNaN(gameDate.getTime())) {
+            return true; // If we can't parse the date, include it (has final score)
+          }
+          
+          const now = new Date();
+          // Include games that have already happened or are happening today
+          return gameDate <= now;
+        } catch (e) {
+          return true; // If date parsing fails, include it (has final score)
+        }
+      });
     }
     
     return filtered;
