@@ -172,8 +172,10 @@ const Spielplan: React.FC = () => {
           
           // Get league comparison for this opponent
           const leagueComparison = await getLeagueComparisonInfo(opponentTeamId, opponentTeamName);
+          console.log('League comparison result for', opponentTeamName, ':', leagueComparison);
           if (leagueComparison) {
             setLeagueComparisons(prev => new Map(prev.set(game.id, leagueComparison)));
+            console.log('Added league comparison to state for game:', game.id);
           }
           
           // Select top 3 dangerous players based on new logic
@@ -271,6 +273,8 @@ const Spielplan: React.FC = () => {
 
   const getLeagueComparisonInfo = async (opponentTeamId: string, opponentTeamName: string) => {
     try {
+      console.log('Fetching league comparison for:', { opponentTeamId, opponentTeamName });
+      
       // Fetch all standings data for the league
       const { data: standings, error } = await supabase
         .from('standings')
@@ -278,13 +282,19 @@ const Spielplan: React.FC = () => {
         .eq('league_id', '1') // Assuming league_id is '1' for the main league
         .order('position', { ascending: true });
 
+      console.log('Standings query result:', { standings, error, count: standings?.length });
+
       if (error || !standings || standings.length === 0) {
+        console.log('No standings data found');
         return null;
       }
 
       // Find the opponent team's standing
       const opponentStanding = standings.find(s => s.team_id === opponentTeamId);
+      console.log('Looking for team with ID:', opponentTeamId, 'in standings:', standings.map(s => ({ id: s.team_id, name: s.team_name })));
+      
       if (!opponentStanding) {
+        console.log('Opponent standing not found for team:', opponentTeamId);
         return null;
       }
 
@@ -671,16 +681,21 @@ const Spielplan: React.FC = () => {
                           </div>
                         )}
 
-                        {leagueComparisons.get(game.id) && (
-                          <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                            <div className="flex items-center gap-2 text-sm text-purple-800">
-                              <TrendingUp className="w-4 h-4" />
-                              <span className="font-medium">
-                                {leagueComparisons.get(game.id)}
-                              </span>
+                        {(() => {
+                          const comparison = leagueComparisons.get(game.id);
+                          console.log('Checking league comparison for game', game.id, ':', comparison);
+                          console.log('All league comparisons:', Array.from(leagueComparisons.entries()));
+                          return comparison && (
+                            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                              <div className="flex items-center gap-2 text-sm text-purple-800">
+                                <TrendingUp className="w-4 h-4" />
+                                <span className="font-medium">
+                                  {comparison}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {getMissingTopPlayersInfo(game.dangerous_players_extended || game.dangerous_players) && (
                           <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
