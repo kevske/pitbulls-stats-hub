@@ -208,9 +208,57 @@ const Spielplan: React.FC = () => {
     }, allPlayers[0]);
     
     if (playerWithMostMissedFT && playerWithMostMissedFT.seasonStats.avgFreeThrowAttempts > 0) {
-      const missedFT = playerWithMostMissedFT.seasonStats.avgFreeThrowAttempts - playerWithMostMissedFT.seasonStats.avgFreeThrows;
-      return `${playerWithMostMissedFT.player.full_name} verfehlt im Schnitt ${missedFT.toFixed(1)} seiner ${playerWithMostMissedFT.seasonStats.avgFreeThrowAttempts.toFixed(1)} Freiwürfe pro Spiel`;
+      // Calculate freethrow percentage
+      const freeThrowPercentage = (playerWithMostMissedFT.seasonStats.avgFreeThrows / playerWithMostMissedFT.seasonStats.avgFreeThrowAttempts) * 100;
+      
+      // Only show message if percentage is 60% or lower
+      if (freeThrowPercentage <= 60) {
+        const missedFT = playerWithMostMissedFT.seasonStats.avgFreeThrowAttempts - playerWithMostMissedFT.seasonStats.avgFreeThrows;
+        return `${playerWithMostMissedFT.player.full_name} verfehlt im Schnitt ${missedFT.toFixed(1)} seiner ${playerWithMostMissedFT.seasonStats.avgFreeThrowAttempts.toFixed(1)} Freiwürfe pro Spiel`;
+      }
     }
+    return null;
+  };
+
+  const getMissingTopPlayersInfo = (allPlayers: DangerousPlayer[]) => {
+    // Get the top 3 players based on season stats (similar to selectTop3DangerousPlayers logic)
+    const top3Players = selectTop3DangerousPlayers(allPlayers);
+    
+    if (top3Players.length === 0) return null;
+    
+    // Check if any of the top 3 players missed recent games
+    const missingPlayers: { player: DangerousPlayer; missedGames: number }[] = [];
+    
+    for (const player of top3Players) {
+      const recentGames = player.recentStats?.lastTwoGames || [];
+      let missedCount = 0;
+      
+      for (const recentGame of recentGames) {
+        // If points are 0 and the game was played, likely missed the game
+        // This is a heuristic - in reality you'd check for actual game participation
+        if (recentGame.points === 0 && recentGame.game.status === 'finished') {
+          missedCount++;
+        }
+      }
+      
+      if (missedCount > 0) {
+        missingPlayers.push({ player, missedGames: missedCount });
+      }
+    }
+    
+    if (missingPlayers.length > 0) {
+      const playerNames = missingPlayers.map(mp => mp.player.player.full_name);
+      const totalMissed = missingPlayers.reduce((sum, mp) => sum + mp.missedGames, 0);
+      
+      if (missingPlayers.length === 1) {
+        return `${playerNames[0]} hat ${totalMissed} der letzten Spiele verpasst`;
+      } else if (missingPlayers.length === 2) {
+        return `${playerNames[0]} und ${playerNames[1]} haben insgesamt ${totalMissed} der letzten Spiele verpasst`;
+      } else {
+        return `${playerNames[0]}, ${playerNames[1]} und ${playerNames[2]} haben insgesamt ${totalMissed} der letzten Spiele verpasst`;
+      }
+    }
+    
     return null;
   };
 
@@ -535,6 +583,17 @@ const Spielplan: React.FC = () => {
                               <AlertTriangle className="w-4 h-4" />
                               <span className="font-medium">
                                 {getFoulOutInfo(game.dangerous_players_extended || game.dangerous_players)}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {getMissingTopPlayersInfo(game.dangerous_players_extended || game.dangerous_players) && (
+                          <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                            <div className="flex items-center gap-2 text-sm text-orange-800">
+                              <AlertTriangle className="w-4 h-4" />
+                              <span className="font-medium">
+                                {getMissingTopPlayersInfo(game.dangerous_players_extended || game.dangerous_players)}
                               </span>
                             </div>
                           </div>
