@@ -161,7 +161,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
   };
 
   const getTotalMinutes = () => {
-    return playerMinutes.reduce((sum, pm) => sum + Math.floor(pm.seconds / 60), 0);
+    return playerMinutes.reduce((sum, pm) => sum + (pm.seconds / 60), 0);
   };
 
   const getTotalMinutesStatus = () => {
@@ -266,22 +266,13 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
                   </div>
                   <div>
                     <div className="text-muted-foreground">Gesamtminuten</div>
-                    <div className="font-semibold">{summary.totalMinutes}</div>
+                    <div className={`font-semibold ${getTotalMinutesColor()}`}>{summary.totalMinutes}</div>
                   </div>
                 </div>
               </div>
             )}
 
             <div className="border-t pt-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    Gesamtminuten: <span className={`font-semibold ${getTotalMinutesColor()}`}>{getTotalMinutes()}</span>
-                  </span>
-                </div>
-              </div>
-
               <Button 
                 onClick={handleSave} 
                 disabled={saving}
