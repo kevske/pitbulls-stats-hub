@@ -185,7 +185,7 @@ export class VideoProjectService {
         const nextIndex = existingProjects.length; // Use the length as the next index
         
         return this.saveProject({
-            gameNumber,
+            gameNumber, // This should now be the TSV_game_number
             videoIndex: nextIndex,
             videoId,
             playlistId,
@@ -196,7 +196,8 @@ export class VideoProjectService {
             version: '1.0.0',
             metadata: {
                 source: 'StatsHub Admin',
-                addedAt: new Date().toISOString()
+                addedAt: new Date().toISOString(),
+                note: 'Using TSV_game_number for consistent numbering'
             }
         });
     }

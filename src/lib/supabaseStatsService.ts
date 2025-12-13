@@ -74,14 +74,21 @@ export function transformSupabaseGameLog(row: any, gameNumberMap: Map<string, nu
 
 // Transform Supabase games to match frontend GameStats interface
 export function transformSupabaseGame(row: any, index: number): GameStats {
-  // Generate gameNumber based on chronological order of TSV Neuenstadt games
+  // Check if this is a TSV Neuenstadt game
   const isNeuenstadtGame = row.home_team_name?.toLowerCase().includes('neuenstadt') || 
                            row.away_team_name?.toLowerCase().includes('neuenstadt') ||
                            row.home_team_name?.toLowerCase().includes('pitbull') || 
                            row.away_team_name?.toLowerCase().includes('pitbull');
   
-  // For non-Neuenstadt games, use a different numbering or skip
-  const gameNumber = isNeuenstadtGame ? index + 1 : 999 + index;
+  // Use TSV_game_number for TSV games, fallback to generated number for others
+  let gameNumber: number;
+  if (isNeuenstadtGame && row.tsv_game_number) {
+    gameNumber = row.tsv_game_number;
+  } else if (isNeuenstadtGame) {
+    gameNumber = index + 1; // Fallback if TSV_game_number is not set yet
+  } else {
+    gameNumber = 999 + index; // Non-TSV games get high numbers
+  }
   
   // Extract quarter scores from quarter_scores if available
   const q1Score = row.quarter_scores ? 
@@ -214,12 +221,13 @@ export class SupabaseStatsService {
         // Continue without videos if that fails
       }
 
-      // Create a map of game number to youtube links (array to support multiple videos)
+      // Create a map of TSV_game_number to youtube links (array to support multiple videos)
       const videoMap = new Map<number, string[]>();
       if (videoProjects) {
         videoProjects.forEach((vp: any) => {
-          const gameNum = parseInt(vp.game_number);
-          if (!isNaN(gameNum)) {
+          const gameNumber = parseInt(vp.game_number); // Convert to number for TSV games
+          
+          if (!isNaN(gameNumber)) {
             // Construct youtube link
             let link = '';
             if (vp.video_id) {
@@ -230,9 +238,9 @@ export class SupabaseStatsService {
 
             if (link) {
               // Get existing videos for this game or create new array
-              const existingVideos = videoMap.get(gameNum) || [];
+              const existingVideos = videoMap.get(gameNumber) || [];
               if (!existingVideos.includes(link)) {
-                videoMap.set(gameNum, [...existingVideos, link]);
+                videoMap.set(gameNumber, [...existingVideos, link]);
               }
             }
           }
@@ -251,8 +259,9 @@ export class SupabaseStatsService {
           gameNumberMap.set(row.game_id, gameStats.gameNumber);
         }
         
-        // Attach video links if available
-        const videoLinks = videoMap.get(gameStats.gameNumber);
+        // Attach video links if available (using TSV_game_number)
+        const videoLinks = videoMap.get(gameStats.gameNumber); // Use the actual TSV game number
+        
         if (videoLinks && videoLinks.length > 0) {
           // Populate both fields for backward compatibility and future use
           gameStats.youtubeLink = videoLinks[0]; // First video for backward compatibility
