@@ -214,8 +214,8 @@ export class SupabaseStatsService {
         // Continue without videos if that fails
       }
 
-      // Create a map of game number to youtube link
-      const videoMap = new Map<number, string>();
+      // Create a map of game number to youtube links (array to support multiple videos)
+      const videoMap = new Map<number, string[]>();
       if (videoProjects) {
         videoProjects.forEach((vp: any) => {
           const gameNum = parseInt(vp.game_number);
@@ -229,7 +229,11 @@ export class SupabaseStatsService {
             }
 
             if (link) {
-              videoMap.set(gameNum, link);
+              // Get existing videos for this game or create new array
+              const existingVideos = videoMap.get(gameNum) || [];
+              if (!existingVideos.includes(link)) {
+                videoMap.set(gameNum, [...existingVideos, link]);
+              }
             }
           }
         });
@@ -247,10 +251,12 @@ export class SupabaseStatsService {
           gameNumberMap.set(row.game_id, gameStats.gameNumber);
         }
         
-        // Attach video link if available
-        const videoLink = videoMap.get(gameStats.gameNumber);
-        if (videoLink) {
-          gameStats.youtubeLink = videoLink;
+        // Attach video links if available
+        const videoLinks = videoMap.get(gameStats.gameNumber);
+        if (videoLinks && videoLinks.length > 0) {
+          // Populate both fields for backward compatibility and future use
+          gameStats.youtubeLink = videoLinks[0]; // First video for backward compatibility
+          gameStats.youtubeLinks = videoLinks; // All videos for new functionality
         }
         return gameStats;
       });

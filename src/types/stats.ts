@@ -33,7 +33,8 @@ export interface GameStats {
   q1Score: string;
   halfTimeScore: string;
   q3Score: string;
-  youtubeLink?: string;
+  youtubeLink?: string; // Keep for backward compatibility
+  youtubeLinks?: string[]; // New field for multiple videos
   boxScoreUrl?: string;
 }
 

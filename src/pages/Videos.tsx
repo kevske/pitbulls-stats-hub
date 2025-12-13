@@ -92,12 +92,12 @@ const Videos = () => {
 
   // Filter games that have YouTube links and sort by game number (descending)
   const gamesWithVideos = games
-    .filter(game => game.youtubeLink && game.youtubeLink.trim() !== '')
+    .filter(game => (game.youtubeLink && game.youtubeLink.trim() !== '') || (game.youtubeLinks && game.youtubeLinks.length > 0))
     .sort((a, b) => b.gameNumber - a.gameNumber);
 
   // Filter games that DON'T have video and sort descending
   const gamesWithoutVideos = games
-    .filter(game => !game.youtubeLink || game.youtubeLink.trim() === '')
+    .filter(game => (!game.youtubeLink || game.youtubeLink.trim() === '') && (!game.youtubeLinks || game.youtubeLinks.length === 0))
     .sort((a, b) => b.gameNumber - a.gameNumber);
 
   const handleAddVideo = async (e: React.FormEvent) => {
@@ -151,27 +151,50 @@ const Videos = () => {
           </div>
         ) : (
           <div className="space-y-12 mb-16">
-            {gamesWithVideos.map((game) => (
-              <div key={game.gameNumber}>
-                <h2 className="text-2xl font-semibold mb-4">
-                  Spieltag {game.gameNumber}: {game.homeTeam} vs {game.awayTeam}
-                </h2>
-                <div className="w-full bg-secondary rounded-lg p-4 shadow-lg">
-                  <VideoPlayerWithLogs
-                    gameNumber={game.gameNumber}
-                    youtubeLink={game.youtubeLink!}
-                  />
+            {gamesWithVideos.map((game) => {
+              // Get all video links for this game
+              const videoLinks = game.youtubeLinks || (game.youtubeLink ? [game.youtubeLink] : []);
+              
+              return (
+                <div key={game.gameNumber}>
+                  <h2 className="text-2xl font-semibold mb-4">
+                    Spieltag {game.gameNumber}: {game.homeTeam} vs {game.awayTeam}
+                    {videoLinks.length > 1 && (
+                      <span className="ml-2 text-sm text-muted-foreground">
+                        ({videoLinks.length} Videos)
+                      </span>
+                    )}
+                  </h2>
+                  
+                  {/* Display all videos for this game */}
+                  <div className="space-y-6">
+                    {videoLinks.map((videoLink, index) => (
+                      <div key={index} className="w-full bg-secondary rounded-lg p-4 shadow-lg">
+                        {videoLinks.length > 1 && (
+                          <div className="mb-3">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              Video {index + 1} von {videoLinks.length}
+                            </span>
+                          </div>
+                        )}
+                        <VideoPlayerWithLogs
+                          gameNumber={game.gameNumber}
+                          youtubeLink={videoLink}
+                        />
+                        <div className="mt-4">
+                          <Link to={`/video-editor?game=${game.gameNumber}&video=${getEmbedUrl(videoLink)}`}>
+                            <Button variant="outline" className="flex items-center gap-2">
+                              <Edit className="w-4 h-4" />
+                              Video im Stats-Logger öffnen
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="mt-4">
-                  <Link to={`/video-editor?game=${game.gameNumber}&video=${getEmbedUrl(game.youtubeLink!)}`}>
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <Edit className="w-4 h-4" />
-                      Video im Stats-Logger öffnen
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
