@@ -221,8 +221,8 @@ export class SupabaseStatsService {
         // Continue without videos if that fails
       }
 
-      // Create a map of TSV_game_number to video data (supports playlists with events)
-      const videoMap = new Map<number, { link: string; events: any[]; players: any[]; videoIndex: number }[]>();
+      // Create a map of TSV_game_number to video data (consolidates playlist entries)
+      const videoMap = new Map<number, { link: string; events: any[]; players: any[]; videoIndex: number }>();
       if (videoProjects) {
         videoProjects.forEach((vp: any) => {
           // Handle both old and new table structures
@@ -249,28 +249,47 @@ export class SupabaseStatsService {
             }
 
             if (link) {
-              // Get existing videos for this game or create new array
-              const existingVideos = videoMap.get(gameNumber) || [];
-              
-              // Check if this link already exists (avoid duplicates)
-              const existingIndex = existingVideos.findIndex(v => v.link === link);
-              
-              const videoData = {
-                link,
-                events: vp.data?.events || [],
-                players: vp.data?.players || [],
-                videoIndex: vp.video_index || 0
-              };
-              
-              if (existingIndex >= 0) {
-                // Update existing entry with events/players data
-                existingVideos[existingIndex] = videoData;
+              // Check if we already have a video for this game (consolidate playlists)
+              if (!videoMap.has(gameNumber)) {
+                // Create consolidated video data
+                videoMap.set(gameNumber, {
+                  link,
+                  events: vp.data?.events || [],
+                  players: vp.data?.players || [],
+                  videoIndex: vp.video_index || 0
+                });
               } else {
-                // Add new entry
-                existingVideos.push(videoData);
+                // Merge events and players from additional video entries
+                const existingVideo = videoMap.get(gameNumber)!;
+                const newEvents = vp.data?.events || [];
+                const newPlayers = vp.data?.players || [];
+                
+                // Merge events (avoid duplicates based on timestamp or unique identifier)
+                const allEvents = [...existingVideo.events];
+                newEvents.forEach((newEvent: any) => {
+                  if (!allEvents.some((existingEvent: any) => 
+                    existingEvent.time === newEvent.time && 
+                    existingEvent.type === newEvent.type)) {
+                    allEvents.push(newEvent);
+                  }
+                });
+                
+                // Merge players (avoid duplicates based on player ID)
+                const allPlayers = [...existingVideo.players];
+                newPlayers.forEach((newPlayer: any) => {
+                  if (!allPlayers.some((existingPlayer: any) => 
+                    existingPlayer.id === newPlayer.id)) {
+                    allPlayers.push(newPlayer);
+                  }
+                });
+                
+                // Update the existing video entry
+                videoMap.set(gameNumber, {
+                  ...existingVideo,
+                  events: allEvents,
+                  players: allPlayers
+                });
               }
-              
-              videoMap.set(gameNumber, existingVideos);
             }
           }
         });
@@ -291,16 +310,13 @@ export class SupabaseStatsService {
         // Attach video data if available (using TSV_game_number)
         const videoData = videoMap.get(gameStats.gameNumber); // Use the actual TSV game number
         
-        if (videoData && videoData.length > 0) {
-          // Extract just the links for backward compatibility
-          gameStats.youtubeLink = videoData[0].link; // First video for backward compatibility
-          gameStats.youtubeLinks = videoData.map(v => v.link); // All video links
+        if (videoData) {
+          // Extract just the link for backward compatibility
+          gameStats.youtubeLink = videoData.link;
+          gameStats.youtubeLinks = [videoData.link]; // Single video per game
           
           // Store full video data for advanced features (events, players)
-          gameStats.videoData = videoData.map(v => ({
-            ...v,
-            videoIndex: v.videoIndex ?? 0 // Ensure videoIndex always has a value
-          }));
+          gameStats.videoData = [videoData];
         }
         return gameStats;
       });
