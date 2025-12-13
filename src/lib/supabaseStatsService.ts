@@ -31,13 +31,13 @@ export function transformSupabaseStatsToPlayerStats(row: any): PlayerStats {
 }
 
 // Transform Supabase game logs to match frontend PlayerGameLog interface
-export function transformSupabaseGameLog(row: any): PlayerGameLog {
+export function transformSupabaseGameLog(row: any, gameNumberMap: Map<string, number>): PlayerGameLog {
   const minutesPlayed = Number(row.minutes_played) || 0;
   const threePointers = Number(row.three_pointers) || 0;
 
   return {
     playerId: row.player_slug,
-    gameNumber: Number(row.game_id) || 0, // This might need adjustment based on game_id format
+    gameNumber: gameNumberMap.get(row.game_id) || 0, // Use the mapped game number
     minutesPlayed,
     points: Number(row.points) || 0,
     twoPointers: Number(row.two_pointers) || 0,
@@ -56,8 +56,17 @@ export function transformSupabaseGameLog(row: any): PlayerGameLog {
 
 // Transform Supabase games to match frontend GameStats interface
 export function transformSupabaseGame(row: any, index: number): GameStats {
+  // Generate gameNumber based on chronological order of TSV Neuenstadt games
+  const isNeuenstadtGame = row.home_team_name?.toLowerCase().includes('neuenstadt') || 
+                           row.away_team_name?.toLowerCase().includes('neuenstadt') ||
+                           row.home_team_name?.toLowerCase().includes('pitbull') || 
+                           row.away_team_name?.toLowerCase().includes('pitbull');
+  
+  // For non-Neuenstadt games, use a different numbering or skip
+  const gameNumber = isNeuenstadtGame ? index + 1 : 999 + index;
+  
   return {
-    gameNumber: index + 1, // Start from 1
+    gameNumber,
     date: row.game_date,
     homeTeam: row.home_team_name,
     awayTeam: row.away_team_name,
@@ -105,7 +114,7 @@ export class SupabaseStatsService {
   }
 
   // Get all player game logs
-  static async fetchAllPlayerGameLogs(): Promise<PlayerGameLog[]> {
+  static async fetchAllPlayerGameLogs(gameNumberMap?: Map<string, number>): Promise<PlayerGameLog[]> {
     try {
       const { data, error } = await supabase
         .from('player_game_logs')
@@ -113,7 +122,8 @@ export class SupabaseStatsService {
         .order('player_slug, game_id');
 
       if (error) throw error;
-      return (data || []).map(transformSupabaseGameLog);
+      const map = gameNumberMap || new Map();
+      return (data || []).map(row => transformSupabaseGameLog(row, map));
     } catch (error) {
       console.error('Error fetching game logs from Supabase:', error);
       throw error;
@@ -138,7 +148,7 @@ export class SupabaseStatsService {
   }
 
   // Get all games
-  static async fetchAllGames(): Promise<GameStats[]> {
+  static async fetchAllGames(): Promise<{games: GameStats[], gameNumberMap: Map<string, number>}> {
     try {
       // Fetch games
       const { data: gamesData, error: gamesError } = await supabase
@@ -179,8 +189,18 @@ export class SupabaseStatsService {
         });
       }
 
-      return (gamesData || []).map((row, index) => {
+      // Create gameNumberMap for mapping game_id to gameNumber
+      const gameNumberMap = new Map<string, number>();
+      let neuenstadtGameCounter = 1;
+      
+      const games = (gamesData || []).map((row, index) => {
         const gameStats = transformSupabaseGame(row, index);
+        
+        // Map game_id to gameNumber for game logs
+        if (gameStats.gameNumber <= 999) { // TSV Neuenstadt games
+          gameNumberMap.set(row.game_id, gameStats.gameNumber);
+        }
+        
         // Attach video link if available
         const videoLink = videoMap.get(gameStats.gameNumber);
         if (videoLink) {
@@ -188,6 +208,8 @@ export class SupabaseStatsService {
         }
         return gameStats;
       });
+
+      return { games, gameNumberMap };
     } catch (error) {
       console.error('Error fetching games from Supabase:', error);
       throw error;
@@ -201,11 +223,12 @@ export class SupabaseStatsService {
     games: GameStats[];
   }> {
     try {
-      const [playerStats, gameLogs, games] = await Promise.all([
+      const [playerStats, { games, gameNumberMap }] = await Promise.all([
         this.fetchAllPlayerStats(),
-        this.fetchAllPlayerGameLogs(),
         this.fetchAllGames()
       ]);
+
+      const gameLogs = await this.fetchAllPlayerGameLogs(gameNumberMap);
 
       return { playerStats, gameLogs, games };
     } catch (error) {
