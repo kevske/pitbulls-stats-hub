@@ -211,7 +211,7 @@ export class SupabaseStatsService {
 
       if (gamesError) throw gamesError;
 
-      // Fetch video projects to link youtube videos
+      // Fetch video projects to link youtube videos and find games without logs
       const { data: videoProjects, error: videoError } = await supabase
         .from('video_projects')
         .select('*');
@@ -223,6 +223,8 @@ export class SupabaseStatsService {
 
       // Create a map of TSV_game_number to video data (consolidates playlist entries)
       const videoMap = new Map<number, { link: string; events: any[]; players: any[]; videoIndex: number }>();
+      const videoOnlyGameNumbers = new Set<number>(); // Track games that only exist in video projects
+      
       if (videoProjects) {
         videoProjects.forEach((vp: any) => {
           // Handle both old and new table structures
@@ -240,6 +242,9 @@ export class SupabaseStatsService {
           }
           
           if (gameNumber !== undefined && !isNaN(gameNumber)) {
+            // Track games that only exist in video projects
+            videoOnlyGameNumbers.add(gameNumber);
+            
             // Construct youtube link
             let link = '';
             if (vp.video_id) {
@@ -299,12 +304,18 @@ export class SupabaseStatsService {
       const gameNumberMap = new Map<string, number>();
       let neuenstadtGameCounter = 1;
       
+      // First, process games from the games table and remove them from video-only set
       const games = (gamesData || []).map((row, index) => {
         const gameStats = transformSupabaseGame(row, index);
         
         // Map game_id to gameNumber for game logs
         if (gameStats.gameNumber <= 999) { // TSV Neuenstadt games
           gameNumberMap.set(row.game_id, gameStats.gameNumber);
+        }
+        
+        // Remove this game from video-only set if it exists in both tables
+        if (videoOnlyGameNumbers.has(gameStats.gameNumber)) {
+          videoOnlyGameNumbers.delete(gameStats.gameNumber);
         }
         
         // Attach video data if available (using TSV_game_number)
@@ -321,7 +332,39 @@ export class SupabaseStatsService {
         return gameStats;
       });
 
-      return { games, gameNumberMap };
+      // Now create games for video-only entries
+      const videoOnlyGames: GameStats[] = [];
+      videoOnlyGameNumbers.forEach(gameNumber => {
+        const videoData = videoMap.get(gameNumber);
+        if (videoData) {
+          // Create a minimal game entry for video-only games
+          const videoOnlyGame: GameStats = {
+            gameNumber,
+            date: new Date().toISOString(), // Use current date as placeholder
+            homeTeam: 'TSV Neuenstadt', // Default home team
+            awayTeam: 'Gegner', // Default away team
+            finalScore: '-', // No score available
+            q1Score: '-',
+            halfTimeScore: '-',
+            q3Score: '-',
+            youtubeLink: videoData.link,
+            youtubeLinks: [videoData.link],
+            videoData: [videoData]
+          };
+          videoOnlyGames.push(videoOnlyGame);
+        }
+      });
+
+      // Combine regular games with video-only games
+      const allGames = [...games, ...videoOnlyGames].sort((a, b) => {
+        // Sort by game number, putting video-only games at the end of their number range
+        if (a.gameNumber !== b.gameNumber) {
+          return a.gameNumber - b.gameNumber;
+        }
+        return 0;
+      });
+
+      return { games: allGames, gameNumberMap };
     } catch (error) {
       console.error('Error fetching games from Supabase:', error);
       throw error;
