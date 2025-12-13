@@ -133,33 +133,6 @@ const Games: React.FC = () => {
                           <div className="text-sm text-gray-500">Gast</div>
                         </div>
 
-                        {/* Mobile Quarter Results */}
-                        {(game.q1Score || game.halfTimeScore || game.q3Score) && (
-                          <div className="pt-2">
-                            <div className="text-xs font-medium text-gray-700 mb-1">Viertel</div>
-                            <div className="flex justify-center gap-2 text-xs">
-                              {game.q1Score && (
-                                <div className="bg-gray-50 px-2 py-1 rounded">
-                                  <div className="text-gray-500">Q1</div>
-                                  <div className="font-medium">{game.q1Score}</div>
-                                </div>
-                              )}
-                              {game.halfTimeScore && (
-                                <div className="bg-gray-50 px-2 py-1 rounded">
-                                  <div className="text-gray-500">HT</div>
-                                  <div className="font-medium">{game.halfTimeScore}</div>
-                                </div>
-                              )}
-                              {game.q3Score && (
-                                <div className="bg-gray-50 px-2 py-1 rounded">
-                                  <div className="text-gray-500">Q3</div>
-                                  <div className="font-medium">{game.q3Score}</div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
                         {/* Mobile Top Scorers */}
                         {gameLogs
                           .filter(log => log.gameNumber === game.gameNumber)
@@ -187,33 +160,6 @@ const Games: React.FC = () => {
                         )}
                       </div>
                     </div>
-
-                    {/* Quarter Results - Desktop only */}
-                    {(game.q1Score || game.halfTimeScore || game.q3Score) && (
-                      <div className="hidden md:block pt-2">
-                        <div className="text-sm font-medium text-gray-700 mb-2">Viertel Ergebnisse</div>
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                          {game.q1Score && (
-                            <div className="bg-gray-50 p-2 rounded-lg">
-                              <div className="text-xs text-gray-500">Q1</div>
-                              <div className="text-sm font-medium">{game.q1Score}</div>
-                            </div>
-                          )}
-                          {game.halfTimeScore && (
-                            <div className="bg-gray-50 p-2 rounded-lg">
-                              <div className="text-xs text-gray-500">HT</div>
-                              <div className="text-sm font-medium">{game.halfTimeScore}</div>
-                            </div>
-                          )}
-                          {game.q3Score && (
-                            <div className="bg-gray-50 p-2 rounded-lg">
-                              <div className="text-xs text-gray-500">Q3</div>
-                              <div className="text-sm font-medium">{game.q3Score}</div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Top scorers - Desktop only */}
                     <div className="hidden md:block pt-2">

@@ -65,7 +65,8 @@ export function transformSupabaseGame(row: any, index: number): GameStats {
     q1Score: '-', // Not available in Supabase yet
     halfTimeScore: '-', // Not available in Supabase yet
     q3Score: '-', // Not available in Supabase yet
-    youtubeLink: undefined // Not available in games table yet
+    youtubeLink: undefined, // Will be set later from video_projects
+    boxScoreUrl: row.box_score_url
   };
 }
 

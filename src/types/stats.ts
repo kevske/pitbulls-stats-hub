@@ -34,6 +34,7 @@ export interface GameStats {
   halfTimeScore: string;
   q3Score: string;
   youtubeLink?: string;
+  boxScoreUrl?: string;
 }
 
 export interface PlayerGameLog {

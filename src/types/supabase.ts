@@ -14,6 +14,7 @@ export interface Game {
   status: 'scheduled' | 'live' | 'finished' | 'cancelled';
   league_id: string;
   venue?: string;
+  box_score_url?: string;
   created_at: string;
   updated_at: string;
 }
