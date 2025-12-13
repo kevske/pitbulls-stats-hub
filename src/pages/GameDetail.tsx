@@ -6,13 +6,13 @@ import { format, parse } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Layout from '@/components/Layout';
 import { BoxscoreService } from '@/lib/boxscoreService';
-import { BoxScoreWithPlayerInfo } from '@/types/supabase';
+import { BoxScore } from '@/types/supabase';
 
 const GameDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { games, gameLogs, players } = useStats();
   const navigate = useNavigate();
-  const [boxScores, setBoxScores] = useState<BoxScoreWithPlayerInfo[]>([]);
+  const [boxScores, setBoxScores] = useState<BoxScore[]>([]);
   const [boxScoresLoading, setBoxScoresLoading] = useState(false);
   const [boxScoresError, setBoxScoresError] = useState<string | null>(null);
 
@@ -210,16 +210,8 @@ const GameDetail: React.FC = () => {
                           <td className="py-2 px-4 border">
                             <div>
                               <div className="font-medium">
-                                {boxScore.info_first_name 
-                                  ? `${boxScore.info_first_name} ${boxScore.info_last_name}`
-                                  : `${boxScore.player_first_name} ${boxScore.player_last_name}`
-                                }
+                                {boxScore.player_first_name} {boxScore.player_last_name}
                               </div>
-                              {boxScore.info_first_name && (
-                                <div className="text-xs text-gray-500">
-                                  {boxScore.player_first_name} {boxScore.player_last_name}
-                                </div>
-                              )}
                             </div>
                           </td>
                           <td className="py-2 px-4 border text-center font-medium">{boxScore.points}</td>
