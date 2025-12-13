@@ -112,10 +112,21 @@ jobs:
         echo "Testing DNS resolution for Supabase hostname..."
         HOSTNAME=$(echo "$SUPABASE_URL" | sed -n 's|https://\([^/]*\).*|\1|p')
         echo "Testing hostname: $HOSTNAME"
-        nslookup "$HOSTNAME" || {
+        
+        # Test DNS resolution with fallback
+        if nslookup "$HOSTNAME" >/dev/null 2>&1; then
+          echo "DNS resolution successful for $HOSTNAME"
+        else
           echo "ERROR: DNS resolution failed for $HOSTNAME"
+          echo "This could indicate:"
+          echo "1. Incorrect SUPABASE_URL secret in GitHub Actions"
+          echo "2. Supabase project has been moved or deleted"
+          echo "3. Temporary DNS issues"
+          echo ""
+          echo "Please verify the SUPABASE_URL secret contains a valid Supabase project URL"
+          echo "Expected format: https://your-project-ref.supabase.co"
           exit 1
-        }
+        fi
         
         echo "Testing connectivity to Supabase..."
         curl -s -I "$SUPABASE_URL" || {
