@@ -1,15 +1,20 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStats } from '@/contexts/StatsContext';
 import { format, parse } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Layout from '@/components/Layout';
+import { BoxscoreService } from '@/lib/boxscoreService';
+import { BoxScoreWithPlayerInfo } from '@/types/supabase';
 
 const GameDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { games, gameLogs, players } = useStats();
   const navigate = useNavigate();
+  const [boxScores, setBoxScores] = useState<BoxScoreWithPlayerInfo[]>([]);
+  const [boxScoresLoading, setBoxScoresLoading] = useState(false);
+  const [boxScoresError, setBoxScoresError] = useState<string | null>(null);
 
   if (!id) {
     navigate('/games');
@@ -18,6 +23,30 @@ const GameDetail: React.FC = () => {
 
   const game = games.find(g => g.gameNumber === parseInt(id));
   const gamePlayersLogs = gameLogs.filter(log => log.gameNumber === parseInt(id));
+
+  // Load box scores for the game
+  useEffect(() => {
+    const loadBoxScores = async () => {
+      if (!game) return;
+      
+      setBoxScoresLoading(true);
+      setBoxScoresError(null);
+      
+      try {
+        // Try to create a game ID from the game data
+        const gameId = `game-${game.gameNumber}-${game.date.replace(/[^\d]/g, '')}`;
+        const scores = await BoxscoreService.getBoxScoresByGame(gameId);
+        setBoxScores(scores);
+      } catch (error) {
+        console.error('Failed to load box scores:', error);
+        setBoxScoresError('Box scores konnten nicht geladen werden');
+      } finally {
+        setBoxScoresLoading(false);
+      }
+    };
+
+    loadBoxScores();
+  }, [game]);
 
   if (!game) {
     return (
@@ -139,6 +168,77 @@ const GameDetail: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Box Scores Section */}
+        {boxScores.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Offizielle Box Scores</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="py-2 px-4 border text-left">Spieler</th>
+                      <th className="py-2 px-4 border">Punkte</th>
+                      <th className="py-2 px-4 border">2P</th>
+                      <th className="py-2 px-4 border">3P</th>
+                      <th className="py-2 px-4 border">FT</th>
+                      <th className="py-2 px-4 border">Fouls</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {boxScores
+                      .sort((a, b) => b.points - a.points)
+                      .map((boxScore) => (
+                        <tr key={boxScore.id} className="hover:bg-gray-50">
+                          <td className="py-2 px-4 border">
+                            <div>
+                              <div className="font-medium">
+                                {boxScore.info_first_name 
+                                  ? `${boxScore.info_first_name} ${boxScore.info_last_name}`
+                                  : `${boxScore.player_first_name} ${boxScore.player_last_name}`
+                                }
+                              </div>
+                              {boxScore.info_first_name && (
+                                <div className="text-xs text-gray-500">
+                                  {boxScore.player_first_name} {boxScore.player_last_name}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2 px-4 border text-center font-medium">{boxScore.points}</td>
+                          <td className="py-2 px-4 border text-center">{boxScore.two_pointers}</td>
+                          <td className="py-2 px-4 border text-center">{boxScore.three_pointers}</td>
+                          <td className="py-2 px-4 border text-center">
+                            {boxScore.free_throws_made}/{boxScore.free_throw_attempts}
+                          </td>
+                          <td className="py-2 px-4 border text-center">{boxScore.fouls}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {boxScoresLoading && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center">Lade Box Scores...</div>
+            </CardContent>
+          </Card>
+        )}
+
+        {boxScoresError && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-red-500 text-center">{boxScoresError}</div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
