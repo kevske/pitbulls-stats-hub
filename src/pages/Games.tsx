@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useStats } from '@/contexts/StatsContext';
 import { GameStats } from '@/types/stats';
 import { format, parse } from 'date-fns';
@@ -16,6 +17,7 @@ const Games: React.FC = () => {
   const { games, gameLogs, players, loading, error } = useStats();
   const navigate = useNavigate();
   const [selectedTeam, setSelectedTeam] = useState<string>('TSV Neuenstadt');
+  const [hideUpcoming, setHideUpcoming] = useState<boolean>(true); // Hide upcoming games by default
 
   // Extract unique teams from games data
   const availableTeams = useMemo(() => {
@@ -27,12 +29,19 @@ const Games: React.FC = () => {
     return Array.from(teams).sort();
   }, [games]);
 
-  // Filter games based on selected team
+  // Filter games based on selected team and upcoming games toggle
   const filteredGames = useMemo(() => {
-    return games.filter(game => 
+    let filtered = games.filter(game => 
       game.homeTeam === selectedTeam || game.awayTeam === selectedTeam
     );
-  }, [games, selectedTeam]);
+    
+    // Filter out upcoming games if toggle is enabled
+    if (hideUpcoming) {
+      filtered = filtered.filter(game => game.finalScore && game.finalScore.trim() !== '');
+    }
+    
+    return filtered;
+  }, [games, selectedTeam, hideUpcoming]);
 
   const formatGameDate = (dateString: string) => {
     try {
@@ -86,6 +95,19 @@ const Games: React.FC = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Spiele</h1>
           <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="hide-upcoming"
+                checked={hideUpcoming}
+                onCheckedChange={(checked) => setHideUpcoming(checked as boolean)}
+              />
+              <label
+                htmlFor="hide-upcoming"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Zukünftige Spiele ausblenden
+              </label>
+            </div>
             <Select value={selectedTeam} onValueChange={setSelectedTeam}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Team auswählen" />
