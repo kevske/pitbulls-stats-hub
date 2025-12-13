@@ -321,18 +321,23 @@ class BasketballBundCrawler:
             
             # Find the results table with quarter data
             tables = soup.find_all('table', class_='sportView')
+            logger.info(f"Found {len(tables)} sportView tables for game {game_id}")
             
-            for table in tables:
+            for i, table in enumerate(tables):
                 # Look for table with quarter headers
                 headers = table.find_all('td', class_='sportViewHeader')
                 header_texts = [h.get_text(strip=True) for h in headers]
+                logger.info(f"Table {i} headers: {header_texts}")
                 
                 if '1.&nbsp;Viertel' in header_texts and 'Halbzeit' in header_texts and '3.&nbsp;Viertel' in header_texts:
+                    logger.info(f"Found quarter scores table in table {i}")
                     # Find data rows
                     rows = table.find_all('tr', class_=lambda x: x and x.startswith('sportItem'))
+                    logger.info(f"Found {len(rows)} data rows in quarter table")
                     
-                    for row in rows:
+                    for j, row in enumerate(rows):
                         cells = row.find_all('td', class_=lambda x: x and x.startswith('sportItem'))
+                        logger.info(f"Row {j} has {len(cells)} cells")
                         
                         if len(cells) >= 9:  # Should have enough columns for quarter data
                             # Extract quarter scores from columns 6, 7, 8 (0-indexed)
@@ -340,6 +345,8 @@ class BasketballBundCrawler:
                             halftime = cells[7].get_text(strip=True)
                             third_quarter = cells[8].get_text(strip=True)
                             final_score = cells[5].get_text(strip=True)  # Endstand column
+                            
+                            logger.info(f"Quarter data - Q1: {first_quarter}, HT: {halftime}, Q3: {third_quarter}, Final: {final_score}")
                             
                             # Parse the score pairs (format: "home : away")
                             quarter_scores = {
@@ -353,7 +360,10 @@ class BasketballBundCrawler:
                             
                             logger.info(f"Extracted quarter scores for game {game_id}: {quarter_scores}")
                             return quarter_scores
+                        else:
+                            logger.warning(f"Row {j} has insufficient cells ({len(cells)}), expected >= 9")
             
+            logger.warning(f"No quarter scores table found for game {game_id}")
             return None
             
         except Exception as e:
