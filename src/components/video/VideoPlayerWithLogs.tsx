@@ -84,8 +84,8 @@ export function VideoPlayerWithLogs({ gameNumber, youtubeLink }: VideoPlayerWith
     }, [gameNumber]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[85vh]">
-            <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[85vh]">
+            <div className="lg:col-span-3">
                 <YouTubePlayer
                     ref={youtubePlayerRef}
                     videoId={videoId}
