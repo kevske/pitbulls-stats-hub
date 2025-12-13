@@ -164,6 +164,30 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
     return playerMinutes.reduce((sum, pm) => sum + Math.floor(pm.seconds / 60), 0);
   };
 
+  const getTotalMinutesStatus = () => {
+    const total = getTotalMinutes();
+    const expected = 200; // 5 players * 40 minutes
+    const deviation = Math.abs(total - expected);
+    
+    if (deviation > 1) {
+      return 'red';
+    } else if (deviation <= 1 && total !== expected) {
+      return 'yellow';
+    } else {
+      return 'green';
+    }
+  };
+
+  const getTotalMinutesColor = () => {
+    const status = getTotalMinutesStatus();
+    switch (status) {
+      case 'red': return 'text-red-600';
+      case 'yellow': return 'text-yellow-600';
+      case 'green': return 'text-green-600';
+      default: return '';
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -253,11 +277,8 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    Gesamtminuten: {getTotalMinutes()}
+                    Gesamtminuten: <span className={`font-semibold ${getTotalMinutesColor()}`}>{getTotalMinutes()}</span>
                   </span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  (Basketballspiel: 40 Minuten regulär + mögliche Verlängerung bis 60 Minuten)
                 </div>
               </div>
 
