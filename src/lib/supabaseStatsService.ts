@@ -32,13 +32,16 @@ export function transformSupabaseStatsToPlayerStats(row: any): PlayerStats {
 
 // Transform Supabase game logs to match frontend PlayerGameLog interface
 export function transformSupabaseGameLog(row: any): PlayerGameLog {
+  const minutesPlayed = Number(row.minutes_played) || 0;
+  const threePointers = Number(row.three_pointers) || 0;
+
   return {
     playerId: row.player_slug,
     gameNumber: Number(row.game_id) || 0, // This might need adjustment based on game_id format
-    minutesPlayed: Number(row.minutes_played) || 0,
+    minutesPlayed,
     points: Number(row.points) || 0,
     twoPointers: Number(row.two_pointers) || 0,
-    threePointers: Number(row.three_pointers) || 0,
+    threePointers,
     freeThrowsMade: Number(row.free_throws_made) || 0,
     freeThrowAttempts: Number(row.free_throw_attempts) || 0,
     freeThrowPercentage: row.free_throw_percentage || '',
