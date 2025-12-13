@@ -15,6 +15,14 @@ export interface Game {
   league_id: string;
   venue?: string;
   box_score_url?: string;
+  quarter_scores?: {
+    first_quarter_home?: number;
+    first_quarter_away?: number;
+    halftime_home?: number;
+    halftime_away?: number;
+    third_quarter_home?: number;
+    third_quarter_away?: number;
+  };
   created_at: string;
   updated_at: string;
 }
