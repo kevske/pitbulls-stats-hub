@@ -329,7 +329,7 @@ class BasketballBundCrawler:
                 header_texts = [h.get_text(strip=True) for h in headers]
                 logger.info(f"Table {i} headers: {header_texts}")
                 
-                if '1.&nbsp;Viertel' in header_texts and 'Halbzeit' in header_texts and '3.&nbsp;Viertel' in header_texts:
+                if '1.\xa0Viertel' in header_texts and 'Halbzeit' in header_texts and '3.\xa0Viertel' in header_texts:
                     logger.info(f"Found quarter scores table in table {i}")
                     # Find data rows
                     rows = table.find_all('tr', class_=lambda x: x and x.startswith('sportItem'))
