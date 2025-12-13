@@ -33,14 +33,30 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r crawler/requirements.txt
         
-    - name: Run crawler
+    - name: Debug network connectivity
+      run: |
+        echo "Testing DNS resolution..."
+        nslookup supabase.co || echo "DNS resolution failed for supabase.co"
+        echo "Testing connectivity to basketball-bund.net..."
+        curl -I https://www.basketball-bund.net || echo "Connection to basketball-bund.net failed"
+        echo "Current environment variables (masked):"
+        echo "SUPABASE_URL: ${{ secrets.SUPABASE_URL && 'SET' || 'NOT_SET' }}"
+        echo "LEAGUE_ID: ${{ secrets.LEAGUE_ID }}"
+        
+    - name: Run crawler with retry logic
       env:
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         LEAGUE_ID: ${{ secrets.LEAGUE_ID }}
       working-directory: ./crawler
       run: |
-        python main.py
+        # Add retry logic for network issues
+        for i in {1..3}; do
+          echo "Attempt $i of 3..."
+          python main.py && break
+          echo "Attempt $i failed, waiting 30 seconds before retry..."
+          sleep 30
+        done
         
     - name: Notify on failure
       if: failure()

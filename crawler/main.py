@@ -432,78 +432,106 @@ class BasketballBundCrawler:
         
         return list(teams.values())
     
-    def store_data(self, data):
-        """Store fetched data in Supabase"""
+    def test_supabase_connection(self):
+        """Test connectivity to Supabase before attempting operations"""
         try:
-            # Store teams
-            if data['teams']:
-                teams_result = self.supabase.table('teams').upsert(data['teams'], on_conflict='team_id').execute()
-                logger.info(f"Stored {len(data['teams'])} teams")
+            logger.info(f"Testing connection to Supabase: {self.supabase_url}")
             
-            # Store games (transform API data to database format)
-            if data['games']:
-                games_data = self.transform_games_data(data['games'])
-                games_result = self.supabase.table('games').upsert(games_data, on_conflict='game_id').execute()
-                logger.info(f"Stored {len(games_data)} games")
-            
-            # Store standings (transform API data to database format)
-            if data['standings']:
-                standings_data = self.transform_standings_data(data['standings'])
-                standings_result = self.supabase.table('standings').upsert(standings_data).execute()
-                logger.info(f"Stored {len(standings_data)} standings entries")
-            
-            # Store box scores (transform and store player statistics)
-            if data.get('box_scores'):
-                box_scores_data = self.transform_box_scores_data(data['box_scores'], data['games'])
-                if box_scores_data:
-                    # Preserve existing minutes_played and player_slug data before deletion
-                    preserved_data = self.preserve_minutes_data(box_scores_data)
-                    
-                    # Delete existing box scores for these games to avoid duplicates
-                    game_ids = list(set([bs['game_id'] for bs in box_scores_data]))
-                    for game_id in game_ids:
-                        self.supabase.table('box_scores').delete().eq('game_id', game_id).execute()
-                    
-                    # Merge preserved data back into new box scores
-                    final_box_scores = self.merge_preserved_data(box_scores_data, preserved_data)
-                    
-                    # Insert new box scores with preserved minutes
-                    box_scores_result = self.supabase.table('box_scores').upsert(final_box_scores).execute()
-                    logger.info(f"Stored {len(final_box_scores)} box score entries")
-            
-            # Store scrape metadata
-            metadata = {
-                'league_id': data['league_id'],
-                'scraped_at': data['scraped_at'],
-                'teams_count': len(data['teams']),
-                'games_count': len(data['games']),
-                'standings_count': len(data['standings']),
-                'box_scores_count': len(data.get('box_scores', [])),
-                'status': 'success'
-            }
-            metadata_result = self.supabase.table('scrape_log').insert(metadata).execute()
-            
-            logger.info("Successfully stored all data in Supabase")
+            # Simple ping to test connectivity
+            response = self.supabase.table('scrape_log').select('count').limit(1).execute()
+            logger.info("Supabase connection test successful")
             return True
             
         except Exception as e:
-            logger.error(f"Error storing data in Supabase: {e}")
-            # Log failure
-            try:
-                failure_metadata = {
-                    'league_id': self.league_id,
-                    'scraped_at': datetime.now(timezone.utc).isoformat(),
-                    'teams_count': 0,
-                    'games_count': 0,
-                    'standings_count': 0,
-                    'box_scores_count': 0,
-                    'status': 'failed',
-                    'error_message': str(e)
-                }
-                self.supabase.table('scrape_log').insert(failure_metadata).execute()
-            except:
-                pass  # If we can't even log the failure, just give up
+            logger.error(f"Supabase connection test failed: {e}")
             raise
+    
+    def store_data(self, data):
+        """Store fetched data in Supabase with retry logic"""
+        max_retries = 3
+        retry_delay = 10  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Storing data in Supabase (attempt {attempt + 1}/{max_retries})")
+                
+                # Test connectivity first
+                self.test_supabase_connection()
+                
+                # Store teams
+                if data['teams']:
+                    teams_result = self.supabase.table('teams').upsert(data['teams'], on_conflict='team_id').execute()
+                    logger.info(f"Stored {len(data['teams'])} teams")
+                
+                # Store games (transform API data to database format)
+                if data['games']:
+                    games_data = self.transform_games_data(data['games'])
+                    games_result = self.supabase.table('games').upsert(games_data, on_conflict='game_id').execute()
+                    logger.info(f"Stored {len(games_data)} games")
+                
+                # Store standings (transform API data to database format)
+                if data['standings']:
+                    standings_data = self.transform_standings_data(data['standings'])
+                    standings_result = self.supabase.table('standings').upsert(standings_data).execute()
+                    logger.info(f"Stored {len(standings_data)} standings entries")
+                
+                # Store box scores (transform and store player statistics)
+                if data.get('box_scores'):
+                    box_scores_data = self.transform_box_scores_data(data['box_scores'], data['games'])
+                    if box_scores_data:
+                        # Preserve existing minutes_played and player_slug data before deletion
+                        preserved_data = self.preserve_minutes_data(box_scores_data)
+                        
+                        # Delete existing box scores for these games to avoid duplicates
+                        game_ids = list(set([bs['game_id'] for bs in box_scores_data]))
+                        for game_id in game_ids:
+                            self.supabase.table('box_scores').delete().eq('game_id', game_id).execute()
+                        
+                        # Merge preserved data back into new box scores
+                        final_box_scores = self.merge_preserved_data(box_scores_data, preserved_data)
+                        
+                        # Insert new box scores with preserved minutes
+                        box_scores_result = self.supabase.table('box_scores').upsert(final_box_scores).execute()
+                        logger.info(f"Stored {len(final_box_scores)} box score entries")
+                
+                # Store scrape metadata
+                metadata = {
+                    'league_id': data['league_id'],
+                    'scraped_at': data['scraped_at'],
+                    'teams_count': len(data['teams']),
+                    'games_count': len(data['games']),
+                    'standings_count': len(data['standings']),
+                    'box_scores_count': len(data.get('box_scores', [])),
+                    'status': 'success'
+                }
+                metadata_result = self.supabase.table('scrape_log').insert(metadata).execute()
+                
+                logger.info("Successfully stored all data in Supabase")
+                return True
+                
+            except Exception as e:
+                logger.error(f"Error storing data in Supabase (attempt {attempt + 1}): {e}")
+                if attempt < max_retries - 1:
+                    logger.info(f"Waiting {retry_delay} seconds before retry...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    # Log failure on final attempt
+                    try:
+                        failure_metadata = {
+                            'league_id': self.league_id,
+                            'scraped_at': datetime.now(timezone.utc).isoformat(),
+                            'teams_count': 0,
+                            'games_count': 0,
+                            'standings_count': 0,
+                            'box_scores_count': 0,
+                            'status': 'failed',
+                            'error_message': str(e)
+                        }
+                        self.supabase.table('scrape_log').insert(failure_metadata).execute()
+                    except:
+                        pass  # If we can't even log the failure, just give up
+                    raise
     
     def transform_games_data(self, games):
         """Transform API games data to database format"""
