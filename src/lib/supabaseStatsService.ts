@@ -1,11 +1,11 @@
 import { supabase } from './supabase';
-import { PlayerStats, PlayerGameLog } from '../types/stats';
+import { PlayerStats, PlayerGameLog, GameStats } from '../types/stats';
 import { generateImageFilename } from '../data/api/statsService';
 
 // Transform Supabase player stats to match frontend PlayerStats interface
 export function transformSupabaseStatsToPlayerStats(row: any): PlayerStats {
   const imageUrl = `/pitbulls-stats-hub/players/${generateImageFilename(row.first_name, row.last_name)}`;
-  
+
   return {
     id: row.player_slug,
     firstName: row.first_name,
@@ -48,6 +48,21 @@ export function transformSupabaseGameLog(row: any): PlayerGameLog {
     threePointersPer40: Number(row.three_pointers_per_40) || 0,
     foulsPer40: Number(row.fouls_per_40) || 0,
     gameType: row.game_type || ''
+  };
+}
+
+// Transform Supabase games to match frontend GameStats interface
+export function transformSupabaseGame(row: any, index: number): GameStats {
+  return {
+    gameNumber: index + 1, // Start from 1
+    date: row.game_date,
+    homeTeam: row.home_team_name,
+    awayTeam: row.away_team_name,
+    finalScore: row.home_score !== null && row.away_score !== null ? `${row.home_score}:${row.away_score}` : '-',
+    q1Score: '-', // Not available in Supabase yet
+    halfTimeScore: '-', // Not available in Supabase yet
+    q3Score: '-', // Not available in Supabase yet
+    youtubeLink: undefined // Not available in games table yet
   };
 }
 
@@ -118,18 +133,77 @@ export class SupabaseStatsService {
     }
   }
 
-  // Get comprehensive stats data (both player totals and game logs)
+  // Get all games
+  static async fetchAllGames(): Promise<GameStats[]> {
+    try {
+      // Fetch games
+      const { data: gamesData, error: gamesError } = await supabase
+        .from('games')
+        .select('*')
+        .order('game_date', { ascending: true });
+
+      if (gamesError) throw gamesError;
+
+      // Fetch video projects to link youtube videos
+      const { data: videoProjects, error: videoError } = await supabase
+        .from('video_projects')
+        .select('*');
+
+      if (videoError) {
+        console.warn('Error fetching video projects:', videoError);
+        // Continue without videos if that fails
+      }
+
+      // Create a map of game number to youtube link
+      const videoMap = new Map<number, string>();
+      if (videoProjects) {
+        videoProjects.forEach((vp: any) => {
+          const gameNum = parseInt(vp.game_number);
+          if (!isNaN(gameNum)) {
+            // Construct youtube link
+            let link = '';
+            if (vp.video_id) {
+              link = `https://www.youtube.com/watch?v=${vp.video_id}`;
+            } else if (vp.playlist_id) {
+              link = `https://www.youtube.com/playlist?list=${vp.playlist_id}`;
+            }
+
+            if (link) {
+              videoMap.set(gameNum, link);
+            }
+          }
+        });
+      }
+
+      return (gamesData || []).map((row, index) => {
+        const gameStats = transformSupabaseGame(row, index);
+        // Attach video link if available
+        const videoLink = videoMap.get(gameStats.gameNumber);
+        if (videoLink) {
+          gameStats.youtubeLink = videoLink;
+        }
+        return gameStats;
+      });
+    } catch (error) {
+      console.error('Error fetching games from Supabase:', error);
+      throw error;
+    }
+  }
+
+  // Get comprehensive stats data (both player totals, game logs, and games)
   static async fetchAllStatsData(): Promise<{
     playerStats: PlayerStats[];
     gameLogs: PlayerGameLog[];
+    games: GameStats[];
   }> {
     try {
-      const [playerStats, gameLogs] = await Promise.all([
+      const [playerStats, gameLogs, games] = await Promise.all([
         this.fetchAllPlayerStats(),
-        this.fetchAllPlayerGameLogs()
+        this.fetchAllPlayerGameLogs(),
+        this.fetchAllGames()
       ]);
 
-      return { playerStats, gameLogs };
+      return { playerStats, gameLogs, games };
     } catch (error) {
       console.error('Error fetching stats data from Supabase:', error);
       throw error;

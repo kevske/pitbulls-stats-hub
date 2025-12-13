@@ -4,8 +4,13 @@ import Layout from "@/components/Layout";
 import PasswordProtection from "@/components/PasswordProtection";
 import { useStats } from "@/contexts/StatsContext";
 import { Button } from "@/components/ui/button";
-import { Edit } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Edit, Plus, Loader2 } from "lucide-react";
 import { VideoPlayerWithLogs } from "@/components/video/VideoPlayerWithLogs";
+import { VideoProjectService } from "@/lib/videoProjectService";
+import { toast } from "sonner";
 
 // Helper function to convert YouTube URL to embed format
 const getEmbedUrl = (url: string): string => {
@@ -39,9 +44,38 @@ const getEmbedUrl = (url: string): string => {
   return url;
 };
 
+// Helper to extract ID from link
+const extractVideoId = (url: string): { videoId: string | null, playlistId: string | null } => {
+  let videoId = null;
+  let playlistId = null;
+
+  // Check playlist first
+  const playlistMatch = url.match(/[?&]list=([^&]+)/);
+  if (playlistMatch || url.startsWith('PL')) {
+    playlistId = playlistMatch ? playlistMatch[1] : (url.startsWith('PL') ? url : null);
+    return { videoId, playlistId };
+  }
+
+  // Check unique video ID
+  const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([^&?/]+)/);
+  if (videoIdMatch) {
+    videoId = videoIdMatch[1];
+  } else if (!url.includes('http') && !url.includes('/')) {
+    // assume input is ID if not URL
+    videoId = url;
+  }
+
+  return { videoId, playlistId };
+}
+
 const Videos = () => {
   const [hasAccess, setHasAccess] = useState(false);
-  const { games, loading } = useStats();
+  const { games, loading, refresh } = useStats();
+
+  // State for adding video
+  const [selectedGame, setSelectedGame] = useState<string>("");
+  const [videoLink, setVideoLink] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   if (!hasAccess) {
     return (
@@ -61,6 +95,44 @@ const Videos = () => {
     .filter(game => game.youtubeLink && game.youtubeLink.trim() !== '')
     .sort((a, b) => b.gameNumber - a.gameNumber);
 
+  // Filter games that DON'T have video and sort descending
+  const gamesWithoutVideos = games
+    .filter(game => !game.youtubeLink || game.youtubeLink.trim() === '')
+    .sort((a, b) => b.gameNumber - a.gameNumber);
+
+  const handleAddVideo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGame || !videoLink) return;
+
+    setSubmitting(true);
+    try {
+      const { videoId, playlistId } = extractVideoId(videoLink);
+
+      if (!videoId && !playlistId) {
+        toast.error("Ungültiger YouTube Link");
+        setSubmitting(false);
+        return;
+      }
+
+      await VideoProjectService.addVideoToGame(
+        parseInt(selectedGame),
+        videoId || '',
+        playlistId || undefined
+      );
+
+      toast.success("Video erfolgreich hinzugefügt!");
+      setVideoLink("");
+      setSelectedGame("");
+      await refresh(); // Reload data to show new video
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Fehler beim Hinzufügen des Videos");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="container mx-auto max-w-[98vw] px-2 py-4">
@@ -78,7 +150,7 @@ const Videos = () => {
             Keine Videos verfügbar.
           </div>
         ) : (
-          <div className="space-y-12">
+          <div className="space-y-12 mb-16">
             {gamesWithVideos.map((game) => (
               <div key={game.gameNumber}>
                 <h2 className="text-2xl font-semibold mb-4">
@@ -102,6 +174,60 @@ const Videos = () => {
             ))}
           </div>
         )}
+
+        {/* Add Video Section */}
+        <div className="mt-16 pt-8 border-t border-border">
+          <h2 className="text-2xl font-bold mb-6">Neues Video hinzufügen</h2>
+          <div className="bg-card rounded-lg border border-border p-6 max-w-md">
+            <form onSubmit={handleAddVideo} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="gameSelect">Spiel auswählen</Label>
+                <Select value={selectedGame} onValueChange={setSelectedGame}>
+                  <SelectTrigger id="gameSelect">
+                    <SelectValue placeholder="Wähle ein Spiel ohne Video" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gamesWithoutVideos.map(game => (
+                      <SelectItem key={game.gameNumber} value={game.gameNumber.toString()}>
+                        {game.homeTeam?.includes('Pitbulls') || game.homeTeam?.includes('Neuenstadt')
+                          ? `Heim vs ${game.awayTeam}`
+                          : `Auswärts vs ${game.homeTeam}`}
+                        , {game.date}
+                      </SelectItem>
+                    ))}
+                    {gamesWithoutVideos.length === 0 && (
+                      <SelectItem value="none" disabled>Keine Spiele verfügbar</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="youtubeLink">YouTube Link (Video oder Playlist)</Label>
+                <Input
+                  id="youtubeLink"
+                  value={videoLink}
+                  onChange={(e) => setVideoLink(e.target.value)}
+                  placeholder="https://youtu.be/..."
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={submitting || !selectedGame || !videoLink}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Wird hinzugefügt...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Video hinzufügen
+                  </>
+                )}
+              </Button>
+            </form>
+          </div>
+        </div>
       </div>
     </Layout>
   );

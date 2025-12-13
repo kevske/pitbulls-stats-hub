@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { fetchAllData } from '@/data/api/statsService';
+import { SupabaseStatsService } from '@/lib/supabaseStatsService';
 import { GameStats, PlayerGameLog, PlayerStats } from '@/types/stats';
 
 interface StatsContextType {
@@ -24,10 +24,12 @@ export const StatsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setLoading(true);
     setError(null);
     try {
-      const { games, playerStats, playerTotals } = await fetchAllData(forceRefresh);
+      // Supabase fetch doesn't need forceRefresh as it's not using the same local storage caching strategy yet
+      // or if it implements caching, it would be internal.
+      const { games, playerStats, gameLogs } = await SupabaseStatsService.fetchAllStatsData();
       setGames(games);
-      setPlayers(playerTotals);
-      setGameLogs(playerStats);
+      setPlayers(playerStats);
+      setGameLogs(gameLogs);
     } catch (err) {
       console.error('Failed to load data:', err);
       setError('Failed to load data. Please try again later.');
@@ -35,7 +37,7 @@ export const StatsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setLoading(false);
     }
   };
-  
+
   // Expose a refresh function that forces a refresh
   const refresh = () => loadData(true);
 
