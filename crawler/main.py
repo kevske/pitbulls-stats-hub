@@ -341,7 +341,7 @@ class BasketballBundCrawler:
                         logger.info(f"Row {k} class: {row_class}")
                     
                     # Try multiple row selection methods
-                    rows = table.find_all('tr', class_=lambda x: x and x.startswith('sportItem'))
+                    rows = table.find_all('tr', class_=lambda x: x and ('sportItem' in str(x)))
                     logger.info(f"Found {len(rows)} rows with sportItem* class")
                     
                     if len(rows) == 0:
@@ -350,7 +350,7 @@ class BasketballBundCrawler:
                         logger.info(f"Fallback: found {len(rows)} non-header rows")
                     
                     for j, row in enumerate(rows):
-                        cells = row.find_all('td', class_=lambda x: x and x.startswith('sportItem'))
+                        cells = row.find_all('td', class_=lambda x: x and ('sportItem' in str(x)))
                         logger.info(f"Row {j} has {len(cells)} sportItem cells")
                         
                         # Fallback: try all cells if no sportItem cells found
