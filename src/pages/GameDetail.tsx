@@ -135,6 +135,20 @@ const GameDetail: React.FC = () => {
               </div>
             </div>
 
+            {/* Box Score URL Link - if available */}
+            {game.boxScoreUrl && (
+              <div className="mt-6">
+                <a
+                  href={game.boxScoreUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  📊 Offizielle Box Scores prüfen
+                </a>
+              </div>
+            )}
+
             <div className="mt-8">
               <h3 className="text-lg font-semibold mb-4">Top-Scorer</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
