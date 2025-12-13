@@ -59,7 +59,6 @@ export class MinutesService {
         `)
         .eq('game_id', gameNumber.toString())
         .eq('team_id', tsvNeuenstadtTeamId) // Only TSV Neuenstadt players
-        .gt('points', 0) // Only players who actually played
         .order('player_last_name, player_first_name');
 
       if (error) throw error;
@@ -161,8 +160,7 @@ export class MinutesService {
         .from('box_scores')
         .select('minutes_played, points, player_slug, player_first_name, player_last_name')
         .eq('game_id', gameNumber.toString())
-        .eq('team_id', tsvNeuenstadtTeamId) // Only TSV Neuenstadt players
-        .gt('points', 0); // Only players who actually played
+        .eq('team_id', tsvNeuenstadtTeamId); // Only TSV Neuenstadt players
 
       if (error) throw error;
 
@@ -257,8 +255,7 @@ export class MinutesService {
         .from('box_scores')
         .select('game_id, player_first_name, player_last_name, points, minutes_played, team_id')
         .in('game_id', gameIds)
-        .in('team_id', Array.from(tsvTeamIds))
-        .gt('points', 0);
+        .in('team_id', Array.from(tsvTeamIds));
 
       if (boxScoresError) throw boxScoresError;
 
