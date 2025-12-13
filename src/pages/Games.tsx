@@ -1,8 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useStats } from '@/contexts/StatsContext';
+import { GameStats } from '@/types/stats';
 import { format, parse } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Layout from '@/components/Layout';
@@ -13,6 +15,24 @@ import { Clock, Settings } from 'lucide-react';
 const Games: React.FC = () => {
   const { games, gameLogs, players, loading, error } = useStats();
   const navigate = useNavigate();
+  const [selectedTeam, setSelectedTeam] = useState<string>('TSV Neuenstadt');
+
+  // Extract unique teams from games data
+  const availableTeams = useMemo(() => {
+    const teams = new Set<string>();
+    games.forEach(game => {
+      if (game.homeTeam) teams.add(game.homeTeam);
+      if (game.awayTeam) teams.add(game.awayTeam);
+    });
+    return Array.from(teams).sort();
+  }, [games]);
+
+  // Filter games based on selected team
+  const filteredGames = useMemo(() => {
+    return games.filter(game => 
+      game.homeTeam === selectedTeam || game.awayTeam === selectedTeam
+    );
+  }, [games, selectedTeam]);
 
   const formatGameDate = (dateString: string) => {
     try {
@@ -50,18 +70,32 @@ const Games: React.FC = () => {
       <div className="container mx-auto p-4">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Spiele</h1>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/games/minutes')}
-            className="flex items-center gap-2"
-          >
-            <Settings className="h-4 w-4" />
-            <Clock className="h-4 w-4" />
-            Minuten verwalten
-          </Button>
+          <div className="flex items-center gap-4">
+            <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Team auswählen" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableTeams.map((team) => (
+                  <SelectItem key={team} value={team}>
+                    {team}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/games/minutes')}
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              <Clock className="h-4 w-4" />
+              Minuten verwalten
+            </Button>
+          </div>
         </div>
         <div className="space-y-4">
-          {games.map((game) => (
+          {filteredGames.map((game) => (
             <Card
               key={game.gameNumber}
               className="hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden border border-gray-200"
