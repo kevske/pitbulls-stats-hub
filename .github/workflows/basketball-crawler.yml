@@ -42,6 +42,14 @@ jobs:
         echo "Current environment variables (masked):"
         echo "SUPABASE_URL: ${{ secrets.SUPABASE_URL && 'SET' || 'NOT_SET' }}"
         echo "LEAGUE_ID: ${{ secrets.LEAGUE_ID }}"
+        echo "Testing Supabase URL format..."
+        if [ -n "${{ secrets.SUPABASE_URL }}" ]; then
+          echo "Supabase URL format: ${{ secrets.SUPABASE_URL }}"
+          # Extract hostname from URL for testing
+          HOSTNAME=$(echo "${{ secrets.SUPABASE_URL }}" | sed -n 's|https://\([^/]*\).*|\1|p')
+          echo "Extracted hostname: $HOSTNAME"
+          nslookup "$HOSTNAME" || echo "DNS resolution failed for Supabase hostname: $HOSTNAME"
+        fi
         
     - name: Run crawler with retry logic
       env:
@@ -90,4 +98,30 @@ jobs:
         LEAGUE_ID: ${{ secrets.LEAGUE_ID }}
       working-directory: ./crawler
       run: |
-        python -c "import os; from supabase import create_client; from datetime import datetime, timedelta; supabase = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY')); three_days_ago = datetime.utcnow() - timedelta(hours=72); result = supabase.table('scrape_log').select('*').eq('league_id', os.getenv('LEAGUE_ID')).gte('scraped_at', three_days_ago.isoformat()).execute(); exit(1) if len(result.data) == 0 else [print(f'SUCCESS: Found {len(result.data)} recent scrape(s)') or [print(f'  - {scrape[\"scraped_at\"]}: {scrape[\"teams_count\"]} teams, {scrape[\"games_count\"]} games, {scrape[\"standings_count\"]} standings') for scrape in result.data]]"
+        echo "Starting health check..."
+        
+        # Validate environment variables first
+        if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ] || [ -z "$LEAGUE_ID" ]; then
+          echo "ERROR: Missing required environment variables"
+          echo "SUPABASE_URL: ${SUPABASE_URL:+SET}"
+          echo "SUPABASE_KEY: ${SUPABASE_KEY:+SET}"
+          echo "LEAGUE_ID: $LEAGUE_ID"
+          exit 1
+        fi
+        
+        echo "Testing DNS resolution for Supabase hostname..."
+        HOSTNAME=$(echo "$SUPABASE_URL" | sed -n 's|https://\([^/]*\).*|\1|p')
+        echo "Testing hostname: $HOSTNAME"
+        nslookup "$HOSTNAME" || {
+          echo "ERROR: DNS resolution failed for $HOSTNAME"
+          exit 1
+        }
+        
+        echo "Testing connectivity to Supabase..."
+        curl -s -I "$SUPABASE_URL" || {
+          echo "ERROR: Cannot connect to Supabase URL: $SUPABASE_URL"
+          exit 1
+        }
+        
+        echo "Running health check query..."
+        python health_check.py
