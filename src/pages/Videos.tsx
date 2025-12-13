@@ -163,35 +163,11 @@ const Videos = () => {
                     Spieltag {game.gameNumber}: {game.homeTeam} vs {game.awayTeam}
                   </h2>
                   
-                  {/* Single video embed */}
-                  <div className="w-full bg-secondary rounded-lg p-4 shadow-lg">
-                    {/* Video embed */}
-                    <div className="aspect-video mb-4">
-                      <iframe
-                        src={videoData.link.replace('watch?v=', 'embed/').replace('playlist?list=', 'embed/videoseries?list=')}
-                        className="w-full h-full rounded-lg"
-                        allowFullScreen
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      />
-                    </div>
-                    
-                    {/* Event tags display */}
-                    {videoData.events && videoData.events.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="text-sm font-semibold mb-2">Event Tags:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {videoData.events.map((event, eventIndex) => (
-                            <span 
-                              key={eventIndex}
-                              className="px-2 py-1 bg-primary/10 text-primary rounded text-xs"
-                            >
-                              {event.type || 'Event'} {event.time ? `@ ${event.time}` : ''}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  {/* Video player with event tags */}
+                  <VideoPlayerWithLogs
+                    gameNumber={game.gameNumber}
+                    youtubeLink={videoData.link}
+                  />
                 </div>
               );
             })}
