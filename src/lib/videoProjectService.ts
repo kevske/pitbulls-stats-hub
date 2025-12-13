@@ -175,4 +175,25 @@ export class VideoProjectService {
             return [];
         }
     }
+
+    /**
+     * Add a simple video entry (no events/players data initially) to link a video to a game
+     */
+    static async addVideoToGame(gameNumber: number, videoId: string, playlistId?: string): Promise<string | null> {
+        return this.saveProject({
+            gameNumber,
+            videoIndex: 0, // Default to 0, assuming 1 video per game for this use case
+            videoId,
+            playlistId,
+            events: [],
+            players: [],
+            timestamp: new Date().toISOString(),
+            lastModified: new Date().toISOString(),
+            version: '1.0.0',
+            metadata: {
+                source: 'StatsHub Admin',
+                addedAt: new Date().toISOString()
+            }
+        });
+    }
 }
