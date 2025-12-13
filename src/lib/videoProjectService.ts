@@ -180,9 +180,13 @@ export class VideoProjectService {
      * Add a simple video entry (no events/players data initially) to link a video to a game
      */
     static async addVideoToGame(gameNumber: number, videoId: string, playlistId?: string): Promise<string | null> {
+        // First, get existing videos for this game to determine the next index
+        const existingProjects = await this.getProjectsForGame(gameNumber.toString());
+        const nextIndex = existingProjects.length; // Use the length as the next index
+        
         return this.saveProject({
             gameNumber,
-            videoIndex: 0, // Default to 0, assuming 1 video per game for this use case
+            videoIndex: nextIndex,
             videoId,
             playlistId,
             events: [],
