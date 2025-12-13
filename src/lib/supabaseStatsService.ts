@@ -221,8 +221,8 @@ export class SupabaseStatsService {
         // Continue without videos if that fails
       }
 
-      // Create a map of TSV_game_number to youtube links (array to support multiple videos)
-      const videoMap = new Map<number, string[]>();
+      // Create a map of TSV_game_number to video data (supports playlists with events)
+      const videoMap = new Map<number, { link: string; events: any[]; players: any[]; videoIndex: number }[]>();
       if (videoProjects) {
         videoProjects.forEach((vp: any) => {
           // Handle both old and new table structures
@@ -251,9 +251,26 @@ export class SupabaseStatsService {
             if (link) {
               // Get existing videos for this game or create new array
               const existingVideos = videoMap.get(gameNumber) || [];
-              if (!existingVideos.includes(link)) {
-                videoMap.set(gameNumber, [...existingVideos, link]);
+              
+              // Check if this link already exists (avoid duplicates)
+              const existingIndex = existingVideos.findIndex(v => v.link === link);
+              
+              const videoData = {
+                link,
+                events: vp.data?.events || [],
+                players: vp.data?.players || [],
+                videoIndex: vp.video_index || 0
+              };
+              
+              if (existingIndex >= 0) {
+                // Update existing entry with events/players data
+                existingVideos[existingIndex] = videoData;
+              } else {
+                // Add new entry
+                existingVideos.push(videoData);
               }
+              
+              videoMap.set(gameNumber, existingVideos);
             }
           }
         });
@@ -271,13 +288,19 @@ export class SupabaseStatsService {
           gameNumberMap.set(row.game_id, gameStats.gameNumber);
         }
         
-        // Attach video links if available (using TSV_game_number)
-        const videoLinks = videoMap.get(gameStats.gameNumber); // Use the actual TSV game number
+        // Attach video data if available (using TSV_game_number)
+        const videoData = videoMap.get(gameStats.gameNumber); // Use the actual TSV game number
         
-        if (videoLinks && videoLinks.length > 0) {
-          // Populate both fields for backward compatibility and future use
-          gameStats.youtubeLink = videoLinks[0]; // First video for backward compatibility
-          gameStats.youtubeLinks = videoLinks; // All videos for new functionality
+        if (videoData && videoData.length > 0) {
+          // Extract just the links for backward compatibility
+          gameStats.youtubeLink = videoData[0].link; // First video for backward compatibility
+          gameStats.youtubeLinks = videoData.map(v => v.link); // All video links
+          
+          // Store full video data for advanced features (events, players)
+          gameStats.videoData = videoData.map(v => ({
+            ...v,
+            videoIndex: v.videoIndex ?? 0 // Ensure videoIndex always has a value
+          }));
         }
         return gameStats;
       });

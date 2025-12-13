@@ -35,6 +35,7 @@ export interface GameStats {
   q3Score: string;
   youtubeLink?: string; // Keep for backward compatibility
   youtubeLinks?: string[]; // New field for multiple videos
+  videoData?: { link: string; events: any[]; players: any[]; videoIndex: number }[]; // Full video data with events and players
   boxScoreUrl?: string;
 }
 
