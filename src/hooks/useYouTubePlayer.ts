@@ -180,12 +180,25 @@ export function useYouTubePlayer({
       playerRef.current.destroy();
     }
 
+    // Generate a unique ID for this player instance to avoid DOM conflicts
+    const containerId = `youtube-player-${Math.random().toString(36).substr(2, 9)}`;
+    if (containerRef.current) {
+      containerRef.current.id = containerId;
+    }
+
+    // Stagger initialization to prevent race conditions when mounting multiple players
+    const delay = Math.random() * 200;
+    await new Promise(resolve => setTimeout(resolve, delay));
+
     try {
       await loadYouTubeAPI();
     } catch (error) {
       console.error('Failed to load YouTube API:', error);
       return;
     }
+
+    // Double check container still exists after await
+    if (!containerRef.current) return;
 
     const playerVars: any = {
       autoplay: 0,
@@ -312,7 +325,9 @@ export function useYouTubePlayer({
       }
 
       console.log('Final player config:', playerConfig);
-      playerRef.current = new window.YT.Player(containerRef.current, playerConfig);
+      const target = containerRef.current.id || containerRef.current;
+      // @ts-ignore - YT.Player accepts string ID or HTMLElement
+      playerRef.current = new window.YT.Player(target as any, playerConfig);
     } catch (error) {
       console.error('Failed to create YouTube player:', error);
     }
