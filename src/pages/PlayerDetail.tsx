@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useStats } from '@/contexts/StatsContext';
 import { usePlayerStats } from '@/hooks/usePlayerStats';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { useState, useEffect } from 'react';
 
 import { PlayerStats, PlayerGameLog } from '@/types/stats';
 import playerImagesData from '@/data/playerImages.json';
@@ -28,12 +28,23 @@ interface PlayerImagesData {
 
 const PlayerDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { games } = useStats(); // Get games from context
   const { player, gameLogs } = usePlayerStats(id) as { player: PlayerStats | null; gameLogs: PlayerGameLog[] };
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
   const [randomImageStream, setRandomImageStream] = useState<GalleryImage[]>([]);
   const navigate = useNavigate();
+
+  // Helper to get opponent name
+  const getOpponentName = (gameNumber: number) => {
+    const game = games.find(g => g.gameNumber === gameNumber);
+    if (!game) return `Spiel ${gameNumber}`;
+
+    // Determine opponent - assuming Pitbulls/Neuenstadt is always one side
+    const isHome = game.homeTeam?.toLowerCase().includes('pitbulls') || game.homeTeam?.toLowerCase().includes('neuenstadt');
+    return isHome ? `Gegen ${game.awayTeam}` : `Bei ${game.homeTeam}`;
+  };
 
   // Scroll to gallery function
   const scrollToGallery = () => {
@@ -335,7 +346,7 @@ const PlayerDetail: React.FC = () => {
                             padding: '8px 12px'
                           }}
                           formatter={(value: number) => [value, 'Punkte']}
-                          labelFormatter={(label) => `Spieltag ${label}`}
+                          labelFormatter={(label: any) => getOpponentName(Number(label))}
                         />
                         <Line
                           type="monotone"
@@ -381,6 +392,7 @@ const PlayerDetail: React.FC = () => {
                             border: '1px solid #e5e7eb',
                             padding: '8px 12px'
                           }}
+                          labelFormatter={(label: any) => getOpponentName(Number(label))}
                         />
                         <Legend
                           wrapperStyle={{ paddingTop: '20px' }}
@@ -440,7 +452,7 @@ const PlayerDetail: React.FC = () => {
                   {gameLogs.map((game, index) => (
                     <tr key={index} className={index % 2 === 0 ? 'bg-card' : 'bg-accent/50'}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        Spiel {game.gameNumber}
+                        {getOpponentName(game.gameNumber)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {game.minutesPlayed.toFixed(1) || '0.0'}
