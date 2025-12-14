@@ -1,0 +1,296 @@
+{
+  "gameNumber": 6,
+  "videoIndex": 1,
+  "events": [
+    {
+      "timestamp": 16.99610589128113,
+      "formattedTime": "00:16",
+      "type": "assist",
+      "player": "Alexander Rib",
+      "id": "549e5221-d2cf-42ce-ab2d-23b3265d2a31",
+      "description": "Assist Alexander Rib"
+    },
+    {
+      "timestamp": 16.99610589128113,
+      "formattedTime": "00:16",
+      "type": "shot",
+      "player": "Abdullah Ari",
+      "points": 2,
+      "missed": false,
+      "id": "82724bc2-4340-41cc-b77b-223c3ad3190e",
+      "description": "Shot Abdullah Ari: two. Made"
+    },
+    {
+      "timestamp": 23.502549009536743,
+      "formattedTime": "00:23",
+      "type": "steal",
+      "player": "Marius Scholl",
+      "id": "3a5f27c5-05f7-4561-8c9f-7644aafa4019",
+      "description": "Steal Marius Scholl"
+    },
+    {
+      "timestamp": 45.089811898910526,
+      "formattedTime": "00:45",
+      "type": "foul",
+      "player": "Alexander Rib",
+      "id": "991939d2-ba93-485b-97ae-857aa3bbcdb8",
+      "description": "Foul Alexander Rib"
+    },
+    {
+      "timestamp": 98.98974695231628,
+      "formattedTime": "01:38",
+      "type": "shot",
+      "player": "Abdullah Ari",
+      "points": 2,
+      "missed": true,
+      "id": "58dc9ddd-f7ae-46ba-8ce1-e2a04a7db258",
+      "description": "Shot Abdullah Ari: two. Missed"
+    },
+    {
+      "timestamp": 111.85002198283387,
+      "formattedTime": "01:51",
+      "type": "steal",
+      "player": "Abdullah Ari",
+      "id": "3bec3fda-f498-4428-bbef-953a8ac527b4",
+      "description": "Steal Abdullah Ari"
+    },
+    {
+      "timestamp": 116.6877648664856,
+      "formattedTime": "01:56",
+      "type": "assist",
+      "player": "Abdullah Ari",
+      "id": "777147eb-0ab6-45d9-9ab7-7b0ff05eac0b",
+      "description": "Assist Abdullah Ari"
+    },
+    {
+      "timestamp": 116.6877648664856,
+      "formattedTime": "01:56",
+      "type": "shot",
+      "player": "Alexander Rib",
+      "points": 2,
+      "missed": false,
+      "id": "9b8bbd65-e9f0-4329-ac30-85c2fc999c15",
+      "description": "Shot Alexander Rib: two. Made"
+    },
+    {
+      "timestamp": 173.04091897329712,
+      "formattedTime": "02:53",
+      "type": "shot",
+      "player": "Abdullah Ari",
+      "points": 2,
+      "missed": false,
+      "id": "21dad6f4-9155-4a2d-8f39-e319079ab0d7",
+      "description": "Shot Abdullah Ari: two. Made"
+    },
+    {
+      "timestamp": 256.9864279923706,
+      "formattedTime": "04:16",
+      "type": "shot",
+      "player": "Tim Krause",
+      "points": 3,
+      "missed": true,
+      "id": "6cbaa131-e5e5-44ed-a4ee-874bfb55c878",
+      "description": "Shot Tim Krause: three. Missed"
+    },
+    {
+      "timestamp": 266.28095307247924,
+      "formattedTime": "04:26",
+      "type": "foul",
+      "player": "Jan Crocoll",
+      "id": "cb65e3aa-cb5c-478e-88bd-d6cde3863593",
+      "description": "Foul Jan Crocoll"
+    },
+    {
+      "timestamp": 327.70367406484985,
+      "formattedTime": "05:27",
+      "type": "rebound",
+      "player": "Alexander Rib",
+      "id": "b83f4d1f-c828-4c0d-b097-ffa427e747ff",
+      "description": "Rebound Alexander Rib"
+    },
+    {
+      "timestamp": 338.05941314305113,
+      "formattedTime": "05:38",
+      "type": "shot",
+      "player": "Marius Scholl",
+      "points": 3,
+      "missed": true,
+      "id": "fd467a5b-0ece-4d42-92c9-fb43dd7d5680",
+      "description": "Shot Marius Scholl: three. Missed"
+    },
+    {
+      "timestamp": 343.0753320991821,
+      "formattedTime": "05:43",
+      "type": "shot",
+      "player": "Alexander Rib",
+      "points": 3,
+      "missed": true,
+      "id": "9bedbb6d-1727-4ed2-b35c-d5a3ad739839",
+      "description": "Shot Alexander Rib: three. Missed"
+    },
+    {
+      "timestamp": 346.02574782833864,
+      "formattedTime": "05:46",
+      "type": "steal",
+      "player": "Jan Crocoll",
+      "id": "e717b5fb-b2a9-4cad-a4c1-38ac5f0b1d30",
+      "description": "Steal Jan Crocoll"
+    },
+    {
+      "timestamp": 350.74427709155276,
+      "formattedTime": "05:50",
+      "type": "shot",
+      "player": "Marius Scholl",
+      "points": 3,
+      "missed": true,
+      "id": "e3345ae7-569a-4745-8833-e580cda062f5",
+      "description": "Shot Marius Scholl: three. Missed"
+    },
+    {
+      "timestamp": 358.03248190844727,
+      "formattedTime": "05:58",
+      "type": "rebound",
+      "player": "Tim Krause",
+      "id": "a70b0971-6eb0-4255-a5f8-9dfe2001ab0f",
+      "description": "Rebound Tim Krause"
+    },
+    {
+      "timestamp": 371.7963229828339,
+      "formattedTime": "06:11",
+      "type": "assist",
+      "player": "Alexander Rib",
+      "id": "727ed81f-8253-4522-a8e4-9b1c34dce728",
+      "description": "Assist Alexander Rib"
+    },
+    {
+      "timestamp": 371.7963229828339,
+      "formattedTime": "06:11",
+      "type": "shot",
+      "player": "Abdullah Ari",
+      "points": 3,
+      "missed": false,
+      "id": "3014aa34-e1f1-457a-bd54-1a786c730793",
+      "description": "Shot Abdullah Ari: three. Made"
+    },
+    {
+      "timestamp": 496.33466710490416,
+      "formattedTime": "08:16",
+      "type": "assist",
+      "player": "Marius Scholl",
+      "id": "30d71954-b6a7-45c9-9fc0-e6f2a53e01ad",
+      "description": "Assist Marius Scholl"
+    },
+    {
+      "timestamp": 496.33466710490416,
+      "formattedTime": "08:16",
+      "type": "shot",
+      "player": "Jan Crocoll",
+      "points": 2,
+      "missed": false,
+      "id": "cb573108-c385-4ed6-bf73-5abb712a6f13",
+      "description": "Shot Jan Crocoll: two. Made"
+    }
+  ],
+  "players": [
+    {
+      "id": "1",
+      "name": "Kevin Rassner",
+      "jerseyNumber": 19,
+      "position": "Forward"
+    },
+    {
+      "id": "2",
+      "name": "Stefan Anselm",
+      "jerseyNumber": 30,
+      "position": "Guard"
+    },
+    {
+      "id": "3",
+      "name": "Gregor Arapidis",
+      "jerseyNumber": 77,
+      "position": "Forward"
+    },
+    {
+      "id": "4",
+      "name": "Abdullah Ari",
+      "jerseyNumber": 55,
+      "position": "Forward"
+    },
+    {
+      "id": "5",
+      "name": "Sven Bader",
+      "jerseyNumber": 17,
+      "position": "Guard"
+    },
+    {
+      "id": "6",
+      "name": "Jan Crocoll",
+      "jerseyNumber": 21,
+      "position": "Center"
+    },
+    {
+      "id": "7",
+      "name": "Nino de Bortoli",
+      "jerseyNumber": 7,
+      "position": "Guard"
+    },
+    {
+      "id": "8",
+      "name": "Marcus Hayes",
+      "jerseyNumber": 33,
+      "position": "Center"
+    },
+    {
+      "id": "9",
+      "name": "Tim Krause",
+      "jerseyNumber": 13,
+      "position": "Guard"
+    },
+    {
+      "id": "10",
+      "name": "Christoph Mörsch",
+      "jerseyNumber": 41,
+      "position": "Center"
+    },
+    {
+      "id": "11",
+      "name": "Alexander Rib",
+      "jerseyNumber": 11,
+      "position": "Guard"
+    },
+    {
+      "id": "12",
+      "name": "David Scheja",
+      "jerseyNumber": 69,
+      "position": "Center"
+    },
+    {
+      "id": "13",
+      "name": "Marius Scholl",
+      "jerseyNumber": 24,
+      "position": "Guard"
+    },
+    {
+      "id": "14",
+      "name": "Jan Strobel",
+      "jerseyNumber": 8,
+      "position": "Forward"
+    },
+    {
+      "id": "15",
+      "name": "Tobi Thury",
+      "jerseyNumber": 52,
+      "position": "Forward"
+    },
+    {
+      "id": "16",
+      "name": "Danny Seitz",
+      "jerseyNumber": 31,
+      "position": "Forward"
+    }
+  ],
+  "videoId": "",
+  "playlistId": "PLo9Gj2rLRK5y7Tc7zTMv_GyyvGP7yXjaY",
+  "timestamp": "2025-12-10T16:14:43.986Z",
+  "name": "game-6-video-1"
+}
