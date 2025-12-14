@@ -12,31 +12,13 @@ const Impressum = () => {
             <h2 className="text-xl font-semibold mb-4">Angaben gemäß § 5 TMG</h2>
             <div className="space-y-4 text-foreground/80">
               <p>
-                <strong>TSV Neuenstadt Basketball</strong><br />
-                TSV Neuenstadt e.V.<br />
-                Basketball-Abteilung<br />
+                <strong>Kevin Steiger</strong><br />
+                Private Website<br />
                 <br />
                 <strong>Anschrift:</strong><br />
-                TSV Neuenstadt e.V.<br />
-                Basketball-Abteilung<br />
-                [Straße und Hausnummer]<br />
-                72631 Neuenstadt<br />
+                [Private Adresse]<br />
+                [PLZ und Ort]<br />
                 Deutschland
-              </p>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold mb-4">Vertreten durch</h2>
-            <div className="space-y-4 text-foreground/80">
-              <p>
-                <strong>Vorstand:</strong><br />
-                [Name des Vorstandsmitglieds]<br />
-                [Position im Vorstand]<br />
-                <br />
-                <strong>Kontakt:</strong><br />
-                E-Mail: [E-Mail-Adresse]<br />
-                Telefon: [Telefonnummer]
               </p>
             </div>
           </section>
@@ -46,10 +28,10 @@ const Impressum = () => {
             <div className="space-y-4 text-foreground/80">
               <p>
                 <strong>E-Mail:</strong><br />
-                [E-Mail-Adresse]<br />
+                [Private E-Mail-Adresse]<br />
                 <br />
                 <strong>Website:</strong><br />
-                [Website-URL]
+                https://kevske.github.io/pitbulls-stats-hub
               </p>
             </div>
           </section>
@@ -97,8 +79,8 @@ const Impressum = () => {
                 Wir sind nicht verpflichtet und nicht bereit, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
               </p>
               <p>
-                <strong>Verbraucher-Kontaktstelle:</strong><br />
-                E-Mail: [E-Mail-Adresse]<br />
+                <strong>Kontakt bei Beschwerden:</strong><br />
+                E-Mail: [Private E-Mail-Adresse]<br />
                 Wir sind nicht bereit, an einem freiwilligen Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
               </p>
             </div>
