@@ -62,7 +62,7 @@ const Layout = ({ children }: LayoutProps) => {
               <div className="h-px w-8 bg-border/50 sm:h-4 sm:w-px"></div>
 
               <a
-                href="/impressum"
+                href={import.meta.env.PROD ? "/pitbulls-stats-hub/impressum" : "/impressum"}
                 className="inline-flex items-center gap-2 text-foreground/70 hover:text-primary transition-elegant group"
               >
                 <svg className="w-4 h-4 transition-elegant group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
