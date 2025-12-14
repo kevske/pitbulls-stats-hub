@@ -12,7 +12,7 @@ const Impressum = () => {
             <h2 className="text-xl font-semibold mb-4">Angaben gemäß § 5 TMG</h2>
             <div className="space-y-4 text-foreground/80">
               <p>
-                <strong>Kevin Steiger</strong><br />
+                <strong>Kevin Rassner</strong><br />
                 Private Website<br />
                 <br />
                 <strong>Anschrift:</strong><br />
@@ -28,7 +28,7 @@ const Impressum = () => {
             <div className="space-y-4 text-foreground/80">
               <p>
                 <strong>E-Mail:</strong><br />
-                [Private E-Mail-Adresse]<br />
+                kevin.rassner@gmail.com<br />
                 <br />
                 <strong>Website:</strong><br />
                 https://kevske.github.io/pitbulls-stats-hub
@@ -80,7 +80,7 @@ const Impressum = () => {
               </p>
               <p>
                 <strong>Kontakt bei Beschwerden:</strong><br />
-                E-Mail: [Private E-Mail-Adresse]<br />
+                E-Mail: kevin.rassner@gmail.com<br />
                 Wir sind nicht bereit, an einem freiwilligen Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
               </p>
             </div>
