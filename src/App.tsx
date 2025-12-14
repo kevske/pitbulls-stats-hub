@@ -21,6 +21,7 @@ import AdminPlayerInfo from "./pages/AdminPlayerInfo";
 import Login from "./pages/Login";
 import AdminAuditLogs from "./pages/AdminAuditLogs";
 import GamesMinutesManager from "./components/GamesMinutesManager";
+import Impressum from "./pages/Impressum";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -123,6 +124,7 @@ const App = () => {
                 <Route path="/videos" element={<Videos />} />
                 <Route path="/video-editor" element={<VideoEditor />} />
                 <Route path="/spielplan" element={<Spielplan />} />
+                <Route path="/impressum" element={<Impressum />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/admin/player-info" element={<AdminPlayerInfo />} />
                 <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />

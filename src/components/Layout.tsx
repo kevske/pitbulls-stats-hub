@@ -58,6 +58,18 @@ const Layout = ({ children }: LayoutProps) => {
                 <span className="font-medium">Ligaübersicht</span>
                 <span className="text-sm">@DBB</span>
               </a>
+
+              <div className="h-px w-8 bg-border/50 sm:h-4 sm:w-px"></div>
+
+              <a
+                href="/impressum"
+                className="inline-flex items-center gap-2 text-foreground/70 hover:text-primary transition-elegant group"
+              >
+                <svg className="w-4 h-4 transition-elegant group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fillRule="evenodd" d="M4 4h16v16H4V4zm2 2v12h12V6H6zm2 2h8v2H8V8zm0 4h8v2H8v-2zm0 4h6v2H8v-2z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm">Impressum</span>
+              </a>
             </div>
           </div>
         </footer>
