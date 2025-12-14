@@ -48,17 +48,22 @@ export class AuthService {
   // Check if user is authenticated
   static async isAuthenticated(): Promise<boolean> {
     try {
+      console.log('Checking authentication...');
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session data:', session);
       
       if (!session) {
+        console.log('No session found');
         return false;
       }
 
       // Check if session is expired
       const now = new Date();
       const expiresAt = new Date(session.expires_at * 1000);
+      console.log('Session expires at:', expiresAt, 'Current time:', now);
       
       if (now >= expiresAt) {
+        console.log('Session expired, attempting refresh...');
         // Session expired, try to refresh
         const { error } = await supabase.auth.refreshSession();
         if (error) {
@@ -68,9 +73,11 @@ export class AuthService {
         
         // Check if refresh succeeded
         const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+        console.log('Refreshed session:', refreshedSession);
         return !!refreshedSession;
       }
 
+      console.log('Session valid, user authenticated');
       return true;
     } catch (error) {
       console.error('Error checking authentication:', error);

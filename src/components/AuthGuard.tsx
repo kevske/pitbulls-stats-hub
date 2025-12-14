@@ -35,16 +35,20 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
   const checkAuth = async () => {
     try {
+      console.log('AuthGuard: Checking authentication...');
       const userData = await AuthService.getCurrentUser();
+      console.log('AuthGuard: User data received:', userData);
       if (userData) {
         setUser(userData.user);
         setPlayerInfo(userData.playerInfo);
         setIsAuthenticated(true);
+        console.log('AuthGuard: User authenticated successfully');
       } else {
         setIsAuthenticated(false);
+        console.log('AuthGuard: No user data found');
       }
     } catch (error) {
-      console.error('Error checking auth:', error);
+      console.error('AuthGuard: Error checking auth:', error);
       setIsAuthenticated(false);
     }
   };
