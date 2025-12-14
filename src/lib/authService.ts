@@ -47,30 +47,80 @@ export class AuthService {
 
   // Check if user is authenticated
   static async isAuthenticated(): Promise<boolean> {
-    const { data: { session } } = await supabase.auth.getSession();
-    return !!session;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        return false;
+      }
+
+      // Check if session is expired
+      const now = new Date();
+      const expiresAt = new Date(session.expires_at * 1000);
+      
+      if (now >= expiresAt) {
+        // Session expired, try to refresh
+        const { error } = await supabase.auth.refreshSession();
+        if (error) {
+          console.log('Session refresh failed:', error);
+          return false;
+        }
+        
+        // Check if refresh succeeded
+        const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+        return !!refreshedSession;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      return false;
+    }
   }
 
   // Get current authenticated user
   static async getCurrentUser(): Promise<{ user: any; playerInfo?: PlayerInfo } | null> {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.user) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user) {
+        return null;
+      }
+
+      // Check if session is expired and try refresh if needed
+      const now = new Date();
+      const expiresAt = new Date(session.expires_at * 1000);
+      
+      if (now >= expiresAt) {
+        const { error } = await supabase.auth.refreshSession();
+        if (error) {
+          console.log('Session refresh failed in getCurrentUser:', error);
+          return null;
+        }
+        
+        // Get refreshed session
+        const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+        if (!refreshedSession?.user) {
+          return null;
+        }
+      }
+
+      // Get player info associated with this email
+      const { data: playerInfo } = await supabase
+        .from('player_info')
+        .select('*')
+        .eq('email', session.user.email)
+        .eq('is_active', true)
+        .single();
+
+      return {
+        user: session.user,
+        playerInfo: playerInfo || undefined
+      };
+    } catch (error) {
+      console.error('Error getting current user:', error);
       return null;
     }
-
-    // Get player info associated with this email
-    const { data: playerInfo } = await supabase
-      .from('player_info')
-      .select('*')
-      .eq('email', session.user.email)
-      .eq('is_active', true)
-      .single();
-
-    return {
-      user: session.user,
-      playerInfo: playerInfo || undefined
-    };
   }
 
   // Sign out
