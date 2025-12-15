@@ -25,6 +25,7 @@ const formatDate = (dateStr: string): string => {
 
 const PlayerGallery = ({ playerName }: PlayerGalleryProps) => {
   const [images, setImages] = useState<GalleryImage[]>([]);
+  const [loadedImages, setLoadedImages] = useState<GalleryImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -57,14 +58,23 @@ const PlayerGallery = ({ playerName }: PlayerGalleryProps) => {
       .sort((a, b) => b.date.localeCompare(a.date));
       
     setImages(processedImages);
+    setLoadedImages(processedImages);
     setIsLoading(false);
   }, [playerName]);
+
+  const handleImageError = (failedImagePath: string) => {
+    setLoadedImages(prev => prev.filter(img => img.path !== failedImagePath));
+    // If current image fails, close modal since we can't navigate to other images safely
+    if (selectedImage?.path === failedImagePath) {
+      setSelectedImage(null);
+    }
+  };
 
   if (isLoading) {
     return <div className="mt-8">Lade Bilder...</div>;
   }
 
-  if (images.length === 0) {
+  if (loadedImages.length === 0) {
     return <div className="mt-8">Keine Bilder verfügbar.</div>;
   }
 
@@ -72,7 +82,7 @@ const PlayerGallery = ({ playerName }: PlayerGalleryProps) => {
     <div className="mt-8">
       <h3 className="text-2xl font-semibold mb-4">Galerie</h3>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {images.map((img, index) => (
+        {loadedImages.map((img, index) => (
           <motion.div 
             key={index}
             className="group cursor-pointer"
@@ -86,6 +96,7 @@ const PlayerGallery = ({ playerName }: PlayerGalleryProps) => {
                 effect="blur"
                 className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
                 placeholderSrc="/placeholder.jpg"
+                onError={() => handleImageError(img.path)}
               />
             </div>
             <div className="text-center text-sm text-gray-600">
