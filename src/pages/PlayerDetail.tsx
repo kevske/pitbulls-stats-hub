@@ -31,6 +31,7 @@ const PlayerDetail: React.FC = () => {
   const { games } = useStats(); // Get games from context
   const { player, gameLogs } = usePlayerStats(id) as { player: PlayerStats | null; gameLogs: PlayerGameLog[] };
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [loadedImages, setLoadedImages] = useState<GalleryImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
   const [randomImageStream, setRandomImageStream] = useState<GalleryImage[]>([]);
@@ -56,22 +57,32 @@ const PlayerDetail: React.FC = () => {
 
   // Gallery navigation functions
   const openImageAtIndex = (index: number) => {
-    setCurrentGalleryIndex(index);
-    setSelectedImage(galleryImages[index].src);
+    if (loadedImages.length === 0) return;
+    const safeIndex = Math.min(index, loadedImages.length - 1);
+    setCurrentGalleryIndex(safeIndex);
+    setSelectedImage(loadedImages[safeIndex].src);
   };
 
   const navigateImage = (direction: 'prev' | 'next') => {
-    if (galleryImages.length === 0) return;
+    if (loadedImages.length === 0) return;
 
     let newIndex;
     if (direction === 'prev') {
-      newIndex = currentGalleryIndex === 0 ? galleryImages.length - 1 : currentGalleryIndex - 1;
+      newIndex = currentGalleryIndex === 0 ? loadedImages.length - 1 : currentGalleryIndex - 1;
     } else {
-      newIndex = currentGalleryIndex === galleryImages.length - 1 ? 0 : currentGalleryIndex + 1;
+      newIndex = currentGalleryIndex === loadedImages.length - 1 ? 0 : currentGalleryIndex + 1;
     }
 
     setCurrentGalleryIndex(newIndex);
-    setSelectedImage(galleryImages[newIndex].src);
+    setSelectedImage(loadedImages[newIndex].src);
+  };
+
+  const handleImageError = (failedImageSrc: string) => {
+    setLoadedImages(prev => prev.filter(img => img.src !== failedImageSrc));
+    // If current image fails, navigate to next available
+    if (selectedImage === failedImageSrc && loadedImages.length > 1) {
+      navigateImage('next');
+    }
   };
 
   useEffect(() => {
@@ -106,13 +117,16 @@ const PlayerDetail: React.FC = () => {
 
     if (playerImages && playerImages.length > 0) {
       console.log(`Found ${playerImages.length} images for ${playerSlug}`);
-      setGalleryImages(playerImages.map(img => ({
+      const processedImages = playerImages.map(img => ({
         src: img.src,
         alt: img.alt
-      })));
+      }));
+      setGalleryImages(processedImages);
+      setLoadedImages(processedImages);
     } else {
       console.log(`No gallery images found for ${playerSlug}`);
       setGalleryImages([]);
+      setLoadedImages([]);
     }
   }, [player]);
 
@@ -134,10 +148,10 @@ const PlayerDetail: React.FC = () => {
 
   // Update random stream when gallery images change
   useEffect(() => {
-    if (galleryImages.length > 0) {
-      setRandomImageStream(createRandomImageStream(galleryImages));
+    if (loadedImages.length > 0) {
+      setRandomImageStream(createRandomImageStream(loadedImages));
     }
-  }, [galleryImages]);
+  }, [loadedImages]);
 
   if (!player || !player.firstName) {
     return (
@@ -216,7 +230,7 @@ const PlayerDetail: React.FC = () => {
                   <div
                     className="flex animate-scroll hover:pause"
                     style={{
-                      '--scroll-duration': `${galleryImages.length * 15}s`
+                      '--scroll-duration': `${loadedImages.length * 15}s`
                     } as React.CSSProperties}
                   >
                     {/* Use the random stream of different images */}
@@ -491,19 +505,15 @@ const PlayerDetail: React.FC = () => {
           <h2 className="text-2xl font-bold mb-6">Galerie</h2>
           {player ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {galleryImages.length > 0 ? (
-                galleryImages.map((image, index) => (
+              {loadedImages.length > 0 ? (
+                loadedImages.map((image, index) => (
                   <div key={index} className="aspect-square">
                     <img
                       src={image.src}
                       alt={image.alt}
                       className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
                       onClick={() => openImageAtIndex(index)}
-                      onError={(e) => {
-                        console.error(`Failed to load image: ${image.src}`);
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
+                      onError={() => handleImageError(image.src)}
                     />
                   </div>
                 ))
@@ -532,7 +542,7 @@ const PlayerDetail: React.FC = () => {
             onClick={() => setSelectedImage(null)}
           >
             {/* Left Arrow */}
-            {galleryImages.length > 1 && (
+            {loadedImages.length > 1 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -547,7 +557,7 @@ const PlayerDetail: React.FC = () => {
             )}
 
             {/* Right Arrow */}
-            {galleryImages.length > 1 && (
+            {loadedImages.length > 1 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -582,9 +592,9 @@ const PlayerDetail: React.FC = () => {
                   className="max-w-full max-h-[80vh] object-contain"
                 />
               </div>
-              {galleryImages.length > 1 && (
+              {loadedImages.length > 1 && (
                 <div className="text-center text-white mt-2">
-                  {currentGalleryIndex + 1} / {galleryImages.length}
+                  {currentGalleryIndex + 1} / {loadedImages.length}
                 </div>
               )}
             </div>
