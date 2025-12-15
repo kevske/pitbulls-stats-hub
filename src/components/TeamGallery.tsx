@@ -9,6 +9,7 @@ interface TeamImage {
 
 const TeamGallery: React.FC = () => {
   const [teamImages, setTeamImages] = useState<TeamImage[]>([]);
+  const [loadedImages, setLoadedImages] = useState<TeamImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
 
@@ -24,26 +25,37 @@ const TeamGallery: React.FC = () => {
       });
     }
     setTeamImages(images);
+    setLoadedImages(images); // Initially assume all images will load
   }, []);
 
   // Gallery navigation functions
   const openImageAtIndex = (index: number) => {
-    setCurrentGalleryIndex(index);
-    setSelectedImage(teamImages[index].src);
+    if (loadedImages.length === 0) return;
+    const safeIndex = Math.min(index, loadedImages.length - 1);
+    setCurrentGalleryIndex(safeIndex);
+    setSelectedImage(loadedImages[safeIndex].src);
   };
 
   const navigateImage = (direction: 'prev' | 'next') => {
-    if (teamImages.length === 0) return;
+    if (loadedImages.length === 0) return;
     
     let newIndex;
     if (direction === 'prev') {
-      newIndex = currentGalleryIndex === 0 ? teamImages.length - 1 : currentGalleryIndex - 1;
+      newIndex = currentGalleryIndex === 0 ? loadedImages.length - 1 : currentGalleryIndex - 1;
     } else {
-      newIndex = currentGalleryIndex === teamImages.length - 1 ? 0 : currentGalleryIndex + 1;
+      newIndex = currentGalleryIndex === loadedImages.length - 1 ? 0 : currentGalleryIndex + 1;
     }
     
     setCurrentGalleryIndex(newIndex);
-    setSelectedImage(teamImages[newIndex].src);
+    setSelectedImage(loadedImages[newIndex].src);
+  };
+
+  const handleImageError = (failedImageSrc: string) => {
+    setLoadedImages(prev => prev.filter(img => img.src !== failedImageSrc));
+    // If current image fails, navigate to next available
+    if (selectedImage === failedImageSrc && loadedImages.length > 1) {
+      navigateImage('next');
+    }
   };
 
   return (
@@ -52,19 +64,15 @@ const TeamGallery: React.FC = () => {
       
       {/* Gallery Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
-        {teamImages.length > 0 ? (
-          teamImages.map((image, index) => (
+        {loadedImages.length > 0 ? (
+          loadedImages.map((image, index) => (
             <div key={index} className="aspect-square">
               <img
                 src={image.src}
                 alt={image.alt}
                 className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
                 onClick={() => openImageAtIndex(index)}
-                onError={(e) => {
-                  console.error(`Failed to load image: ${image.src}`);
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
+                onError={() => handleImageError(image.src)}
               />
             </div>
           ))
@@ -85,7 +93,7 @@ const TeamGallery: React.FC = () => {
           onClick={() => setSelectedImage(null)}
         >
           {/* Left Arrow */}
-          {teamImages.length > 1 && (
+          {loadedImages.length > 1 && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -100,7 +108,7 @@ const TeamGallery: React.FC = () => {
           )}
           
           {/* Right Arrow */}
-          {teamImages.length > 1 && (
+          {loadedImages.length > 1 && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -135,9 +143,9 @@ const TeamGallery: React.FC = () => {
                 className="max-w-full max-h-[80vh] object-contain"
               />
             </div>
-            {teamImages.length > 1 && (
+            {loadedImages.length > 1 && (
               <div className="text-center text-white mt-2">
-                {currentGalleryIndex + 1} / {teamImages.length}
+                {currentGalleryIndex + 1} / {loadedImages.length}
               </div>
             )}
           </div>
