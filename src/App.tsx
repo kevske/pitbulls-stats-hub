@@ -22,6 +22,7 @@ import Login from "./pages/Login";
 import AdminAuditLogs from "./pages/AdminAuditLogs";
 import GamesMinutesManager from "./components/GamesMinutesManager";
 import Impressum from "./pages/Impressum";
+import Playbook from "./pages/Playbook";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -75,7 +76,7 @@ const App = () => {
         const pathSegments = pathWithoutBase.split('/');
 
         // If this looks like one of our routes
-        if (pathSegments.length > 0 && ['games', 'players', 'videos', 'stats', 'upload-game', 'spielplan'].includes(pathSegments[0])) {
+        if (pathSegments.length > 0 && ['games', 'players', 'videos', 'stats', 'upload-game', 'spielplan', 'playbook'].includes(pathSegments[0])) {
           // Reconstruct the URL with the base path
           const newPath = `${basePath}${currentPath}`;
           window.history.replaceState({}, '', newPath);
@@ -124,6 +125,7 @@ const App = () => {
                 <Route path="/videos" element={<Videos />} />
                 <Route path="/video-editor" element={<VideoEditor />} />
                 <Route path="/spielplan" element={<Spielplan />} />
+                <Route path="/playbook" element={<Playbook />} />
                 <Route path="/impressum" element={<Impressum />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/admin/player-info" element={<AdminPlayerInfo />} />
