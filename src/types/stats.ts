@@ -8,6 +8,8 @@ export interface PlayerStats {
   position?: string;
   age?: number;
   height?: string;
+  weight?: number;
+  birthDate?: string;
   bio?: string;
 
   // Stats from Totals CSV (all games combined)

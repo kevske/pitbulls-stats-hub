@@ -22,6 +22,27 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
   const [showExpandButton, setShowExpandButton] = useState(false);
   const bioRef = useRef<HTMLParagraphElement>(null);
 
+  // Utility function to calculate age from birth date
+  const calculateAge = (birthDate?: string): number | undefined => {
+    if (!birthDate) return undefined;
+    
+    const birth = new Date(birthDate);
+    const today = new Date();
+    
+    // Check if birth date is valid
+    if (isNaN(birth.getTime())) return undefined;
+    
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    // Adjust age if birthday hasn't occurred yet this year
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
   useEffect(() => {
     const checkOverflow = () => {
       if (bioRef.current) {
@@ -185,10 +206,18 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
                   <div className="text-sm font-semibold text-foreground">{player.height} cm</div>
                 </div>
               )}
-              {player.age && player.age > 0 && (
+              {(player.age || calculateAge(player.birthDate)) && (
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wide">Alter</div>
-                  <div className="text-sm font-semibold text-foreground">{player.age}</div>
+                  <div className="text-sm font-semibold text-foreground">
+                    {player.age || calculateAge(player.birthDate)} Jahre
+                  </div>
+                </div>
+              )}
+              {player.weight && player.weight > 0 && (
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide">Gewicht</div>
+                  <div className="text-sm font-semibold text-foreground">{player.weight} kg</div>
                 </div>
               )}
             </div>
