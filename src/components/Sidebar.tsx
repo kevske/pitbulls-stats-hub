@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Users, BarChart2, Film, X, Trophy, Calendar } from 'lucide-react';
+import { Home, Users, BarChart2, Film, X, Trophy, Calendar, BookOpen } from 'lucide-react';
 import { useStats } from '@/contexts/StatsContext';
 
 interface SidebarProps {
@@ -35,6 +35,7 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     { to: '/stats', icon: BarChart2, label: 'Statistiken' },
     { to: '/games', icon: Trophy, label: 'Ergebnisse' },
     { to: '/spielplan', icon: Calendar, label: 'Spielplan' },
+    { to: '/playbook', icon: BookOpen, label: 'Playbook' },
     { to: '/videos', icon: Film, label: 'Videos' },
   ];
 
