@@ -150,25 +150,29 @@ export class SupabaseStatsService {
 
       if (statsError) throw statsError;
 
-      // Then fetch player info for birth dates
+      // Then fetch player info for birth dates and weight
       const { data: playerInfo, error: infoError } = await supabase
         .from('player_info')
-        .select('player_slug, birth_date');
+        .select('player_slug, birth_date, weight');
 
       if (infoError) throw infoError;
 
-      // Create a map of player_slug to birth_date
+      // Create maps of player_slug to birth_date and weight
       const birthDateMap = new Map();
+      const weightMap = new Map();
       (playerInfo || []).forEach(info => {
         birthDateMap.set(info.player_slug, info.birth_date);
+        weightMap.set(info.player_slug, info.weight);
       });
 
-      // Merge birth dates into player stats
+      // Merge birth dates and weight into player stats
       return (playerStats || []).map(player => {
         const birthDate = birthDateMap.get(player.player_slug) || '';
+        const weight = weightMap.get(player.player_slug) || 0;
         return transformSupabaseStatsToPlayerStats({
           ...player,
-          birth_date: birthDate
+          birth_date: birthDate,
+          weight: weight
         });
       });
     } catch (error) {
