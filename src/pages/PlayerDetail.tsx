@@ -6,6 +6,7 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BoxscoreService } from '@/lib/boxscoreService';
 
 import { PlayerStats, PlayerGameLog } from '@/types/stats';
 import playerImagesData from '@/data/playerImages.json';
@@ -56,7 +57,40 @@ const PlayerDetail: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
   const [randomImageStream, setRandomImageStream] = useState<GalleryImage[]>([]);
+  const [gamesWithBoxScores, setGamesWithBoxScores] = useState<Set<number>>(new Set());
   const navigate = useNavigate();
+
+  // Check which games have box score data
+  useEffect(() => {
+    const checkGamesWithBoxScores = async () => {
+      const gameNumbers = new Set<number>();
+      
+      for (const game of games) {
+        if (game.boxScoreUrl) {
+          // If game has a box score URL, it definitely has box score data
+          gameNumbers.add(game.gameNumber);
+        } else {
+          // Check if box scores exist for this game
+          try {
+            const gameId = `game-${game.gameNumber}-${game.date.replace(/[^\d]/g, '')}`;
+            const boxScores = await BoxscoreService.getBoxScoresByGame(gameId);
+            if (boxScores.length > 0) {
+              gameNumbers.add(game.gameNumber);
+            }
+          } catch (error) {
+            // Game has no box score data
+            console.log(`No box score data for game ${game.gameNumber}`);
+          }
+        }
+      }
+      
+      setGamesWithBoxScores(gameNumbers);
+    };
+
+    if (games.length > 0) {
+      checkGamesWithBoxScores();
+    }
+  }, [games]);
 
   // Helper to get opponent name
   const getOpponentName = (gameNumber: number) => {
@@ -66,6 +100,22 @@ const PlayerDetail: React.FC = () => {
     // Determine opponent - assuming Pitbulls/Neuenstadt is always one side
     const isHome = game.homeTeam?.toLowerCase().includes('pitbulls') || game.homeTeam?.toLowerCase().includes('neuenstadt');
     return isHome ? `Gegen ${game.awayTeam}` : `Bei ${game.homeTeam}`;
+  };
+
+  // Helper to check if a game has box score data
+  const hasBoxScoreData = (gameNumber: number) => {
+    return gamesWithBoxScores.has(gameNumber);
+  };
+
+  // Helper to display stats - show "N/A" for missing box score data
+  const displayStat = (gameNumber: number, value: number, isDecimal: boolean = false) => {
+    if (!hasBoxScoreData(gameNumber)) {
+      return <span className="text-gray-400 italic">N/A</span>;
+    }
+    if (isDecimal) {
+      return value.toFixed(1) || '0.0';
+    }
+    return value || 0;
   };
 
   // Scroll to gallery function
@@ -493,30 +543,45 @@ const PlayerDetail: React.FC = () => {
                         >
                           {getOpponentName(game.gameNumber)}
                         </Link>
+                        {!hasBoxScoreData(game.gameNumber) && (
+                          <div className="text-xs text-gray-400 italic mt-1">Keine Boxscore-Daten</div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {game.minutesPlayed.toFixed(1) || '0.0'}
+                        {displayStat(game.gameNumber, game.minutesPlayed, true)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {game.points || 0}
+                        {displayStat(game.gameNumber, game.points)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {game.threePointers || 0}
+                        {displayStat(game.gameNumber, game.threePointers)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {game.freeThrowsMade || 0}/{game.freeThrowAttempts || 0}
+                        {hasBoxScoreData(game.gameNumber) 
+                          ? `${game.freeThrowsMade || 0}/${game.freeThrowAttempts || 0}`
+                          : <span className="text-gray-400 italic">N/A</span>
+                        }
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {game.fouls || 0}
+                        {displayStat(game.gameNumber, game.fouls)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {game.pointsPer40?.toFixed(1) || '-'}
+                        {hasBoxScoreData(game.gameNumber) && game.pointsPer40
+                          ? game.pointsPer40.toFixed(1)
+                          : <span className="text-gray-400 italic">-</span>
+                        }
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {game.threePointersPer40?.toFixed(1) || '-'}
+                        {hasBoxScoreData(game.gameNumber) && game.threePointersPer40
+                          ? game.threePointersPer40.toFixed(1)
+                          : <span className="text-gray-400 italic">-</span>
+                        }
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {game.foulsPer40?.toFixed(1) || '-'}
+                        {hasBoxScoreData(game.gameNumber) && game.foulsPer40
+                          ? game.foulsPer40.toFixed(1)
+                          : <span className="text-gray-400 italic">-</span>
+                        }
                       </td>
                     </tr>
                   ))}
