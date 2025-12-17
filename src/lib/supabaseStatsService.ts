@@ -50,15 +50,14 @@ const calculateAge = (birthDate?: string): number => {
 export function transformSupabaseStatsToPlayerStats(row: any): PlayerStats {
   const imageUrl = `/pitbulls-stats-hub/players/${generateImageFilename(row.first_name, row.last_name)}`;
   
-  // Handle both direct birth_date and nested player_info.birth_date from join
-  const birthDate = row.birth_date || row.player_info?.birth_date || '';
+  // Handle direct birth_date field (now merged from player_info)
+  const birthDate = row.birth_date || '';
   
   // Debug logging
   console.log('Supabase player data:', {
     first_name: row.first_name,
     last_name: row.last_name,
     birth_date: row.birth_date,
-    player_info_birth_date: row.player_info?.birth_date,
     birthDate: birthDate
   });
   
@@ -174,18 +173,35 @@ export class SupabaseStatsService {
   // Get all player stats from Supabase
   static async fetchAllPlayerStats(): Promise<PlayerStats[]> {
     try {
-      const { data, error } = await supabase
+      // First fetch player stats
+      const { data: playerStats, error: statsError } = await supabase
         .from('player_season_totals')
-        .select(`
-          *,
-          player_info!inner(
-            birth_date
-          )
-        `)
+        .select('*')
         .order('points_per_game', { ascending: false });
 
-      if (error) throw error;
-      return (data || []).map(transformSupabaseStatsToPlayerStats);
+      if (statsError) throw statsError;
+
+      // Then fetch player info for birth dates
+      const { data: playerInfo, error: infoError } = await supabase
+        .from('player_info')
+        .select('player_slug, birth_date');
+
+      if (infoError) throw infoError;
+
+      // Create a map of player_slug to birth_date
+      const birthDateMap = new Map();
+      (playerInfo || []).forEach(info => {
+        birthDateMap.set(info.player_slug, info.birth_date);
+      });
+
+      // Merge birth dates into player stats
+      return (playerStats || []).map(player => {
+        const birthDate = birthDateMap.get(player.player_slug) || '';
+        return transformSupabaseStatsToPlayerStats({
+          ...player,
+          birth_date: birthDate
+        });
+      });
     } catch (error) {
       console.error('Error fetching player stats from Supabase:', error);
       throw error;
