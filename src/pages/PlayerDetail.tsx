@@ -10,6 +10,27 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { PlayerStats, PlayerGameLog } from '@/types/stats';
 import playerImagesData from '@/data/playerImages.json';
 
+// Utility function to calculate age from birth date
+const calculateAge = (birthDate?: string): number | undefined => {
+  if (!birthDate) return undefined;
+  
+  const birth = new Date(birthDate);
+  const today = new Date();
+  
+  // Check if birth date is valid
+  if (isNaN(birth.getTime())) return undefined;
+  
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  
+  // Adjust age if birthday hasn't occurred yet this year
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  
+  return age;
+};
+
 // Custom CSS for scrolling animation is now in index.css
 
 interface GalleryImage {
@@ -287,9 +308,9 @@ const PlayerDetail: React.FC = () => {
                       <span className="font-medium">Position:</span> {player.position}
                     </span>
                   )}
-                  {player.age && (
+                  {(player.age || calculateAge(player.birthDate)) && (
                     <span>
-                      <span className="font-medium">Alter:</span> {player.age}
+                      <span className="font-medium">Alter:</span> {player.age || calculateAge(player.birthDate)}
                     </span>
                   )}
                   {player.height && (
