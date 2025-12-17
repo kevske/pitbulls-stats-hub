@@ -49,7 +49,7 @@ interface PlayerImagesData {
 
 const PlayerDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { games } = useStats(); // Get games from context
+  const { games, gameLogs: allGameLogs } = useStats(); // Get ALL game logs from context
   const { player, gameLogs } = usePlayerStats(id) as { player: PlayerStats | null; gameLogs: PlayerGameLog[] };
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [loadedImages, setLoadedImages] = useState<GalleryImage[]>([]);
@@ -65,12 +65,12 @@ const PlayerDetail: React.FC = () => {
       const gameNumbers = new Set<number>();
       
       // A game has meaningful box score data if not all players have 0 points
-      // If all players have 0 points, it's a box score problem
+      // Check across ALL players, not just the current player
       for (const game of games) {
-        const gameLogsForThisGame = gameLogs.filter(log => log.gameNumber === game.gameNumber);
+        const gameLogsForThisGame = allGameLogs.filter(log => log.gameNumber === game.gameNumber);
         const allPlayersHaveZeroPoints = gameLogsForThisGame.every(log => log.points === 0);
         
-        console.log(`Game ${game.gameNumber}: allPlayersHaveZeroPoints = ${allPlayersHaveZeroPoints}`);
+        console.log(`Game ${game.gameNumber}: allPlayersHaveZeroPoints = ${allPlayersHaveZeroPoints}, players in game: ${gameLogsForThisGame.length}`);
         if (!allPlayersHaveZeroPoints) {
           gameNumbers.add(game.gameNumber);
         }
@@ -80,10 +80,10 @@ const PlayerDetail: React.FC = () => {
       setGamesWithBoxScores(gameNumbers);
     };
 
-    if (games.length > 0 && gameLogs.length > 0) {
+    if (games.length > 0 && allGameLogs.length > 0) {
       checkGamesWithBoxScores();
     }
-  }, [games, gameLogs]);
+  }, [games, allGameLogs]);
 
   // Helper to get opponent name
   const getOpponentName = (gameNumber: number) => {
