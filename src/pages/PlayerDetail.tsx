@@ -68,10 +68,10 @@ const PlayerDetail: React.FC = () => {
       // If all players have 0 points, it's a box score problem
       for (const game of games) {
         const gameLogsForThisGame = gameLogs.filter(log => log.gameNumber === game.gameNumber);
-        const hasPointsData = gameLogsForThisGame.some(log => log.points > 0);
+        const allPlayersHaveZeroPoints = gameLogsForThisGame.every(log => log.points === 0);
         
-        console.log(`Game ${game.gameNumber}: hasPointsData = ${hasPointsData}`);
-        if (hasPointsData) {
+        console.log(`Game ${game.gameNumber}: allPlayersHaveZeroPoints = ${allPlayersHaveZeroPoints}`);
+        if (!allPlayersHaveZeroPoints) {
           gameNumbers.add(game.gameNumber);
         }
       }
