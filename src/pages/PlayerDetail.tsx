@@ -64,26 +64,26 @@ const PlayerDetail: React.FC = () => {
     const checkGamesWithBoxScores = () => {
       const gameNumbers = new Set<number>();
       
-      // A game has box score data if it has a box_score_url
-      // This is much more efficient than checking each game individually
+      // A game has meaningful box score data if not all players have 0 points
+      // If all players have 0 points, it's a box score problem
       for (const game of games) {
-        console.log(`Game ${game.gameNumber}: boxScoreUrl = ${game.boxScoreUrl}`);
-        if (game.boxScoreUrl) {
+        const gameLogsForThisGame = gameLogs.filter(log => log.gameNumber === game.gameNumber);
+        const hasPointsData = gameLogsForThisGame.some(log => log.points > 0);
+        
+        console.log(`Game ${game.gameNumber}: hasPointsData = ${hasPointsData}`);
+        if (hasPointsData) {
           gameNumbers.add(game.gameNumber);
         }
       }
       
-      // TEMPORARY: Hardcode game 7 as having no box score data for testing
-      gameNumbers.delete(7);
-      
-      console.log('Games with box scores:', Array.from(gameNumbers));
+      console.log('Games with meaningful data:', Array.from(gameNumbers));
       setGamesWithBoxScores(gameNumbers);
     };
 
-    if (games.length > 0) {
+    if (games.length > 0 && gameLogs.length > 0) {
       checkGamesWithBoxScores();
     }
-  }, [games]);
+  }, [games, gameLogs]);
 
   // Helper to get opponent name
   const getOpponentName = (gameNumber: number) => {
