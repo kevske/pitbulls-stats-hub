@@ -214,7 +214,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
                   </div>
                 </div>
               )}
-              {player.weight && player.weight > 0 && (
+              {player.weight && player.weight !== 0 && player.weight !== undefined && player.weight !== null && (
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wide">Gewicht</div>
                   <div className="text-sm font-semibold text-foreground">{player.weight} kg</div>
