@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStats } from '@/contexts/StatsContext';
 import { usePlayerStats } from '@/hooks/usePlayerStats';
 import Layout from '@/components/Layout';
@@ -487,7 +487,12 @@ const PlayerDetail: React.FC = () => {
                   {gameLogs.map((game, index) => (
                     <tr key={index} className={index % 2 === 0 ? 'bg-card' : 'bg-accent/50'}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {getOpponentName(game.gameNumber)}
+                        <Link 
+                          to={`/games/${game.gameNumber}`}
+                          className="text-primary hover:text-primary/80 hover:underline transition-colors"
+                        >
+                          {getOpponentName(game.gameNumber)}
+                        </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {game.minutesPlayed.toFixed(1) || '0.0'}
