@@ -125,14 +125,6 @@ const Players: React.FC = () => {
             <div className="space-y-6 mb-8">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h1 className="text-3xl font-bold">Spieler</h1>
-                <div className="flex items-center gap-4">
-                  {latestGameNumber > 1 && (
-                    <div className="text-sm text-muted-foreground flex items-center">
-                      <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
-                      Letzter Spieltag: {latestGameNumber}
-                    </div>
-                  )}
-                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
