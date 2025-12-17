@@ -8,6 +8,7 @@ import { PlayerTrendInfo, getTopTrendingPlayers } from "@/utils/statsTrends";
 import { Flame } from "lucide-react";
 import TeamBanner from "@/components/TeamBanner";
 import TeamGallery from "@/components/TeamGallery";
+import BirthdayNotification from "@/components/BirthdayNotification";
 
 // Custom CSS for scrolling animation moved to index.css
 
@@ -248,6 +249,9 @@ const Home = () => {
 
   return (
     <Layout>
+      {/* Birthday Notification Popup */}
+      <BirthdayNotification players={players} />
+      
       <div className="container mx-auto max-w-6xl space-y-12 animate-fade-in">
         {/* Hero Section */}
         <div className="text-center mb-8">
