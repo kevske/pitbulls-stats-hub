@@ -210,11 +210,11 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wide">Alter</div>
                   <div className="text-sm font-semibold text-foreground">
-                    {player.age || calculateAge(player.birthDate)} Jahre
+                    {player.age || calculateAge(player.birthDate)}
                   </div>
                 </div>
               )}
-              {player.weight && player.weight !== 0 && player.weight !== undefined && player.weight !== null && (
+              {player.weight && player.weight !== 0 && player.weight !== undefined && player.weight !== null && !isNaN(player.weight) && (
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wide">Gewicht</div>
                   <div className="text-sm font-semibold text-foreground">{player.weight} kg</div>
