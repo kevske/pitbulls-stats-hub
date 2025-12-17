@@ -6,7 +6,6 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { BoxscoreService } from '@/lib/boxscoreService';
 
 import { PlayerStats, PlayerGameLog } from '@/types/stats';
 import playerImagesData from '@/data/playerImages.json';
@@ -62,28 +61,22 @@ const PlayerDetail: React.FC = () => {
 
   // Check which games have box score data
   useEffect(() => {
-    const checkGamesWithBoxScores = async () => {
+    const checkGamesWithBoxScores = () => {
       const gameNumbers = new Set<number>();
       
+      // A game has box score data if it has a box_score_url
+      // This is much more efficient than checking each game individually
       for (const game of games) {
+        console.log(`Game ${game.gameNumber}: boxScoreUrl = ${game.boxScoreUrl}`);
         if (game.boxScoreUrl) {
-          // If game has a box score URL, it definitely has box score data
           gameNumbers.add(game.gameNumber);
-        } else {
-          // Check if box scores exist for this game
-          try {
-            const gameId = `game-${game.gameNumber}-${game.date.replace(/[^\d]/g, '')}`;
-            const boxScores = await BoxscoreService.getBoxScoresByGame(gameId);
-            if (boxScores.length > 0) {
-              gameNumbers.add(game.gameNumber);
-            }
-          } catch (error) {
-            // Game has no box score data
-            console.log(`No box score data for game ${game.gameNumber}`);
-          }
         }
       }
       
+      // TEMPORARY: Hardcode game 7 as having no box score data for testing
+      gameNumbers.delete(7);
+      
+      console.log('Games with box scores:', Array.from(gameNumbers));
       setGamesWithBoxScores(gameNumbers);
     };
 
