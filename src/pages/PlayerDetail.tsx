@@ -398,7 +398,9 @@ const PlayerDetail: React.FC = () => {
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
-                        data={[...gameLogs].sort((a, b) => a.gameNumber - b.gameNumber)}
+                        data={[...gameLogs]
+                          .filter(log => hasBoxScoreData(log.gameNumber))
+                          .sort((a, b) => a.gameNumber - b.gameNumber)}
                         margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -433,6 +435,7 @@ const PlayerDetail: React.FC = () => {
                           strokeWidth={3}
                           dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
                           activeDot={{ r: 6 }}
+                          connectNulls={true}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -445,7 +448,9 @@ const PlayerDetail: React.FC = () => {
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
-                        data={[...gameLogs].sort((a, b) => a.gameNumber - b.gameNumber)}
+                        data={[...gameLogs]
+                          .filter(log => hasBoxScoreData(log.gameNumber))
+                          .sort((a, b) => a.gameNumber - b.gameNumber)}
                         margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -483,6 +488,7 @@ const PlayerDetail: React.FC = () => {
                           stroke="#10b981"
                           strokeWidth={2}
                           dot={{ r: 3, fill: '#10b981' }}
+                          connectNulls={true}
                         />
                         <Line
                           type="monotone"
@@ -491,6 +497,7 @@ const PlayerDetail: React.FC = () => {
                           stroke="#ef4444"
                           strokeWidth={2}
                           dot={{ r: 3, fill: '#ef4444' }}
+                          connectNulls={true}
                         />
                         <Line
                           type="monotone"
@@ -499,6 +506,7 @@ const PlayerDetail: React.FC = () => {
                           stroke="#f59e0b"
                           strokeWidth={2}
                           dot={{ r: 3, fill: '#f59e0b' }}
+                          connectNulls={true}
                         />
                       </LineChart>
                     </ResponsiveContainer>
