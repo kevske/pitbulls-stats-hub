@@ -15,6 +15,8 @@ export function transformSupabaseStatsToPlayerStats(row: any): PlayerStats {
     position: row.position || '',
     age: 0, // Not computed in Supabase yet
     height: row.height || '',
+    weight: row.weight || 0,
+    birthDate: row.birth_date || '',
     bio: row.bio || '',
     gamesPlayed: Number(row.games_played) || 0,
     minutesPerGame: Number(row.minutes_per_game) || 0,
