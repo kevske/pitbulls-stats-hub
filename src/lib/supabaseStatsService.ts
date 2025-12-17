@@ -49,13 +49,16 @@ const calculateAge = (birthDate?: string): number => {
 // Transform Supabase player stats to match frontend PlayerStats interface
 export function transformSupabaseStatsToPlayerStats(row: any): PlayerStats {
   const imageUrl = `/pitbulls-stats-hub/players/${generateImageFilename(row.first_name, row.last_name)}`;
-  const birthDate = row.birth_date || '';
+  
+  // Handle both direct birth_date and nested player_info.birth_date from join
+  const birthDate = row.birth_date || row.player_info?.birth_date || '';
   
   // Debug logging
   console.log('Supabase player data:', {
     first_name: row.first_name,
     last_name: row.last_name,
     birth_date: row.birth_date,
+    player_info_birth_date: row.player_info?.birth_date,
     birthDate: birthDate
   });
   
@@ -173,7 +176,12 @@ export class SupabaseStatsService {
     try {
       const { data, error } = await supabase
         .from('player_season_totals')
-        .select('*')
+        .select(`
+          *,
+          player_info!inner(
+            birth_date
+          )
+        `)
         .order('points_per_game', { ascending: false });
 
       if (error) throw error;
@@ -182,7 +190,7 @@ export class SupabaseStatsService {
       console.error('Error fetching player stats from Supabase:', error);
       throw error;
     }
-  }
+  };
 
   // Get player stats by slug
   static async fetchPlayerStats(playerSlug: string): Promise<PlayerStats | null> {
