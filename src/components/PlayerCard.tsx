@@ -214,7 +214,18 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
                   </div>
                 </div>
               )}
-              {player.weight && player.weight !== 0 && player.weight !== undefined && player.weight !== null && !isNaN(player.weight) && (
+              {(() => {
+                console.log(`Weight debug for ${player.firstName} ${player.lastName}:`, {
+                  weight: player.weight,
+                  type: typeof player.weight,
+                  isNull: player.weight === null,
+                  isUndefined: player.weight === undefined,
+                  isZero: player.weight === 0,
+                  isFalsy: !player.weight,
+                  condition: player.weight && player.weight !== 0 && player.weight !== undefined && player.weight !== null && !isNaN(player.weight)
+                });
+                return player.weight && player.weight !== 0 && player.weight !== undefined && player.weight !== null && !isNaN(player.weight);
+              })() && (
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wide">Gewicht</div>
                   <div className="text-sm font-semibold text-foreground">{player.weight} kg</div>
