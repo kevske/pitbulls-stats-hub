@@ -4,43 +4,20 @@ import { generateImageFilename } from '../data/api/statsService';
 
 // Calculate age from birth date
 const calculateAge = (birthDate?: string): number => {
-  if (!birthDate) {
-    console.log('No birth date provided');
-    return 0;
-  }
+  if (!birthDate) return 0;
   
   const birth = new Date(birthDate);
   const today = new Date();
   
-  console.log('Calculating age:', {
-    birthDate,
-    parsedBirth: birth,
-    today,
-    isValid: !isNaN(birth.getTime())
-  });
-  
   // Check if birth date is valid
-  if (isNaN(birth.getTime())) {
-    console.log('Invalid birth date');
-    return 0;
-  }
+  if (isNaN(birth.getTime())) return 0;
   
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();
   
-  console.log('Age calculation:', {
-    yearDiff: today.getFullYear() - birth.getFullYear(),
-    monthDiff,
-    dayDiff: today.getDate() - birth.getDate(),
-    initialAge: age
-  });
-  
   // Adjust age if birthday hasn't occurred yet this year
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
     age--;
-    console.log('Adjusted age down by 1, final age:', age);
-  } else {
-    console.log('No adjustment needed, final age:', age);
   }
   
   return age;
@@ -52,14 +29,6 @@ export function transformSupabaseStatsToPlayerStats(row: any): PlayerStats {
   
   // Handle direct birth_date field (now merged from player_info)
   const birthDate = row.birth_date || '';
-  
-  // Debug logging
-  console.log('Supabase player data:', {
-    first_name: row.first_name,
-    last_name: row.last_name,
-    birth_date: row.birth_date,
-    birthDate: birthDate
-  });
   
   return {
     id: row.player_slug,
