@@ -2,10 +2,32 @@ import { supabase } from './supabase';
 import { PlayerStats, PlayerGameLog, GameStats } from '../types/stats';
 import { generateImageFilename } from '../data/api/statsService';
 
+// Calculate age from birth date
+const calculateAge = (birthDate?: string): number => {
+  if (!birthDate) return 0;
+  
+  const birth = new Date(birthDate);
+  const today = new Date();
+  
+  // Check if birth date is valid
+  if (isNaN(birth.getTime())) return 0;
+  
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  
+  // Adjust age if birthday hasn't occurred yet this year
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  
+  return age;
+};
+
 // Transform Supabase player stats to match frontend PlayerStats interface
 export function transformSupabaseStatsToPlayerStats(row: any): PlayerStats {
   const imageUrl = `/pitbulls-stats-hub/players/${generateImageFilename(row.first_name, row.last_name)}`;
-
+  const birthDate = row.birth_date || '';
+  
   return {
     id: row.player_slug,
     firstName: row.first_name,
@@ -13,10 +35,10 @@ export function transformSupabaseStatsToPlayerStats(row: any): PlayerStats {
     imageUrl,
     jerseyNumber: row.jersey_number || 0,
     position: row.position || '',
-    age: 0, // Not computed in Supabase yet
+    age: calculateAge(birthDate),
     height: row.height || '',
     weight: row.weight || 0,
-    birthDate: row.birth_date || '',
+    birthDate: birthDate,
     bio: row.bio || '',
     gamesPlayed: Number(row.games_played) || 0,
     minutesPerGame: Number(row.minutes_per_game) || 0,
