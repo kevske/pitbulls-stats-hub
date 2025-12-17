@@ -439,7 +439,7 @@ const AdminPlayerInfo: React.FC = () => {
                             <span className="font-medium">Größe:</span> {player.height}
                           </div>
                         )}
-                        {player.weight && (
+                        {player.weight && player.weight > 0 && (
                           <div>
                             <span className="font-medium">Gewicht:</span> {player.weight} kg
                           </div>
