@@ -31,3 +31,23 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true
   }
 });
+
+// Service role client for admin operations (bypasses RLS)
+// IMPORTANT: Keep this key secure and only use on the server-side or for admin functions
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
+
+let supabaseAdmin;
+if (supabaseServiceKey) {
+  supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
+  console.log('Service role client created for admin operations');
+} else {
+  console.warn('Service role key not found - admin operations will require authentication');
+  supabaseAdmin = supabase; // Fallback to regular client
+}
+
+export { supabaseAdmin };
