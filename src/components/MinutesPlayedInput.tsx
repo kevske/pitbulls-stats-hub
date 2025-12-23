@@ -120,6 +120,20 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
       if (success) {
         toast.success(`Minuten für Spiel ${gameNumber} erfolgreich gespeichert!`);
         
+        // Reload player minutes data to reflect saved values
+        try {
+          const playersData = await MinutesService.getPlayersNeedingMinutes(gameNumber);
+          const componentData = playersData
+            .filter(player => player.playerSlug != null)
+            .map(player => ({
+              playerId: player.playerSlug,
+              seconds: Math.round(player.minutes * 60)
+            }));
+          setPlayerMinutes(componentData);
+        } catch (error) {
+          console.error('Error reloading player minutes after save:', error);
+        }
+        
         // Refresh summary data
         const updatedSummary = await MinutesService.getGameMinutesSummary(gameNumber);
         setSummary(updatedSummary);
