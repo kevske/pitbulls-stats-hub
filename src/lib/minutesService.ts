@@ -97,6 +97,26 @@ export class MinutesService {
       console.log('Game number:', gameNumber);
       console.log('Player seconds data:', playerSeconds);
       
+      // First, get the game info to determine which team is TSV Neuenstadt (same as in getPlayersNeedingMinutes)
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('home_team_name, away_team_name, home_team_id, away_team_id')
+        .eq('game_id', gameNumber.toString())
+        .single();
+
+      if (gameError) throw gameError;
+
+      // Determine which team ID represents TSV Neuenstadt
+      const isTSVNeuenstadtHome = gameData.home_team_name?.toLowerCase().includes('neuenstadt');
+      const tsvNeuenstadtTeamId = isTSVNeuenstadtHome ? gameData.home_team_id : gameData.away_team_id;
+
+      if (!tsvNeuenstadtTeamId) {
+        console.error('Could not determine TSV Neuenstadt team ID for game:', gameNumber);
+        throw new Error('Could not determine team ID for update');
+      }
+
+      console.log(`Game ${gameNumber}: TSV Neuenstadt team ID is ${tsvNeuenstadtTeamId}`);
+      
       // Update each player's minutes individually (convert seconds to decimal for database)
       for (const { playerId, seconds } of playerSeconds) {
         // Use precise conversion to avoid floating point issues
@@ -106,6 +126,7 @@ export class MinutesService {
           .from('box_scores')
           .update({ minutes_played: decimalMinutes })
           .eq('game_id', gameNumber.toString())
+          .eq('team_id', tsvNeuenstadtTeamId) // Add team_id filter like in getPlayersNeedingMinutes
           .eq('player_slug', playerId)
           .select();
           
@@ -121,7 +142,7 @@ export class MinutesService {
         }
         
         if (!data || data.length === 0) {
-          console.warn(`No rows updated for player ${playerId} - check if game_id and player_slug match`);
+          console.warn(`No rows updated for player ${playerId} - check if game_id, team_id, and player_slug match`);
         }
       }
 
