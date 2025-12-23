@@ -151,29 +151,67 @@ export class MinutesService {
           console.error(`Error checking player ${playerId}:`, playerCheckError);
         } else {
           console.log(`Player ${playerId} exists in database:`, playerCheck);
+          console.log(`Exact values being used for update:`, {
+            game_id: gameNumber.toString(),
+            team_id: tsvNeuenstadtTeamId,
+            player_slug: playerId
+          });
         }
         
-        const { error, data } = await supabase
-          .from('box_scores')
-          .update({ minutes_played: decimalMinutes })
-          .eq('game_id', gameNumber.toString())
-          .eq('team_id', tsvNeuenstadtTeamId) // Add team_id filter like in getPlayersNeedingMinutes
-          .eq('player_slug', playerId)
-          .select();
+        // Try the update with more detailed error handling
+        try {
+          const { error, data } = await supabase
+            .from('box_scores')
+            .update({ minutes_played: decimalMinutes })
+            .eq('game_id', gameNumber.toString())
+            .eq('team_id', tsvNeuenstadtTeamId)
+            .eq('player_slug', playerId)
+            .select();
+            
+          console.log(`Update result for ${playerId}:`, { 
+            error, 
+            data: data || 'No data returned',
+            dataLength: data?.length || 0,
+            errorMessage: error?.message,
+            errorDetails: error?.details
+          });
+            
+          if (error) {
+            console.error('Error updating player:', playerId, error);
+            throw error;
+          }
           
-        console.log(`Update result for ${playerId}:`, { 
-          error, 
-          data: data || 'No data returned',
-          dataLength: data?.length || 0
-        });
-          
-        if (error) {
-          console.error('Error updating player:', playerId, error);
-          throw error;
-        }
-        
-        if (!data || data.length === 0) {
-          console.warn(`No rows updated for player ${playerId} - check if game_id, team_id, and player_slug match`);
+          if (!data || data.length === 0) {
+            console.warn(`No rows updated for player ${playerId} - this might be an RLS (Row Level Security) issue`);
+            
+            // Try an alternative approach - try updating without the .select() to see if that's the issue
+            console.log(`Trying update without .select() for player ${playerId}...`);
+            const { error: error2, count } = await supabase
+              .from('box_scores')
+              .update({ minutes_played: decimalMinutes }, { count: 'exact' })
+              .eq('game_id', gameNumber.toString())
+              .eq('team_id', tsvNeuenstadtTeamId)
+              .eq('player_slug', playerId);
+              
+            console.log(`Alternative update result for ${playerId}:`, {
+              error: error2,
+              count: count,
+              errorMessage: error2?.message,
+              errorDetails: error2?.details
+            });
+            
+            if (error2) {
+              console.error('Alternative update also failed for player:', playerId, error2);
+              throw error2;
+            } else if (count === 0) {
+              console.error(`Alternative update also returned 0 rows for player ${playerId} - this is likely an RLS permission issue`);
+            } else {
+              console.log(`Alternative update succeeded for player ${playerId} - updated ${count} rows`);
+            }
+          }
+        } catch (updateError) {
+          console.error(`Update failed for player ${playerId}:`, updateError);
+          throw updateError;
         }
       }
 
