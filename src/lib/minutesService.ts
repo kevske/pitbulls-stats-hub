@@ -99,7 +99,8 @@ export class MinutesService {
       
       // Update each player's minutes individually (convert seconds to decimal for database)
       for (const { playerId, seconds } of playerSeconds) {
-        const decimalMinutes = seconds / 60; // Convert to decimal for database storage
+        // Use precise conversion to avoid floating point issues
+        const decimalMinutes = Math.round((seconds / 60) * 100) / 100; // Round to 2 decimal places
         console.log(`Updating player ${playerId} with seconds: ${seconds}, decimal minutes: ${decimalMinutes}`);
         const { error, data } = await supabase
           .from('box_scores')
@@ -117,6 +118,10 @@ export class MinutesService {
         if (error) {
           console.error('Error updating player:', playerId, error);
           throw error;
+        }
+        
+        if (!data || data.length === 0) {
+          console.warn(`No rows updated for player ${playerId} - check if game_id and player_slug match`);
         }
       }
 
