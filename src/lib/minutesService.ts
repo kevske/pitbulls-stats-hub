@@ -97,6 +97,20 @@ export class MinutesService {
       console.log('Game number:', gameNumber);
       console.log('Player seconds data:', playerSeconds);
       
+      // Check authentication status first
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('Authentication status:', { 
+        user: user ? 'authenticated' : 'not authenticated', 
+        userId: user?.id,
+        userEmail: user?.email,
+        authError 
+      });
+      
+      if (!user) {
+        console.error('User is not authenticated - this explains why RLS blocks updates');
+        throw new Error('User not authenticated. Please log in first.');
+      }
+      
       // First, get the game info to determine which team is TSV Neuenstadt (same as in getPlayersNeedingMinutes)
       const { data: gameData, error: gameError } = await supabase
         .from('games')
