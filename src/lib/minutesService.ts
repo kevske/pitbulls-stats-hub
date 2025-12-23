@@ -106,6 +106,8 @@ export class MinutesService {
 
       if (gameError) throw gameError;
 
+      console.log('Game data from database:', gameData);
+
       // Determine which team ID represents TSV Neuenstadt
       const isTSVNeuenstadtHome = gameData.home_team_name?.toLowerCase().includes('neuenstadt');
       const tsvNeuenstadtTeamId = isTSVNeuenstadtHome ? gameData.home_team_id : gameData.away_team_id;
@@ -117,11 +119,40 @@ export class MinutesService {
 
       console.log(`Game ${gameNumber}: TSV Neuenstadt team ID is ${tsvNeuenstadtTeamId}`);
       
+      // Let's first check what rows actually exist for this game and team
+      const { data: existingRows, error: checkError } = await supabase
+        .from('box_scores')
+        .select('game_id, team_id, player_slug, player_first_name, player_last_name, minutes_played')
+        .eq('game_id', gameNumber.toString())
+        .eq('team_id', tsvNeuenstadtTeamId);
+        
+      if (checkError) {
+        console.error('Error checking existing rows:', checkError);
+      } else {
+        console.log('Existing rows in database for this game/team:', existingRows);
+        console.log('Number of existing rows:', existingRows?.length || 0);
+      }
+      
       // Update each player's minutes individually (convert seconds to decimal for database)
       for (const { playerId, seconds } of playerSeconds) {
         // Use precise conversion to avoid floating point issues
         const decimalMinutes = Math.round((seconds / 60) * 100) / 100; // Round to 2 decimal places
         console.log(`Updating player ${playerId} with seconds: ${seconds}, decimal minutes: ${decimalMinutes}`);
+        
+        // Check if this specific player exists
+        const { data: playerCheck, error: playerCheckError } = await supabase
+          .from('box_scores')
+          .select('game_id, team_id, player_slug, player_first_name, player_last_name, minutes_played')
+          .eq('game_id', gameNumber.toString())
+          .eq('team_id', tsvNeuenstadtTeamId)
+          .eq('player_slug', playerId);
+          
+        if (playerCheckError) {
+          console.error(`Error checking player ${playerId}:`, playerCheckError);
+        } else {
+          console.log(`Player ${playerId} exists in database:`, playerCheck);
+        }
+        
         const { error, data } = await supabase
           .from('box_scores')
           .update({ minutes_played: decimalMinutes })
