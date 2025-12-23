@@ -58,7 +58,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
           .filter(player => player.playerSlug != null) // Filter out null playerSlugs
           .map(player => ({
             playerId: player.playerSlug,
-            seconds: Math.round(player.minutes * 60) // Convert decimal minutes to exact seconds
+            seconds: Math.round((player.minutes || 0) * 60) // Convert decimal minutes to exact seconds, handle null
           }));
         
         console.log('Original player data (minutes):', playersData.map(p => ({ id: p.playerSlug, minutes: p.minutes })));
@@ -127,9 +127,10 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
             .filter(player => player.playerSlug != null)
             .map(player => ({
               playerId: player.playerSlug,
-              seconds: Math.round(player.minutes * 60)
+              seconds: Math.round((player.minutes || 0) * 60) // Use same conversion as initial load
             }));
           setPlayerMinutes(componentData);
+          console.log('Reloaded player minutes after save:', componentData);
         } catch (error) {
           console.error('Error reloading player minutes after save:', error);
         }
