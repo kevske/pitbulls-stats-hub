@@ -56,6 +56,7 @@ export class VideoProjectService {
             };
 
             const payload = {
+                game_number: gameNumber.toString(), // Add game_number for NOT NULL constraint
                 tsv_game_number: gameNumber, // Use TSV_game_number directly
                 video_index: videoIndex,
                 video_id: videoId,
