@@ -44,9 +44,10 @@ if (supabaseServiceKey) {
       autoRefreshToken: false
     }
   });
-  console.log('Service role client created for admin operations');
+  console.log('Service role client created for admin operations - KEY LENGTH:', supabaseServiceKey.length);
 } else {
   console.warn('Service role key not found - admin operations will require authentication');
+  console.warn('Expected environment variable: VITE_SUPABASE_SERVICE_KEY');
   supabaseAdmin = supabase; // Fallback to regular client
 }
 
