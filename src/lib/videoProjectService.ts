@@ -65,11 +65,11 @@ export class VideoProjectService {
             };
 
             // Upsert: Try to update if exists, otherwise insert
-            // We rely on the UNIQUE constraint on (TSV_game_number, video_index)
+            // We rely on the UNIQUE constraint video_projects_tsv_game_video_index_unique
             const { data: savedProject, error } = await supabase
                 .from('video_projects')
                 .upsert(payload, {
-                    onConflict: 'TSV_game_number,video_index',
+                    onConflict: 'video_projects_tsv_game_video_index_unique',
                     ignoreDuplicates: false
                 })
                 .select()
