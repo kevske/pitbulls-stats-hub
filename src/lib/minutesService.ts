@@ -96,6 +96,10 @@ export class MinutesService {
       console.log('=== STARTING SAVE OPERATION ===');
       console.log('Game number:', gameNumber);
       console.log('Player seconds data:', playerSeconds);
+      
+      // Debug: Check which client we're actually using
+      console.log('Service role key available:', !!import.meta.env.VITE_SUPABASE_SERVICE_KEY);
+      console.log('Using client:', supabaseAdmin === supabase ? 'REGULAR CLIENT (subject to RLS)' : 'SERVICE ROLE CLIENT (bypasses RLS)');
       console.log('Using service role client (bypasses RLS)');
       
       // First, get the game info to determine which team is TSV Neuenstadt (same as in getPlayersNeedingMinutes)
