@@ -424,7 +424,8 @@ export class MinutesService {
         const hasMissingData = needingMinutes.size > 0;
         const isInvalidTotal = Math.abs(totalMinutes - 200) > 1;
         
-        const finalNeedingMinutes = (hasMissingData || isInvalidTotal) ? players.size : 0;
+        // Only count players who actually need minutes, not all players
+        const finalNeedingMinutes = hasMissingData ? needingMinutes.size : (isInvalidTotal ? players.size : 0);
         
         gameStats.set(gameId, {
           totalPlayers: players.size,
