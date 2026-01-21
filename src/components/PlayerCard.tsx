@@ -6,7 +6,7 @@ import { PlayerGameLog, PlayerStats } from "@/types/stats";
 import { PlayerTrendIndicator } from "./PlayerTrendIndicator";
 import { useStats } from "@/contexts/StatsContext";
 import { useState, useMemo, useRef, useEffect } from "react";
-import { generateImageFilename } from "@/data/api/statsService";
+import { generateImageFilename } from "@/utils/playerUtils";
 
 interface PlayerCardProps {
   player: PlayerStats;
