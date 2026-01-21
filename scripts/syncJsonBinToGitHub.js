@@ -51,7 +51,7 @@ async function syncJsonBinToGitHub() {
       );
       
       // Sync each video (quarter)
-      for (const [videoNumber, binId] of Object.entries(videos)) {
+      const videoPromises = Object.entries(videos).map(async ([videoNumber, binId]) => {
         try {
           const videoResponse = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
             headers: { 'X-Master-Key': apiKey }
@@ -59,7 +59,7 @@ async function syncJsonBinToGitHub() {
           
           if (!videoResponse.ok) {
             console.warn(`Failed to fetch video ${gameNumber}-${videoNumber}: ${videoResponse.status}`);
-            continue;
+            return;
           }
           
           const videoData = await videoResponse.json();
@@ -73,7 +73,9 @@ async function syncJsonBinToGitHub() {
         } catch (error) {
           console.error(`Error syncing video ${gameNumber}-${videoNumber}:`, error.message);
         }
-      }
+      });
+
+      await Promise.all(videoPromises);
       
       gamesSynced.push(gameNumber);
     }
