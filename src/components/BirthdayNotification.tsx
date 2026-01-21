@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { X, Cake, Gift, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,8 +46,8 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
 
         // Calculate age
         let age = currentYear - birthDate.getFullYear();
-        if (today.getMonth() < birthDate.getMonth() || 
-            (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
+        if (today.getMonth() < birthDate.getMonth() ||
+          (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
           age--;
         }
 
@@ -56,7 +57,7 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
           age
         } as BirthdayInfo;
       })
-      .filter((info): info is BirthdayInfo => 
+      .filter((info): info is BirthdayInfo =>
         info !== null && Math.abs(info.daysUntil) <= 10
       )
       .sort((a, b) => Math.abs(a.daysUntil) - Math.abs(b.daysUntil));
@@ -67,24 +68,31 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
     setIsVisible(birthdayInfos.length > 0);
   }, [birthdayInfos]);
 
-  const getBirthdayMessage = (info: BirthdayInfo): string => {
+  const getBirthdayMessage = (info: BirthdayInfo): React.ReactNode => {
     const { player, daysUntil, age } = info;
-    const playerName = `${player.firstName} ${player.lastName || ''}`;
+    const playerLink = (
+      <Link
+        to={`/players/${player.id}`}
+        className="font-semibold text-primary hover:underline"
+      >
+        {player.firstName} {player.lastName || ''}
+      </Link>
+    );
 
     if (daysUntil === 0) {
-      return `🎉 Heute feiert ${playerName} seinen ${age}. Geburtstag! Alles Gute zum Geburtstag! 🎂`;
+      return <>🎉 Heute feiert {playerLink} seinen {age}. Geburtstag! Alles Gute zum Geburtstag! 🎂</>;
     } else if (daysUntil > 0) {
       if (daysUntil === 1) {
-        return `🎈 Morgen feiert ${playerName} seinen ${age}. Geburtstag!`;
+        return <>🎈 Morgen feiert {playerLink} seinen {age}. Geburtstag!</>;
       } else {
-        return `📅 In ${daysUntil} Tagen feiert ${playerName} seinen ${age}. Geburtstag!`;
+        return <>📅 In {daysUntil} Tagen feiert {playerLink} seinen {age}. Geburtstag!</>;
       }
     } else {
       const daysAgo = Math.abs(daysUntil);
       if (daysAgo === 1) {
-        return `🎊 Gestern hat ${playerName} seinen ${age}. Geburtstag gefeiert! Nachträglich alles Gute! 🎁`;
+        return <>🎊 Gestern hat {playerLink} seinen {age}. Geburtstag gefeiert! Nachträglich alles Gute! 🎁</>;
       } else {
-        return `💫 Vor ${daysAgo} Tagen hat ${playerName} seinen ${age}. Geburtstag gefeiert!`;
+        return <>💫 Vor {daysAgo} Tagen hat {playerLink} seinen {age}. Geburtstag gefeiert!</>;
       }
     }
   };
@@ -113,7 +121,7 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
             <div className="flex items-center gap-2">
               {getBirthdayIcon(birthdayInfos[0].daysUntil)}
               <h3 className="font-bold text-lg">
-                {birthdayInfos.some(info => info.daysUntil === 0) ? '🎉 Geburtstage heute!' : '📅 Geburtstage in der Nähe'}
+                {birthdayInfos.some(info => info.daysUntil === 0) ? '🎉 Geburtstage heute!' : '📅 Kommende Geburtstage'}
               </h3>
             </div>
             <Button
@@ -149,8 +157,8 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
           {birthdayInfos.length > 1 && (
             <div className="mt-3 pt-3 border-t border-gray-200 text-center">
               <p className="text-xs text-gray-500">
-                {birthdayInfos.filter(info => info.daysUntil === 0).length} Geburtstage heute, 
-                {birthdayInfos.filter(info => info.daysUntil > 0).length} in Kürze, 
+                {birthdayInfos.filter(info => info.daysUntil === 0).length} Geburtstage heute,
+                {birthdayInfos.filter(info => info.daysUntil > 0).length} in Kürze,
                 {birthdayInfos.filter(info => info.daysUntil < 0).length} kürzlich
               </p>
             </div>
