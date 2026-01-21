@@ -93,15 +93,6 @@ export class MinutesService {
   // Update seconds for multiple players in a game
   static async updatePlayerMinutes(gameNumber: number, playerSeconds: Array<{playerId: string, seconds: number}>): Promise<boolean> {
     try {
-      console.log('=== STARTING SAVE OPERATION ===');
-      console.log('Game number:', gameNumber);
-      console.log('Player seconds data:', playerSeconds);
-      
-      // Debug: Check which client we're actually using
-      console.log('Service role key available:', !!import.meta.env.VITE_SUPABASE_SERVICE_KEY);
-      console.log('Using client:', supabaseAdmin === supabase ? 'REGULAR CLIENT (subject to RLS)' : 'SERVICE ROLE CLIENT (bypasses RLS)');
-      console.log('Using service role client (bypasses RLS)');
-      
       // First, get the game info to determine which team is TSV Neuenstadt (same as in getPlayersNeedingMinutes)
       const { data: gameData, error: gameError } = await supabaseAdmin
         .from('games')
@@ -110,8 +101,6 @@ export class MinutesService {
         .single();
 
       if (gameError) throw gameError;
-
-      console.log('Game data from database:', gameData);
 
       // Determine which team ID represents TSV Neuenstadt
       const isTSVNeuenstadtHome = gameData.home_team_name?.toLowerCase().includes('neuenstadt');
@@ -122,10 +111,8 @@ export class MinutesService {
         throw new Error('Could not determine team ID for update');
       }
 
-      console.log(`Game ${gameNumber}: TSV Neuenstadt team ID is ${tsvNeuenstadtTeamId}`);
-      
       // Let's first check what rows actually exist for this game and team
-      const { data: existingRows, error: checkError } = await supabaseAdmin
+      const { error: checkError } = await supabaseAdmin
         .from('box_scores')
         .select('game_id, team_id, player_slug, player_first_name, player_last_name, minutes_played')
         .eq('game_id', gameNumber.toString())
@@ -133,19 +120,15 @@ export class MinutesService {
         
       if (checkError) {
         console.error('Error checking existing rows:', checkError);
-      } else {
-        console.log('Existing rows in database for this game/team:', existingRows);
-        console.log('Number of existing rows:', existingRows?.length || 0);
       }
       
       // Update each player's minutes individually (convert seconds to decimal for database)
       for (const { playerId, seconds } of playerSeconds) {
         // Use precise conversion to avoid floating point issues
         const decimalMinutes = Math.round((seconds / 60) * 100) / 100; // Round to 2 decimal places
-        console.log(`Updating player ${playerId} with seconds: ${seconds}, decimal minutes: ${decimalMinutes}`);
         
         // Check if this specific player exists
-        const { data: playerCheck, error: playerCheckError } = await supabaseAdmin
+        const { error: playerCheckError } = await supabaseAdmin
           .from('box_scores')
           .select('game_id, team_id, player_slug, player_first_name, player_last_name, minutes_played')
           .eq('game_id', gameNumber.toString())
@@ -154,13 +137,6 @@ export class MinutesService {
           
         if (playerCheckError) {
           console.error(`Error checking player ${playerId}:`, playerCheckError);
-        } else {
-          console.log(`Player ${playerId} exists in database:`, playerCheck);
-          console.log(`Exact values being used for update:`, {
-            game_id: gameNumber.toString(),
-            team_id: tsvNeuenstadtTeamId,
-            player_slug: playerId
-          });
         }
         
         // Try the update with more detailed error handling
@@ -173,14 +149,6 @@ export class MinutesService {
             .eq('player_slug', playerId)
             .select();
             
-          console.log(`Update result for ${playerId}:`, { 
-            error, 
-            data: data || 'No data returned',
-            dataLength: data?.length || 0,
-            errorMessage: error?.message,
-            errorDetails: error?.details
-          });
-            
           if (error) {
             console.error('Error updating player:', playerId, error);
             throw error;
@@ -190,28 +158,18 @@ export class MinutesService {
             console.warn(`No rows updated for player ${playerId} - this might be an RLS (Row Level Security) issue`);
             
             // Try an alternative approach - try updating without the .select() to see if that's the issue
-            console.log(`Trying update without .select() for player ${playerId}...`);
             const { error: error2, count } = await supabaseAdmin
               .from('box_scores')
               .update({ minutes_played: decimalMinutes }, { count: 'exact' })
               .eq('game_id', gameNumber.toString())
               .eq('team_id', tsvNeuenstadtTeamId)
               .eq('player_slug', playerId);
-              
-            console.log(`Alternative update result for ${playerId}:`, {
-              error: error2,
-              count: count,
-              errorMessage: error2?.message,
-              errorDetails: error2?.details
-            });
             
             if (error2) {
               console.error('Alternative update also failed for player:', playerId, error2);
               throw error2;
             } else if (count === 0) {
               console.error(`Alternative update also returned 0 rows for player ${playerId} - this is likely an RLS permission issue`);
-            } else {
-              console.log(`Alternative update succeeded for player ${playerId} - updated ${count} rows`);
             }
           }
         } catch (updateError) {
@@ -220,7 +178,6 @@ export class MinutesService {
         }
       }
 
-      console.log('=== SAVE OPERATION COMPLETED SUCCESSFULLY ===');
       return true;
     } catch (error) {
       console.error('=== SAVE OPERATION FAILED ===', error);
