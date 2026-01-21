@@ -5,14 +5,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Copy, Download, Check, Upload, Save, FolderOpen } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { toast } from 'sonner';
-import { 
-  SaveData, 
-  generateSaveData, 
-  downloadSaveFile, 
+import {
+  SaveData,
+  generateSaveData,
+  downloadSaveFile,
   downloadYouTubeTimestamps,
   loadSaveFile,
   hasUnsavedChanges
-} from '@/lib/saveLoad';
+} from '@/services/saveLoad';
 
 interface ExportPanelProps {
   events: TaggedEvent[];
@@ -23,13 +23,13 @@ interface ExportPanelProps {
   lastSavedData?: SaveData | null;
 }
 
-export function ExportPanel({ 
-  events, 
-  players, 
-  videoId, 
-  playlistId, 
-  onLoadData, 
-  lastSavedData 
+export function ExportPanel({
+  events,
+  players,
+  videoId,
+  playlistId,
+  onLoadData,
+  lastSavedData
 }: ExportPanelProps) {
   const [copied, setCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -103,7 +103,7 @@ export function ExportPanel({
           )}
         </div>
       </div>
-      
+
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-2 mb-3">
         <Button variant="outline" size="sm" onClick={handleLoadProject} className="w-full gap-1">
@@ -115,7 +115,7 @@ export function ExportPanel({
           Save File
         </Button>
       </div>
-      
+
       {/* Export Options */}
       <div className="flex gap-2 mb-3">
         <Button variant="outline" size="sm" onClick={handleDownloadTimestamps} className="flex-1 gap-1">
@@ -127,7 +127,7 @@ export function ExportPanel({
           {copied ? 'Copied!' : 'Copy'}
         </Button>
       </div>
-      
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -136,14 +136,14 @@ export function ExportPanel({
         onChange={handleFileSelect}
         className="hidden"
       />
-      
+
       <Textarea
         readOnly
         value={timestampList}
         className="font-mono text-xs h-32 bg-background/50 resize-none"
         placeholder="Your timestamps will appear here..."
       />
-      
+
       <div className="mt-2 text-xs text-muted-foreground">
         {events.length} events • Total duration: {Math.floor((sortedEvents[sortedEvents.length - 1]?.timestamp || 0) / 60)}:{Math.floor((sortedEvents[sortedEvents.length - 1]?.timestamp || 0) % 60).toString().padStart(2, '0')}
       </div>

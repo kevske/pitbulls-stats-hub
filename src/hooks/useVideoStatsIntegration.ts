@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { SaveData } from '@/lib/saveLoad';
-import { 
-  convertVideoToPlayerGameLogs, 
-  convertVideoToGameStats, 
+import { SaveData } from '@/services/saveLoad';
+import {
+  convertVideoToPlayerGameLogs,
+  convertVideoToGameStats,
   updatePlayerTotalsWithVideoData,
   integrateVideoDataWithStatsHub
 } from '@/services/videoToStatsHubBridge';

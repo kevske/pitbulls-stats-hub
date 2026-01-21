@@ -1,7 +1,8 @@
 import { PlayerInfoService } from './playerInfoService';
 import { SupabaseStatsService } from './supabaseStatsService';
-import { PlayerStats } from '../types/stats';
-import { BASE_PATH } from '../config';
+import { PlayerInfo } from '@/types/supabase';
+import { PlayerStats } from '@/types/stats';
+import { BASE_PATH } from '@/config';
 
 // Service to fetch player data from Supabase with computed stats
 export class SupabasePlayerService {

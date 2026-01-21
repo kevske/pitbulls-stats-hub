@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { extractStatsFromVideoData, PlayerGameStats, TeamGameStats, ExtractedGameStats } from '@/services/statsExtraction';
 import { useState, useEffect } from 'react';
-import { VideoProjectService } from '@/lib/videoProjectService';
+import { VideoProjectService } from '@/services/videoProjectService';
 import { useSearchParams } from 'react-router-dom';
 
 interface StatisticsProps {

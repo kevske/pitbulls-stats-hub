@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit, Plus, Loader2, Tag } from "lucide-react";
 import { VideoPlayerWithLogs } from "@/components/video/VideoPlayerWithLogs";
-import { VideoProjectService } from "@/lib/videoProjectService";
+import { VideoProjectService } from '@/services/videoProjectService';
 import { toast } from "sonner";
 
 // Helper function to convert YouTube URL to embed format
@@ -154,21 +154,21 @@ const Videos = () => {
             {gamesWithVideos.map((game) => {
               // Get video data for this game (now single video per game)
               const videoData = game.videoData?.[0]; // Get first (and only) video
-              
+
               if (!videoData) return null; // Skip if no video data
-              
+
               return (
                 <div key={game.gameNumber}>
                   <h2 className="text-2xl font-semibold mb-4">
                     Spieltag {game.gameNumber}: {game.homeTeam} vs {game.awayTeam}
                   </h2>
-                  
+
                   {/* Video player with event tags */}
                   <VideoPlayerWithLogs
                     gameNumber={game.gameNumber}
                     youtubeLink={videoData.link}
                   />
-                  
+
                   {/* Video Tagger Button */}
                   <div className="mt-4">
                     <Link to={`/video-editor?game=${game.gameNumber}&video=${getEmbedUrl(videoData.link)}`}>

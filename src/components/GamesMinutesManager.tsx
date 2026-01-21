@@ -5,7 +5,7 @@ import PasswordProtection from '@/components/PasswordProtection';
 import MinutesPlayedInput from '@/components/MinutesPlayedInput';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MinutesService } from '@/lib/minutesService';
+import { MinutesService } from '@/services/minutesService';
 import { ArrowLeft, Settings, Clock, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -82,8 +82,8 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
       <Layout>
         <div className="container mx-auto max-w-4xl p-4">
           <div className="mb-6">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleBackToGameList}
               className="mb-4"
             >
@@ -99,8 +99,8 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
             </p>
           </div>
 
-          <MinutesPlayedInput 
-            gameNumber={selectedGame} 
+          <MinutesPlayedInput
+            gameNumber={selectedGame}
             onSuccess={handleSuccess}
           />
         </div>
@@ -138,7 +138,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                     .map((game) => {
                       const displayText = game.totalPlayers === 0 ? 'Keine Daten' : `${game.playersNeedingMinutes} Spieler`;
                       return (
-                        <Card 
+                        <Card
                           key={game.gameNumber}
                           className="hover:shadow-md transition-all duration-200 cursor-pointer border-orange-200 bg-orange-50/30"
                           onClick={() => handleGameSelect(game.gameNumber)}
@@ -189,7 +189,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
                     .filter(game => game.totalPlayers > 0 && game.playersNeedingMinutes === 0)
                     .map((game) => {
                       return (
-                        <Card 
+                        <Card
                           key={game.gameNumber}
                           className="hover:shadow-md transition-all duration-200 cursor-pointer border-green-200 bg-green-50/30"
                           onClick={() => handleGameSelect(game.gameNumber)}
@@ -228,7 +228,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
               </div>
             )}
 
-            </div>
+          </div>
         )}
       </div>
     </Layout>

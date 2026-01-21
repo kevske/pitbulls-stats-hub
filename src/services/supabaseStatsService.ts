@@ -1,8 +1,8 @@
-import { supabase } from './supabase';
-import { PlayerStats, PlayerGameLog, GameStats } from '../types/stats';
-import { generateImageFilename } from '../utils/playerUtils';
-import { calculateAge } from '../utils/dateUtils';
-import { BASE_PATH } from '../config';
+import { supabase } from '@/lib/supabase';
+import { PlayerStats, PlayerGameLog, GameStats } from '@/types/stats';
+import { generateImageFilename } from '@/utils/playerUtils';
+import { calculateAge } from '@/utils/dateUtils';
+import { BASE_PATH } from '@/config';
 
 
 // Transform Supabase player stats to match frontend PlayerStats interface

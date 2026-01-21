@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PlayerInfo } from '../types/supabase';
-import { PlayerInfoService } from '../lib/playerInfoService';
+import { PlayerInfoService } from '@/services/playerInfoService';
 import AuthGuard from '../components/AuthGuard';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';

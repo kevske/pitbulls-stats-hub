@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
-import { Game } from '../types/supabase';
+import { supabase } from '@/lib/supabase';
+import { Game } from '@/types/supabase';
 import { BasketballBundCrawler, ParsedGameResult } from './basketballBundCrawler';
 
 export class QuarterScoresService {
@@ -7,13 +7,13 @@ export class QuarterScoresService {
    * Update a game with quarter scores from basketball-bund.net
    */
   static async updateGameWithQuarterScores(
-    gameId: string, 
+    gameId: string,
     basketballBundUrl: string
   ): Promise<boolean> {
     try {
       // Fetch quarter scores from basketball-bund.net
       const quarterData = await BasketballBundCrawler.fetchQuarterScores(basketballBundUrl);
-      
+
       if (!quarterData) {
         console.error('Failed to extract quarter scores from URL:', basketballBundUrl);
         return false;
@@ -77,9 +77,9 @@ export class QuarterScoresService {
     for (const game of games) {
       if (game.box_score_url) {
         console.log(`Updating quarter scores for game ${game.game_id}: ${game.home_team_name} vs ${game.away_team_name}`);
-        
+
         const success = await this.updateGameWithQuarterScores(
-          game.game_id, 
+          game.game_id,
           game.box_score_url
         );
 

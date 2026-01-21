@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { SupabaseStatsService } from '@/lib/supabaseStatsService';
+import { SupabaseStatsService } from '@/services/supabaseStatsService';
 import { GameStats, PlayerGameLog, PlayerStats } from '@/types/stats';
 
 interface StatsContextType {

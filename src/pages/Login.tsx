@@ -5,7 +5,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
-import { AuthService } from '../lib/authService';
+import { AuthService } from '@/services/authService';
 import { useToast } from '../hooks/use-toast';
 
 const Login: React.FC = () => {
@@ -16,7 +16,7 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email.trim()) {
       toast({
         title: 'Error',
@@ -27,10 +27,10 @@ const Login: React.FC = () => {
     }
 
     setLoading(true);
-    
+
     try {
       const result = await AuthService.sendMagicLink(email);
-      
+
       if (result.success) {
         setEmailSent(true);
         toast({
@@ -68,8 +68,8 @@ const Login: React.FC = () => {
             <p className="text-sm text-gray-500 mb-4">
               The link will expire in 24 hours.
             </p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setEmailSent(false)}
               className="w-full"
             >
@@ -107,7 +107,7 @@ const Login: React.FC = () => {
                 disabled={loading}
               />
             </div>
-            
+
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>

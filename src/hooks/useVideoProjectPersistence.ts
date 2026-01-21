@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { VideoProjectService } from '@/lib/videoProjectService';
-import { SaveData, compareTimestamps } from '@/lib/saveLoad';
+import { VideoProjectService } from '@/services/videoProjectService';
+import { SaveData, compareTimestamps } from '@/services/saveLoad';
 import { Player, TaggedEvent } from '@/types/basketball';
 
 interface UseVideoProjectPersistenceProps {
@@ -60,10 +60,10 @@ export const useVideoProjectPersistence = ({
             console.log('Loading data with timestamp check:', { gameNum, videoIdx });
 
             // Get remote metadata first to check timestamp
-            const remoteMeta = await VideoProjectService.getProjectMeta(gameNum, videoIdx);
+            const remoteMeta = await VideoProjectService.getProjectMeta(parseInt(gameNum), videoIdx);
 
             // Load the actual data
-            const projectData = await VideoProjectService.loadProject(gameNum, videoIdx);
+            const projectData = await VideoProjectService.loadProject(parseInt(gameNum), videoIdx);
 
             // Use ref for comparison to avoid recreating callback
             const currentLastSavedData = lastSavedDataRef.current;

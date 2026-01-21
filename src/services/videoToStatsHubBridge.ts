@@ -1,4 +1,4 @@
-import { SaveData } from '@/lib/saveLoad';
+import { SaveData } from '@/services/saveLoad';
 import { extractStatsFromVideoData } from '@/services/statsExtraction';
 import { PlayerGameLog, GameStats, PlayerStats } from '@/types/stats';
 
@@ -9,17 +9,17 @@ export interface VideoToStatsHubBridge {
 }
 
 export function convertVideoToPlayerGameLogs(
-  saveData: SaveData, 
-  gameNumber: number, 
+  saveData: SaveData,
+  gameNumber: number,
   gameType: string = 'Heim'
 ): PlayerGameLog[] {
   const extractedStats = extractStatsFromVideoData(saveData);
-  
+
   return extractedStats.playerStats
     .filter(player => player.totalPoints > 0 || player.assists > 0 || player.rebounds > 0)
     .map(player => {
       // Calculate minutes played based on event timespan
-      const minutesPlayed = saveData.metadata.totalTimeSpan > 0 
+      const minutesPlayed = saveData.metadata.totalTimeSpan > 0
         ? Math.round(saveData.metadata.totalTimeSpan / 60)
         : 0;
 
@@ -52,10 +52,10 @@ export function convertVideoToGameStats(
 ): GameStats {
   const extractedStats = extractStatsFromVideoData(saveData);
   const teamStats = extractedStats.teamStats;
-  
+
   // Generate final score from team points if not provided
   const score = finalScore || `${teamStats.totalPoints}-?`;
-  
+
   return {
     gameNumber,
     date: new Date().toISOString().split('T')[0], // Use current date or saveData timestamp
@@ -70,11 +70,11 @@ export function convertVideoToGameStats(
 }
 
 export function updatePlayerTotalsWithVideoData(
-  existingTotals: PlayerStats[], 
+  existingTotals: PlayerStats[],
   videoData: SaveData
 ): PlayerStats[] {
   const videoGameLogs = convertVideoToPlayerGameLogs(videoData, 999, 'Video'); // Use temporary game number
-  
+
   // Create a map of existing player totals by playerId
   const playerTotalsMap = new Map<string, PlayerStats>();
   existingTotals.forEach(player => {
@@ -109,7 +109,7 @@ export function updatePlayerTotalsWithVideoData(
     existing.totalThrees += gameLog.threePointers;
     existing.totalFouls += gameLog.fouls;
     existing.totalFTMade += gameLog.freeThrowsMade;
-    existing.totalFTAttempts += gameLog.freeThrowsAttempts;
+    existing.totalFTAttempts += gameLog.freeThrowAttempts;
 
     videoStatsMap.set(gameLog.playerId, existing);
   });
@@ -135,21 +135,21 @@ export function updatePlayerTotalsWithVideoData(
       existingPlayer.foulsPerGame = newGamesPlayed > 0 ? Math.round((newTotalFouls / newGamesPlayed) * 10) / 10 : 0;
       existingPlayer.freeThrowsMadePerGame = newGamesPlayed > 0 ? Math.round((newTotalFTMade / newGamesPlayed) * 10) / 10 : 0;
       existingPlayer.freeThrowAttemptsPerGame = newGamesPlayed > 0 ? Math.round((newTotalFTAttempts / newGamesPlayed) * 10) / 10 : 0;
-      
+
       // Update percentages
-      existingPlayer.freeThrowPercentage = newTotalFTAttempts > 0 
+      existingPlayer.freeThrowPercentage = newTotalFTAttempts > 0
         ? `${Math.round((newTotalFTMade / newTotalFTAttempts) * 100)}%`
         : existingPlayer.freeThrowPercentage;
-      
+
       // Update per-40 stats
-      existingPlayer.pointsPer40 = existingPlayer.minutesPerGame > 0 
-        ? Math.round((existingPlayer.pointsPerGame / existingPlayer.minutesPerGame) * 40 * 10) / 10 
+      existingPlayer.pointsPer40 = existingPlayer.minutesPerGame > 0
+        ? Math.round((existingPlayer.pointsPerGame / existingPlayer.minutesPerGame) * 40 * 10) / 10
         : 0;
-      existingPlayer.threePointersPer40 = existingPlayer.minutesPerGame > 0 
-        ? Math.round((existingPlayer.threePointersPerGame / existingPlayer.minutesPerGame) * 40 * 10) / 10 
+      existingPlayer.threePointersPer40 = existingPlayer.minutesPerGame > 0
+        ? Math.round((existingPlayer.threePointersPerGame / existingPlayer.minutesPerGame) * 40 * 10) / 10
         : 0;
-      existingPlayer.foulsPer40 = existingPlayer.minutesPerGame > 0 
-        ? Math.round((existingPlayer.foulsPerGame / existingPlayer.minutesPerGame) * 40 * 10) / 10 
+      existingPlayer.foulsPer40 = existingPlayer.minutesPerGame > 0
+        ? Math.round((existingPlayer.foulsPerGame / existingPlayer.minutesPerGame) * 40 * 10) / 10
         : 0;
     }
   });
