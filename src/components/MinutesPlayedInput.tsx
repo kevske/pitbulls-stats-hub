@@ -84,9 +84,9 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
   }, [gameNumber]);
 
   const handleMinutesChange = (playerId: string, seconds: number) => {
-    // Validate total time (should be reasonable for a basketball game)
-    const totalMinutes = seconds / 60;
-    if (totalMinutes < 0 || totalMinutes > 60) {
+    // Validate individual player time
+    const minutes = seconds / 60;
+    if (minutes < 0 || minutes > 60) {
       toast.error('Spielzeit muss zwischen 0 und 60 Minuten liegen');
       return;
     }
@@ -106,6 +106,15 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
       const hasValidTime = playerMinutes.some(pm => pm.seconds > 0);
       if (!hasValidTime) {
         toast.error('Mindestens ein Spieler muss mehr als 0 Minuten haben');
+        setSaving(false);
+        return;
+      }
+
+      // Validate total time (should be reasonable for a basketball game)
+      // Standard game: 200 mins. OT: +25 mins. Allow range 190-300 to cover variances and multiple OTs.
+      const totalMinutes = getTotalMinutes();
+      if (totalMinutes < 190 || totalMinutes > 300) {
+        toast.error(`Gesamtspielzeit (${totalMinutes.toFixed(1)} Min.) ist ungültig. Sie sollte zwischen 190 und 300 Minuten liegen.`);
         setSaving(false);
         return;
       }
