@@ -1,3 +1,4 @@
+import { supabase } from './supabase';
 import { QuarterScores } from '../data/games';
 
 export interface ParsedGameResult {
@@ -148,12 +149,27 @@ export class BasketballBundCrawler {
    */
   static async fetchQuarterScores(url: string): Promise<ParsedGameResult | null> {
     try {
-      // For now, we'll use a simple fetch approach
-      // In a real implementation, you might need to use a proxy or server-side scraping
-      const response = await fetch(url);
-      const html = await response.text();
+      // Use Supabase Edge Function to proxy the request and avoid CORS issues
+      const { data, error } = await supabase.functions.invoke('fetch-game-html', {
+        body: { url }
+      });
+
+      if (error) {
+        console.error('Error invoking fetch-game-html function:', error);
+        // Fallback to direct fetch if function fails (e.g. locally without edge functions running)
+        // This is mainly for local development convenience if the function isn't running
+        console.log('Falling back to direct fetch...');
+        const response = await fetch(url);
+        const html = await response.text();
+        return this.extractQuarterScores(html);
+      }
+
+      if (!data || !data.html) {
+        console.error('No HTML returned from fetch-game-html function');
+        return null;
+      }
       
-      return this.extractQuarterScores(html);
+      return this.extractQuarterScores(data.html);
     } catch (error) {
       console.error('Error fetching quarter scores:', error);
       return null;
