@@ -5,7 +5,7 @@ import { useStats } from '@/contexts/StatsContext';
 import { format, parse } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Layout from '@/components/Layout';
-import { BoxscoreService } from '@/lib/boxscoreService';
+import { BoxscoreService } from '@/services/boxscoreService';
 import { BoxScore } from '@/types/supabase';
 
 const GameDetail: React.FC = () => {
@@ -28,10 +28,10 @@ const GameDetail: React.FC = () => {
   useEffect(() => {
     const loadBoxScores = async () => {
       if (!game) return;
-      
+
       setBoxScoresLoading(true);
       setBoxScoresError(null);
-      
+
       try {
         // Try to create a game ID from the game data
         const gameId = `game-${game.gameNumber}-${game.date.replace(/[^\d]/g, '')}`;

@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
-import { PlayerInfo } from '../types/supabase';
+import { supabase } from '@/lib/supabase';
+import { PlayerInfo } from '@/types/supabase';
 
 export class AuthService {
   // Send magic link to player email
@@ -7,7 +7,7 @@ export class AuthService {
     try {
       // First check if email exists in player_info table
       console.log('Looking up email:', email.trim().toLowerCase());
-      
+
       const { data: player, error: playerError } = await supabase
         .from('player_info')
         .select('email, first_name, last_name, is_active')
@@ -23,10 +23,10 @@ export class AuthService {
       // Send magic link
       const baseUrl = import.meta.env.PROD ? 'https://kevske.github.io/pitbulls-stats-hub' : window.location.origin;
       const redirectUrl = `${baseUrl}/admin/player-info`;
-      
+
       console.log('Using base URL for magic link:', baseUrl);
       console.log('Redirect URL:', redirectUrl);
-      
+
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
@@ -51,7 +51,7 @@ export class AuthService {
       console.log('Checking authentication...');
       const { data: { session } } = await supabase.auth.getSession();
       console.log('Session data:', session);
-      
+
       if (!session) {
         console.log('No session found');
         return false;
@@ -61,7 +61,7 @@ export class AuthService {
       const now = new Date();
       const expiresAt = new Date(session.expires_at * 1000);
       console.log('Session expires at:', expiresAt, 'Current time:', now);
-      
+
       if (now >= expiresAt) {
         console.log('Session expired, attempting refresh...');
         // Session expired, try to refresh
@@ -70,7 +70,7 @@ export class AuthService {
           console.log('Session refresh failed:', error);
           return false;
         }
-        
+
         // Check if refresh succeeded
         const { data: { session: refreshedSession } } = await supabase.auth.getSession();
         console.log('Refreshed session:', refreshedSession);
@@ -89,7 +89,7 @@ export class AuthService {
   static async getCurrentUser(): Promise<{ user: any; playerInfo?: PlayerInfo } | null> {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session?.user) {
         return null;
       }
@@ -97,14 +97,14 @@ export class AuthService {
       // Check if session is expired and try refresh if needed
       const now = new Date();
       const expiresAt = new Date(session.expires_at * 1000);
-      
+
       if (now >= expiresAt) {
         const { error } = await supabase.auth.refreshSession();
         if (error) {
           console.log('Session refresh failed in getCurrentUser:', error);
           return null;
         }
-        
+
         // Get refreshed session
         const { data: { session: refreshedSession } } = await supabase.auth.getSession();
         if (!refreshedSession?.user) {

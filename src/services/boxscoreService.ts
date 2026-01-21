@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
-import { BoxScore, BoxScoreWithPlayerInfo } from '../types/supabase';
+import { supabase } from '@/lib/supabase';
+import { BoxScore, BoxScoreWithPlayerInfo } from '@/types/supabase';
 
 export class BoxscoreService {
   // Get box scores with player info (TSV Neuenstadt only)
@@ -55,7 +55,7 @@ export class BoxscoreService {
 
   // Link an unmatched boxscore player to player_info
   static async linkPlayer(
-    gameIds: string[], 
+    gameIds: string[],
     playerSlug: string
   ): Promise<void> {
     const { error } = await supabase

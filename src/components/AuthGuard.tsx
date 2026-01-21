@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AuthService } from '../lib/authService';
+import { AuthService } from '@/services/authService';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { User, LogOut, Loader2 } from 'lucide-react';
@@ -15,7 +15,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
   useEffect(() => {
     checkAuth();
-    
+
     // Listen for auth state changes
     const { data: { subscription } } = AuthService.onAuthStateChange(async (session) => {
       if (session) {
@@ -87,7 +87,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
+            <Button
               onClick={() => window.location.href = '/login'}
               className="w-full"
             >
@@ -108,8 +108,8 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
             <div className="flex items-center gap-2">
               <User className="h-5 w-5 text-gray-600" />
               <span className="font-medium">
-                {playerInfo ? 
-                  `${playerInfo.first_name} ${playerInfo.last_name}` : 
+                {playerInfo ?
+                  `${playerInfo.first_name} ${playerInfo.last_name}` :
                   user?.email
                 }
               </span>
@@ -126,7 +126,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
           </Button>
         </div>
       </div>
-      
+
       {/* Main content */}
       {children}
     </div>

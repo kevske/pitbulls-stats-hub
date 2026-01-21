@@ -1,18 +1,18 @@
 import { TaggedEvent, Player } from '@/types/basketball';
-import { SaveData } from '@/lib/saveLoad';
+import { SaveData } from '@/services/saveLoad';
 
 export interface PlayerGameStats {
   playerId: string;
   playerName: string;
   jerseyNumber: number;
-  
+
   // Basic stats
   assists: number;
   rebounds: number;
   steals: number;
   blocks: number;
   turnovers: number;
-  
+
   // Shooting stats
   fieldGoalsMade: number;
   fieldGoalsAttempted: number;
@@ -24,7 +24,7 @@ export interface PlayerGameStats {
   freeThrowsAttempted: number;
   freeThrowPercentage: number;
   totalPoints: number;
-  
+
   // Advanced metrics
   plusMinus: number;
   fouls: number;
@@ -38,11 +38,11 @@ export interface TeamGameStats {
   totalSteals: number;
   totalBlocks: number;
   totalTurnovers: number;
-  
+
   teamFieldGoalPercentage: number;
   teamThreePointPercentage: number;
   teamFreeThrowPercentage: number;
-  
+
   totalFouls: number;
   totalSubstitutions: number;
 }
@@ -59,13 +59,13 @@ export interface ExtractedGameStats {
 export function extractStatsFromVideoData(saveData: SaveData): ExtractedGameStats {
   const events = saveData.events;
   const players = saveData.players;
-  
+
   // Sort events by timestamp for proper processing
   const sortedEvents = [...events].sort((a, b) => a.timestamp - b.timestamp);
-  
+
   const playerStats = extractPlayerStats(sortedEvents, players);
   const teamStats = extractTeamStats(playerStats);
-  
+
   return {
     gameId: saveData.videoId || 'unknown',
     videoId: saveData.videoId,
@@ -78,7 +78,7 @@ export function extractStatsFromVideoData(saveData: SaveData): ExtractedGameStat
 
 function extractPlayerStats(events: TaggedEvent[], players: Player[]): PlayerGameStats[] {
   const playerMap = new Map<string, PlayerGameStats>();
-  
+
   // Initialize stats for all players
   players.forEach(player => {
     playerMap.set(player.id, {
@@ -105,53 +105,53 @@ function extractPlayerStats(events: TaggedEvent[], players: Player[]): PlayerGam
       substitutions: 0
     });
   });
-  
+
   // Process each event
   events.forEach(event => {
     if (!event.player) return;
-    
+
     const player = players.find(p => p.name === event.player);
     if (!player) return;
-    
+
     const stats = playerMap.get(player.id);
     if (!stats) return;
-    
+
     switch (event.type) {
       case 'assist':
         stats.assists++;
         break;
-        
+
       case 'rebound':
         stats.rebounds++;
         break;
-        
+
       case 'steal':
         stats.steals++;
         break;
-        
+
       case 'block':
         stats.blocks++;
         break;
-        
+
       case 'turnover':
         stats.turnovers++;
         break;
-        
+
       case 'shot':
         // Handle shooting stats
         stats.fieldGoalsAttempted++;
-        
+
         if (event.points === 3) {
           stats.threePointersAttempted++;
         } else if (event.points === 1) {
           stats.freeThrowsAttempted++;
         }
-        
+
         if (!event.missed) {
           // Made shot
           stats.fieldGoalsMade++;
           stats.totalPoints += event.points || 0;
-          
+
           if (event.points === 3) {
             stats.threePointersMade++;
           } else if (event.points === 1) {
@@ -159,16 +159,16 @@ function extractPlayerStats(events: TaggedEvent[], players: Player[]): PlayerGam
           }
         }
         break;
-        
+
       case 'foul':
         stats.fouls++;
         break;
-        
+
       case 'substitution':
         stats.substitutions++;
         break;
     }
-    
+
     // Handle rebound player from missed shots
     if (event.type === 'shot' && event.missed && event.reboundPlayer) {
       const reboundPlayer = players.find(p => p.name === event.reboundPlayer);
@@ -180,26 +180,26 @@ function extractPlayerStats(events: TaggedEvent[], players: Player[]): PlayerGam
       }
     }
   });
-  
+
   // Calculate percentages
   const finalStats = Array.from(playerMap.values());
   finalStats.forEach(stats => {
     // Field goal percentage
-    stats.fieldGoalPercentage = stats.fieldGoalsAttempted > 0 
+    stats.fieldGoalPercentage = stats.fieldGoalsAttempted > 0
       ? Math.round((stats.fieldGoalsMade / stats.fieldGoalsAttempted) * 100 * 10) / 10
       : 0;
-    
+
     // Three point percentage
     stats.threePointPercentage = stats.threePointersAttempted > 0
       ? Math.round((stats.threePointersMade / stats.threePointersAttempted) * 100 * 10) / 10
       : 0;
-    
+
     // Free throw percentage
     stats.freeThrowPercentage = stats.freeThrowsAttempted > 0
       ? Math.round((stats.freeThrowsMade / stats.freeThrowsAttempted) * 100 * 10) / 10
       : 0;
   });
-  
+
   return finalStats.sort((a, b) => a.jerseyNumber - b.jerseyNumber);
 }
 
@@ -211,10 +211,10 @@ function extractTeamStats(playerStats: PlayerGameStats[]): TeamGameStats {
     acc.totalSteals += player.steals;
     acc.totalBlocks += player.blocks;
     acc.totalTurnovers += player.turnovers;
-    
+
     acc.totalFouls += player.fouls;
     acc.totalSubstitutions += player.substitutions;
-    
+
     // Shooting totals
     acc.fieldGoalsMade += player.fieldGoalsMade;
     acc.fieldGoalsAttempted += player.fieldGoalsAttempted;
@@ -222,7 +222,7 @@ function extractTeamStats(playerStats: PlayerGameStats[]): TeamGameStats {
     acc.threePointersAttempted += player.threePointersAttempted;
     acc.freeThrowsMade += player.freeThrowsMade;
     acc.freeThrowsAttempted += player.freeThrowsAttempted;
-    
+
     return acc;
   }, {
     totalPoints: 0,
@@ -243,30 +243,30 @@ function extractTeamStats(playerStats: PlayerGameStats[]): TeamGameStats {
     freeThrowsMade: 0,
     freeThrowsAttempted: 0
   });
-  
+
   // Calculate team percentages
   teamStats.teamFieldGoalPercentage = teamStats.fieldGoalsAttempted > 0
     ? Math.round((teamStats.fieldGoalsMade / teamStats.fieldGoalsAttempted) * 100 * 10) / 10
     : 0;
-  
+
   teamStats.teamThreePointPercentage = teamStats.threePointersAttempted > 0
     ? Math.round((teamStats.threePointersMade / teamStats.threePointersAttempted) * 100 * 10) / 10
     : 0;
-  
+
   teamStats.teamFreeThrowPercentage = teamStats.freeThrowsAttempted > 0
     ? Math.round((teamStats.freeThrowsMade / teamStats.freeThrowsAttempted) * 100 * 10) / 10
     : 0;
-  
+
   return teamStats;
 }
 
 export function exportStatsToCSV(extractedStats: ExtractedGameStats): string {
   const headers = [
-    'Player Name', 'Jersey #', 'Points', 'FGM', 'FGA', 'FG%', 
-    '3PM', '3PA', '3P%', 'FTM', 'FTA', 'FT%', 'AST', 'REB', 
+    'Player Name', 'Jersey #', 'Points', 'FGM', 'FGA', 'FG%',
+    '3PM', '3PA', '3P%', 'FTM', 'FTA', 'FT%', 'AST', 'REB',
     'STL', 'BLK', 'TOV', 'FOULS', 'SUB'
   ];
-  
+
   const rows = extractedStats.playerStats.map(player => [
     player.playerName,
     player.jerseyNumber.toString(),
@@ -288,17 +288,17 @@ export function exportStatsToCSV(extractedStats: ExtractedGameStats): string {
     player.fouls.toString(),
     player.substitutions.toString()
   ]);
-  
+
   return [headers, ...rows].map(row => row.join(',')).join('\n');
 }
 
 export function calculatePlayerEfficiency(playerStats: PlayerGameStats): number {
   // Efficiency formula: (Points + Rebounds + Assists + Steals + Blocks - Turnovers) / Games
   // For single game, just return the raw efficiency
-  return playerStats.totalPoints + 
-         playerStats.rebounds + 
-         playerStats.assists + 
-         playerStats.steals + 
-         playerStats.blocks - 
-         playerStats.turnovers;
+  return playerStats.totalPoints +
+    playerStats.rebounds +
+    playerStats.assists +
+    playerStats.steals +
+    playerStats.blocks -
+    playerStats.turnovers;
 }

@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
-import { PlayerInfo } from '../types/supabase';
+import { supabase } from '@/lib/supabase';
+import { PlayerInfo } from '@/types/supabase';
 import { AuthService } from './authService';
 import { AuditService } from './auditService';
 
@@ -36,7 +36,7 @@ export class PlayerInfoService {
       .single();
 
     if (error) throw error;
-    
+
     // Log the creation
     const currentUser = await AuthService.getCurrentUser();
     if (currentUser && data) {
@@ -49,7 +49,7 @@ export class PlayerInfoService {
         user_id: currentUser.user.id,
       });
     }
-    
+
     return data;
   }
 
@@ -70,7 +70,7 @@ export class PlayerInfoService {
       .single();
 
     if (error) throw error;
-    
+
     // Log the update
     const currentUser = await AuthService.getCurrentUser();
     if (currentUser && data) {
@@ -84,7 +84,7 @@ export class PlayerInfoService {
         user_id: currentUser.user.id,
       });
     }
-    
+
     return data;
   }
 
@@ -103,7 +103,7 @@ export class PlayerInfoService {
       .eq('id', id);
 
     if (error) throw error;
-    
+
     // Log the deletion
     const currentUser = await AuthService.getCurrentUser();
     if (currentUser && oldData) {

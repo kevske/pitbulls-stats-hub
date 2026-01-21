@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useStats } from '@/contexts/StatsContext';
-import { MinutesService, PlayerMinutesData } from '@/lib/minutesService';
+import { MinutesService, PlayerMinutesData } from '@/services/minutesService';
 import { Save, Clock, Users, AlertCircle } from 'lucide-react';
 import TimeInput from '@/components/TimeInput';
 
@@ -43,16 +43,16 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
       try {
         console.log('Starting to load player minutes for game:', gameNumber);
         setLoading(true);
-        
+
         // Get players who need minutes data for this game
         const playersData = await MinutesService.getPlayersNeedingMinutes(gameNumber);
         console.log('Raw players data:', playersData);
-        
+
         // Get summary data
         const summaryData = await MinutesService.getGameMinutesSummary(gameNumber);
         console.log('Summary data:', summaryData);
         setSummary(summaryData);
-        
+
         // Convert to our component format, filter out null playerIds
         const componentData = playersData
           .filter(player => player.playerSlug != null) // Filter out null playerSlugs
@@ -60,11 +60,11 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
             playerId: player.playerSlug,
             seconds: Math.round((player.minutes || 0) * 60) // Convert decimal minutes to exact seconds, handle null
           }));
-        
+
         console.log('Original player data (minutes):', playersData.map(p => ({ id: p.playerSlug, minutes: p.minutes })));
         console.log('Converted component data (seconds):', componentData);
         console.log('Players filtered out:', playersData.length - componentData.length);
-        
+
         setPlayerMinutes(componentData);
         console.log('Player minutes state set');
       } catch (error) {
@@ -91,8 +91,8 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
       return;
     }
 
-    setPlayerMinutes(prev => 
-      prev.map(pm => 
+    setPlayerMinutes(prev =>
+      prev.map(pm =>
         pm.playerId === playerId ? { ...pm, seconds: seconds } : pm
       )
     );
@@ -100,7 +100,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
 
   const handleSave = async () => {
     setSaving(true);
-    
+
     try {
       // Validate that at least one player has time > 0
       const hasValidTime = playerMinutes.some(pm => pm.seconds > 0);
@@ -125,10 +125,10 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
         seconds: pm.seconds // Store exact seconds as integer
       }));
       const success = await MinutesService.updatePlayerMinutes(gameNumber, serviceData);
-      
+
       if (success) {
         toast.success(`Minuten für Spiel ${gameNumber} erfolgreich gespeichert!`);
-        
+
         // Reload player minutes data to reflect saved values
         try {
           const playersData = await MinutesService.getPlayersNeedingMinutes(gameNumber);
@@ -143,16 +143,16 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
         } catch (error) {
           console.error('Error reloading player minutes after save:', error);
         }
-        
+
         // Refresh summary data
         const updatedSummary = await MinutesService.getGameMinutesSummary(gameNumber);
         setSummary(updatedSummary);
-        
+
         onSuccess?.();
       } else {
         toast.error('Fehler beim Speichern der Minuten');
       }
-      
+
     } catch (error) {
       console.error('Error saving minutes:', error);
       toast.error('Fehler beim Speichern der Minuten');
@@ -167,7 +167,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
     if (player) {
       return `${player.firstName} ${player.lastName}`;
     }
-    
+
     // If not found in local data, try to extract from slug
     if (playerId && playerId.includes('-')) {
       const parts = playerId.split('-');
@@ -175,7 +175,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
         return `${parts[0].charAt(0).toUpperCase() + parts[0].slice(1)} ${parts[1].charAt(0).toUpperCase() + parts[1].slice(1)}`;
       }
     }
-    
+
     return playerId || 'Unbekannter Spieler';
   };
 
@@ -192,7 +192,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
     const total = getTotalMinutes();
     const expected = 200; // 5 players * 40 minutes
     const deviation = Math.abs(total - expected);
-    
+
     if (deviation > 1) {
       return 'red';
     } else if (deviation <= 1 && total !== expected) {
@@ -250,62 +250,62 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
       <CardContent className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {playerMinutes.filter(pm => pm.playerId != null).map(({ playerId, seconds }) => (
-                <div key={playerId || `unknown-${Math.random()}`} className="space-y-2">
-                  <Label htmlFor={`minutes-${playerId}`} className="text-sm font-medium">
-                    <div className="flex items-center gap-2">
-                      <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold">
-                        #{getPlayerJerseyNumber(playerId)}
-                      </span>
-                      {getPlayerName(playerId)}
-                    </div>
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <TimeInput
-                      id={`minutes-${playerId}`}
-                      value={seconds} // Already in seconds
-                      onChange={(seconds) => handleMinutesChange(playerId, seconds)}
-                      className=""
-                    />
-                    <span className="text-sm text-muted-foreground">mm:ss</span>
-                  </div>
+            <div key={playerId || `unknown-${Math.random()}`} className="space-y-2">
+              <Label htmlFor={`minutes-${playerId}`} className="text-sm font-medium">
+                <div className="flex items-center gap-2">
+                  <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold">
+                    #{getPlayerJerseyNumber(playerId)}
+                  </span>
+                  {getPlayerName(playerId)}
                 </div>
-              ))}
-            </div>
-
-            {/* Summary Section */}
-            {summary && (
-              <div className="border rounded-lg p-4 bg-muted/30">
-                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
-                  Status Übersicht
-                </h3>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <div className="text-muted-foreground">Spieler mit Minuten</div>
-                    <div className="font-semibold text-green-600">{summary.playersWithMinutes}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">Spieler ohne Minuten</div>
-                    <div className="font-semibold text-orange-600">{summary.playersNeedingMinutes}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">Gesamtminuten</div>
-                    <div className={`font-semibold ${getTotalMinutesColor()}`}>{summary.totalMinutes}</div>
-                  </div>
-                </div>
+              </Label>
+              <div className="flex items-center gap-2">
+                <TimeInput
+                  id={`minutes-${playerId}`}
+                  value={seconds} // Already in seconds
+                  onChange={(seconds) => handleMinutesChange(playerId, seconds)}
+                  className=""
+                />
+                <span className="text-sm text-muted-foreground">mm:ss</span>
               </div>
-            )}
-
-            <div className="border-t pt-4">
-              <Button 
-                onClick={handleSave} 
-                disabled={saving}
-                className="w-full"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? 'Speichern...' : 'Minuten speichern'}
-              </Button>
             </div>
+          ))}
+        </div>
+
+        {/* Summary Section */}
+        {summary && (
+          <div className="border rounded-lg p-4 bg-muted/30">
+            <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              Status Übersicht
+            </h3>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <div className="text-muted-foreground">Spieler mit Minuten</div>
+                <div className="font-semibold text-green-600">{summary.playersWithMinutes}</div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Spieler ohne Minuten</div>
+                <div className="font-semibold text-orange-600">{summary.playersNeedingMinutes}</div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Gesamtminuten</div>
+                <div className={`font-semibold ${getTotalMinutesColor()}`}>{summary.totalMinutes}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="border-t pt-4">
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? 'Speichern...' : 'Minuten speichern'}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

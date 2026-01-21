@@ -1,4 +1,4 @@
-import { QuarterScores } from '../data/games';
+import { QuarterScores } from '@/data/games';
 
 export interface ParsedGameResult {
   homeTeam: string;
@@ -29,15 +29,15 @@ export class BasketballBundCrawler {
     // Look for the main results table
     const tableRegex = /<table[^>]*class="sportView"[^>]*>[\s\S]*?<\/table>/g;
     const tables = html.match(tableRegex);
-    
+
     if (!tables || tables.length === 0) {
       return null;
     }
 
     // Find the results table (should be the first one with quarter data)
-    const resultsTable = tables.find(table => 
-      table.includes('1.&nbsp;Viertel') && 
-      table.includes('Halbzeit') && 
+    const resultsTable = tables.find(table =>
+      table.includes('1.&nbsp;Viertel') &&
+      table.includes('Halbzeit') &&
       table.includes('3.&nbsp;Viertel')
     );
 
@@ -152,7 +152,7 @@ export class BasketballBundCrawler {
       // In a real implementation, you might need to use a proxy or server-side scraping
       const response = await fetch(url);
       const html = await response.text();
-      
+
       return this.extractQuarterScores(html);
     } catch (error) {
       console.error('Error fetching quarter scores:', error);

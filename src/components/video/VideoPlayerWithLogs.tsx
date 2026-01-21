@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { TaggedEvent } from '@/types/basketball';
 import { YouTubePlayer, YouTubePlayerRef } from '@/components/video/YouTubePlayer';
 import { EventList } from '@/components/video/EventList';
-import { VideoProjectService } from '@/lib/videoProjectService';
+import { VideoProjectService } from '@/services/videoProjectService';
 import { Card } from '@/components/ui/card';
 
 interface VideoPlayerWithLogsProps {

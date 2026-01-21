@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuditLog } from '../types/supabase';
-import { AuditService } from '../lib/auditService';
+import { AuditService } from '@/services/auditService';
 import AuthGuard from '../components/AuthGuard';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -10,14 +10,14 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { useToast } from '../hooks/use-toast';
-import { 
-  History, 
-  User, 
-  Calendar, 
-  Filter, 
-  RefreshCw, 
-  Plus, 
-  Edit, 
+import {
+  History,
+  User,
+  Calendar,
+  Filter,
+  RefreshCw,
+  Plus,
+  Edit,
   Trash2,
   Eye,
   Search
@@ -53,7 +53,7 @@ const AdminAuditLogs: React.FC = () => {
         allLogs = allLogs.filter(log => log.table_name === filterTable);
       }
       if (searchTerm) {
-        allLogs = allLogs.filter(log => 
+        allLogs = allLogs.filter(log =>
           log.user_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
           log.table_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           log.record_id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -159,7 +159,7 @@ const AdminAuditLogs: React.FC = () => {
                   />
                 </div>
               </div>
-              
+
               <div>
                 <Label htmlFor="action">Action</Label>
                 <Select value={filterAction} onValueChange={setFilterAction}>
@@ -230,7 +230,7 @@ const AdminAuditLogs: React.FC = () => {
                       <span className="font-medium">{log.table_name}</span>
                       <span className="text-gray-500 text-sm">ID: {log.record_id}</span>
                     </div>
-                    
+
                     <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
                       <div className="flex items-center gap-1">
                         <User className="h-4 w-4" />
@@ -297,49 +297,49 @@ const AdminAuditLogs: React.FC = () => {
                     <div>
                       <h4 className="font-medium mb-2 text-red-600">Before:</h4>
                       <ScrollArea className="h-64 w-full border rounded p-3">
-                    <pre className="text-xs whitespace-pre-wrap">
-                      {formatData(selectedLog.old_data)}
-                    </pre>
-                  </ScrollArea>
+                        <pre className="text-xs whitespace-pre-wrap">
+                          {formatData(selectedLog.old_data)}
+                        </pre>
+                      </ScrollArea>
+                    </div>
+                  )}
+
+                  {selectedLog.new_data && (
+                    <div>
+                      <h4 className="font-medium mb-2 text-green-600">After:</h4>
+                      <ScrollArea className="h-64 w-full border rounded p-3">
+                        <pre className="text-xs whitespace-pre-wrap">
+                          {formatData(selectedLog.new_data)}
+                        </pre>
+                      </ScrollArea>
+                    </div>
+                  )}
                 </div>
-              )}
-              
-              {selectedLog.new_data && (
-                <div>
-                  <h4 className="font-medium mb-2 text-green-600">After:</h4>
-                  <ScrollArea className="h-64 w-full border rounded p-3">
-                    <pre className="text-xs whitespace-pre-wrap">
-                      {formatData(selectedLog.new_data)}
-                    </pre>
-                  </ScrollArea>
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-4 pt-4 border-t text-sm text-gray-600">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="font-medium">User:</span> {selectedLog.user_email}
-                </div>
-                <div>
-                  <span className="font-medium">Time:</span> {new Date(selectedLog.timestamp).toLocaleString()}
-                </div>
-                {selectedLog.ip_address && (
-                  <div>
-                    <span className="font-medium">IP:</span> {selectedLog.ip_address}
+
+                <div className="mt-4 pt-4 border-t text-sm text-gray-600">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="font-medium">User:</span> {selectedLog.user_email}
+                    </div>
+                    <div>
+                      <span className="font-medium">Time:</span> {new Date(selectedLog.timestamp).toLocaleString()}
+                    </div>
+                    {selectedLog.ip_address && (
+                      <div>
+                        <span className="font-medium">IP:</span> {selectedLog.ip_address}
+                      </div>
+                    )}
+                    {selectedLog.user_agent && (
+                      <div>
+                        <span className="font-medium">User Agent:</span> {selectedLog.user_agent}
+                      </div>
+                    )}
                   </div>
-                )}
-                {selectedLog.user_agent && (
-                  <div>
-                    <span className="font-medium">User Agent:</span> {selectedLog.user_agent}
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </AuthGuard>
   );

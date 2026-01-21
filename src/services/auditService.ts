@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
-import { AuditLog } from '../types/supabase';
+import { supabase } from '@/lib/supabase';
+import { AuditLog } from '@/types/supabase';
 
 export class AuditService {
   // Log an action to the audit table
