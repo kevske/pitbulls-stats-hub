@@ -487,8 +487,8 @@ class BasketballBundCrawler:
                         
                         # Delete existing box scores for these games to avoid duplicates
                         game_ids = list(set([bs['game_id'] for bs in box_scores_data]))
-                        for game_id in game_ids:
-                            self.supabase.table('box_scores').delete().eq('game_id', game_id).execute()
+                        if game_ids:
+                            self.supabase.table('box_scores').delete().in_('game_id', game_ids).execute()
                         
                         # Merge preserved data back into new box scores
                         final_box_scores = self.merge_preserved_data(box_scores_data, preserved_data)
