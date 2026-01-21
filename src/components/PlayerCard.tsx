@@ -7,6 +7,8 @@ import { PlayerTrendIndicator } from "./PlayerTrendIndicator";
 import { useStats } from "@/contexts/StatsContext";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { generateImageFilename } from "@/utils/playerUtils";
+import { calculateAge } from "@/utils/dateUtils";
+import { BASE_PATH } from "@/config";
 
 interface PlayerCardProps {
   player: PlayerStats;
@@ -22,26 +24,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
   const [showExpandButton, setShowExpandButton] = useState(false);
   const bioRef = useRef<HTMLParagraphElement>(null);
 
-  // Utility function to calculate age from birth date
-  const calculateAge = (birthDate?: string): number | undefined => {
-    if (!birthDate) return undefined;
-    
-    const birth = new Date(birthDate);
-    const today = new Date();
-    
-    // Check if birth date is valid
-    if (isNaN(birth.getTime())) return undefined;
-    
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    
-    // Adjust age if birthday hasn't occurred yet this year
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    
-    return age;
-  };
+  // calculateAge imported from @/utils/dateUtils
 
   useEffect(() => {
     const checkOverflow = () => {
@@ -160,17 +143,17 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
           {/* Left side - Player Image */}
           <div className="md:w-48 h-48 md:h-auto flex-shrink-0 relative bg-secondary">
             <img
-              src={`/pitbulls-stats-hub/players/${generateImageFilename(player.firstName, player.lastName).replace(/\.jpg$/, '.png')}`}
+              src={`${BASE_PATH}/players/${generateImageFilename(player.firstName, player.lastName).replace(/\.jpg$/, '.png')}`}
               alt={`${player.firstName} ${player.lastName}`}
               className="w-full h-full object-cover object-top"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 // If PNG fails, try JPG
                 if (target.src.endsWith('.png')) {
-                  target.src = `/pitbulls-stats-hub/players/${generateImageFilename(player.firstName, player.lastName)}`;
+                  target.src = `${BASE_PATH}/players/${generateImageFilename(player.firstName, player.lastName)}`;
                 } else {
                   // If both fail, use placeholder with base path
-                  target.src = '/pitbulls-stats-hub/placeholder-player.png';
+                  target.src = `${BASE_PATH}/placeholder-player.png`;
                 }
               }}
             />
@@ -229,11 +212,11 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
                 const shouldShowWeight = player.weight && player.weight > 0 && player.weight !== undefined && player.weight !== null && !isNaN(player.weight);
                 return shouldShowWeight;
               })() && (
-                <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wide">Gewicht</div>
-                  <div className="text-sm font-semibold text-foreground">{player.weight} kg</div>
-                </div>
-              )}
+                  <div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Gewicht</div>
+                    <div className="text-sm font-semibold text-foreground">{player.weight} kg</div>
+                  </div>
+                )}
             </div>
 
             {/* Bio */}

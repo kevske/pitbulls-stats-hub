@@ -1,6 +1,7 @@
 import { PlayerInfoService } from './playerInfoService';
 import { SupabaseStatsService } from './supabaseStatsService';
 import { PlayerStats } from '../types/stats';
+import { BASE_PATH } from '../config';
 
 // Service to fetch player data from Supabase with computed stats
 export class SupabasePlayerService {
@@ -17,7 +18,7 @@ export class SupabasePlayerService {
         id: player.player_slug,
         firstName: player.first_name,
         lastName: player.last_name,
-        imageUrl: `/pitbulls-stats-hub/players/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}.jpg`,
+        imageUrl: `${BASE_PATH}/players/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}.jpg`,
         jerseyNumber: player.jersey_number || 0,
         position: player.position || '',
         age: player.birth_date ? new Date().getFullYear() - new Date(player.birth_date).getFullYear() : 0,
