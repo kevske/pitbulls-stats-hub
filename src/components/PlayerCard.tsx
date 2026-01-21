@@ -46,14 +46,25 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
   useEffect(() => {
     const checkOverflow = () => {
       if (bioRef.current) {
+        // If expanded, we don't check overflow to avoid hiding the "Show Less" button
+        // when the container expands to fit the text.
+        if (isBioExpanded) return;
         setShowExpandButton(bioRef.current.scrollHeight > bioRef.current.clientHeight);
       }
     };
 
     checkOverflow();
-    window.addEventListener('resize', checkOverflow);
-    return () => window.removeEventListener('resize', checkOverflow);
-  }, [player.bio]);
+
+    const resizeObserver = new ResizeObserver(() => {
+      checkOverflow();
+    });
+
+    if (bioRef.current) {
+      resizeObserver.observe(bioRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, [player.bio, isBioExpanded]);
   // Game filter is now controlled by parent component
 
   // Calculate filtered stats based on game type
