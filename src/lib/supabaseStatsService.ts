@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { PlayerStats, PlayerGameLog, GameStats } from '../types/stats';
-import { generateImageFilename } from '../data/api/statsService';
+import { generateImageFilename } from '../utils/playerUtils';
 
 // Calculate age from birth date
 const calculateAge = (birthDate?: string): number => {
