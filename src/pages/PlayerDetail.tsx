@@ -9,27 +9,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 import { PlayerStats, PlayerGameLog } from '@/types/stats';
 import playerImagesData from '@/data/playerImages.json';
+import { calculateAge } from '@/utils/dateUtils';
+import { BASE_PATH } from '@/config';
 
-// Utility function to calculate age from birth date
-const calculateAge = (birthDate?: string): number | undefined => {
-  if (!birthDate) return undefined;
-  
-  const birth = new Date(birthDate);
-  const today = new Date();
-  
-  // Check if birth date is valid
-  if (isNaN(birth.getTime())) return undefined;
-  
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  
-  // Adjust age if birthday hasn't occurred yet this year
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--;
-  }
-  
-  return age;
-};
 
 // Custom CSS for scrolling animation is now in index.css
 
@@ -63,19 +45,19 @@ const PlayerDetail: React.FC = () => {
   useEffect(() => {
     const checkGamesWithBoxScores = () => {
       const gameNumbers = new Set<number>();
-      
+
       // A game has meaningful box score data if not all players have 0 points
       // Check across ALL players, not just the current player
       for (const game of games) {
         const gameLogsForThisGame = allGameLogs.filter(log => log.gameNumber === game.gameNumber);
         const allPlayersHaveZeroPoints = gameLogsForThisGame.every(log => log.points === 0);
-        
+
         console.log(`Game ${game.gameNumber}: allPlayersHaveZeroPoints = ${allPlayersHaveZeroPoints}, players in game: ${gameLogsForThisGame.length}`);
         if (!allPlayersHaveZeroPoints) {
           gameNumbers.add(game.gameNumber);
         }
       }
-      
+
       console.log('Games with meaningful data:', Array.from(gameNumbers));
       setGamesWithBoxScores(gameNumbers);
     };
@@ -181,10 +163,14 @@ const PlayerDetail: React.FC = () => {
 
     if (playerImages && playerImages.length > 0) {
       console.log(`Found ${playerImages.length} images for ${playerSlug}`);
-      const processedImages = playerImages.map(img => ({
-        src: img.src,
-        alt: img.alt
-      }));
+      const processedImages = playerImages.map(img => {
+        // Strip the hardcoded /pitbulls-stats-hub prefix from JSON paths and use dynamic BASE_PATH
+        const relativePath = img.src.replace('/pitbulls-stats-hub', '');
+        return {
+          src: `${BASE_PATH}${relativePath}`,
+          alt: img.alt
+        };
+      });
       setGalleryImages(processedImages);
       setLoadedImages(processedImages);
     } else {
@@ -328,12 +314,12 @@ const PlayerDetail: React.FC = () => {
               <div className="text-center text-white">
                 <div className="w-24 h-24 md:w-32 md:h-32 bg-background rounded-full overflow-hidden border-4 border-background shadow-elegant mx-auto mb-4">
                   <img
-                    src={player.imageUrl || '/pitbulls-stats-hub/placeholder-player.png'}
+                    src={player.imageUrl || `${BASE_PATH}/placeholder-player.png`}
                     alt={`${player.firstName} ${player.lastName}`}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = '/pitbulls-stats-hub/placeholder-player.png';
+                      target.src = `${BASE_PATH}/placeholder-player.png`;
                     }}
                   />
                 </div>
@@ -538,7 +524,7 @@ const PlayerDetail: React.FC = () => {
                   {gameLogs.map((game, index) => (
                     <tr key={index} className={index % 2 === 0 ? 'bg-card' : 'bg-accent/50'}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Link 
+                        <Link
                           to={`/games/${game.gameNumber}`}
                           className="text-primary hover:text-primary/80 hover:underline transition-colors"
                         >
@@ -558,7 +544,7 @@ const PlayerDetail: React.FC = () => {
                         {displayStat(game.gameNumber, game.threePointers)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {hasBoxScoreData(game.gameNumber) 
+                        {hasBoxScoreData(game.gameNumber)
                           ? `${game.freeThrowsMade || 0}/${game.freeThrowAttempts || 0}`
                           : <span className="text-gray-400 italic">N/A</span>
                         }

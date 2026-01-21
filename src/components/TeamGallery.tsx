@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
+import { BASE_PATH } from '@/config';
 
 interface TeamImage {
   src: string;
@@ -19,7 +20,7 @@ const TeamGallery: React.FC = () => {
     for (let i = 1; i <= 16; i++) {
       const num = i.toString().padStart(2, '0');
       images.push({
-        src: `/pitbulls-stats-hub/photos/Team-${num}.jpeg`,
+        src: `${BASE_PATH}/photos/Team-${num}.jpeg`,
         alt: `Team Photo ${num}`,
         filename: `Team-${num}.jpeg`
       });
@@ -38,14 +39,14 @@ const TeamGallery: React.FC = () => {
 
   const navigateImage = (direction: 'prev' | 'next') => {
     if (loadedImages.length === 0) return;
-    
+
     let newIndex;
     if (direction === 'prev') {
       newIndex = currentGalleryIndex === 0 ? loadedImages.length - 1 : currentGalleryIndex - 1;
     } else {
       newIndex = currentGalleryIndex === loadedImages.length - 1 ? 0 : currentGalleryIndex + 1;
     }
-    
+
     setCurrentGalleryIndex(newIndex);
     setSelectedImage(loadedImages[newIndex].src);
   };
@@ -61,7 +62,7 @@ const TeamGallery: React.FC = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-center">Team Galerie</h2>
-      
+
       {/* Gallery Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
         {loadedImages.length > 0 ? (
@@ -88,7 +89,7 @@ const TeamGallery: React.FC = () => {
 
       {/* Image Modal */}
       {selectedImage && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedImage(null)}
         >
@@ -106,7 +107,7 @@ const TeamGallery: React.FC = () => {
               <ChevronLeft size={24} />
             </button>
           )}
-          
+
           {/* Right Arrow */}
           {loadedImages.length > 1 && (
             <button
@@ -121,12 +122,12 @@ const TeamGallery: React.FC = () => {
               <ChevronRight size={24} />
             </button>
           )}
-          
-          <div 
+
+          <div
             className="max-w-4xl w-full max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <button 
+            <button
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedImage(null);
@@ -137,9 +138,9 @@ const TeamGallery: React.FC = () => {
               &times;
             </button>
             <div className="flex-1 flex items-center justify-center">
-              <img 
-                src={selectedImage} 
-                alt="Enlarged view" 
+              <img
+                src={selectedImage}
+                alt="Enlarged view"
                 className="max-w-full max-h-[80vh] object-contain"
               />
             </div>

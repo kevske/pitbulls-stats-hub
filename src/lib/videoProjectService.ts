@@ -1,26 +1,18 @@
 import { supabase } from '@/lib/supabase';
 import { Player, TaggedEvent } from '@/types/basketball';
+import { SaveData } from '@/types/video';
+
+// Re-export SaveData for backward compatibility with imports from this file
+export type { SaveData };
 
 export interface VideoProjectData {
     items: {
         events: TaggedEvent[];
         players: Player[];
-        metadata?: any;
+        metadata?: unknown;
     }
 }
 
-export interface SaveData {
-    gameNumber: number;
-    videoIndex: number;
-    events: TaggedEvent[];
-    players: Player[];
-    videoId: string;
-    playlistId?: string;
-    timestamp: string;
-    lastModified: string;
-    metadata?: any;
-    version: string; // Required for compatibility with saveLoad.ts
-}
 
 export interface VideoProject {
     id: string;
@@ -189,7 +181,7 @@ export class VideoProjectService {
         // First, get existing videos for this game to determine the next index
         const existingProjects = await this.getProjectsForGame(gameNumber);
         const nextIndex = existingProjects.length; // Use the length as the next index
-        
+
         return this.saveProject({
             gameNumber, // This should now be the TSV_game_number
             videoIndex: nextIndex,

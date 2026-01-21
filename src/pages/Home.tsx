@@ -9,6 +9,7 @@ import { Flame } from "lucide-react";
 import TeamBanner from "@/components/TeamBanner";
 import TeamGallery from "@/components/TeamGallery";
 import BirthdayNotification from "@/components/BirthdayNotification";
+import { BASE_PATH } from "@/config";
 
 // Custom CSS for scrolling animation moved to index.css
 
@@ -26,7 +27,7 @@ const Home = () => {
         const homeTeam = g.homeTeam?.toLowerCase() || '';
         const awayTeam = g.awayTeam?.toLowerCase() || '';
         return homeTeam.includes('neuenstadt') || homeTeam.includes('pitbull') ||
-               awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull');
+          awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull');
       })
       .sort((a, b) => b.gameNumber - a.gameNumber)[0];
   }, [games]);
@@ -75,7 +76,7 @@ const Home = () => {
         const homeTeam = g.homeTeam?.toLowerCase() || '';
         const awayTeam = g.awayTeam?.toLowerCase() || '';
         return homeTeam.includes('neuenstadt') || homeTeam.includes('pitbull') ||
-               awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull');
+          awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull');
       })
       .sort((a, b) => b.gameNumber - a.gameNumber);
 
@@ -117,7 +118,7 @@ const Home = () => {
         id: p.id,
         firstName: p.firstName,
         lastName: p.lastName || '',
-        image: p.imageUrl || '/pitbulls-stats-hub/placeholder-player.png'
+        image: p.imageUrl || `${BASE_PATH}/placeholder-player.png`
       })),
       latestGameNumber,
       gameLogs,
@@ -251,7 +252,7 @@ const Home = () => {
     <Layout>
       {/* Birthday Notification Popup */}
       <BirthdayNotification players={players} />
-      
+
       <div className="container mx-auto max-w-6xl space-y-12 animate-fade-in">
         {/* Hero Section */}
         <div className="text-center mb-8">

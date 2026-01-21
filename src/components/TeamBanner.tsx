@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BASE_PATH } from '@/config';
 
 interface TeamImage {
   src: string;
@@ -22,7 +23,7 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak, onBannerClick }) => {
     for (let i = 1; i <= 16; i++) {
       const num = i.toString().padStart(2, '0');
       images.push({
-        src: `/pitbulls-stats-hub/photos/Team-${num}.jpeg`,
+        src: `${BASE_PATH}/photos/Team-${num}.jpeg`,
         alt: `Team Photo ${num}`,
         filename: `Team-${num}.jpeg`
       });
@@ -115,12 +116,12 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ streak, onBannerClick }) => {
         <div className="text-center text-white">
           <div className="w-24 h-24 md:w-32 md:h-32 bg-background rounded-full overflow-hidden border-4 border-background shadow-elegant mx-auto">
             <img
-              src="/pitbulls-stats-hub/photos/profile.jpg"
+              src={`${BASE_PATH}/photos/profile.jpg`}
               alt="Team Profile"
               className="w-full h-full object-cover"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.src = '/pitbulls-stats-hub/placeholder-player.png';
+                target.src = `${BASE_PATH}/placeholder-player.png`;
               }}
             />
           </div>

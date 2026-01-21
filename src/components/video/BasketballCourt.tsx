@@ -1,6 +1,7 @@
 import { Player } from '@/types/basketball';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { BASE_PATH } from '@/config';
 
 export interface CourtPosition {
   id: number;
@@ -51,8 +52,8 @@ export function BasketballCourt({ players, onPlayerSelect, selectedPlayerId, dis
       <CardContent className="p-4">
         <div className="relative w-full aspect-[2/1] rounded-lg overflow-hidden">
           {/* Basketball Court Background Image */}
-          <img 
-            src="/pitbulls-stats-hub/half-court.png"
+          <img
+            src={`${BASE_PATH}/half-court.png`}
             alt="Basketball Court"
             className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => {
@@ -60,7 +61,7 @@ export function BasketballCourt({ players, onPlayerSelect, selectedPlayerId, dis
               (e.target as HTMLImageElement).style.display = 'none';
             }}
           />
-          
+
           {/* Fallback SVG court (hidden by default) */}
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 100" style={{ display: 'none' }}>
             <rect x="0" y="0" width="200" height="100" fill="#dbeafe" />
@@ -80,10 +81,10 @@ export function BasketballCourt({ players, onPlayerSelect, selectedPlayerId, dis
           {/* Players only - no empty positions */}
           {positionAssignments.map((player, index) => {
             if (!player) return null;
-            
+
             const position = COURT_POSITIONS[index];
             const isSelected = player.id === selectedPlayerId;
-            
+
             return (
               <div
                 key={player.id}
@@ -98,9 +99,8 @@ export function BasketballCourt({ players, onPlayerSelect, selectedPlayerId, dis
                   size="sm"
                   onClick={() => onPlayerSelect(player)}
                   disabled={disabled}
-                  className={`h-10 w-24 rounded-[25%/50%] flex flex-col items-center justify-center p-0 text-xs font-medium transition-all ${
-                    isSelected ? 'bg-primary text-primary-foreground shadow-lg scale-110' : 'bg-background hover:bg-accent'
-                  }`}
+                  className={`h-10 w-24 rounded-[25%/50%] flex flex-col items-center justify-center p-0 text-xs font-medium transition-all ${isSelected ? 'bg-primary text-primary-foreground shadow-lg scale-110' : 'bg-background hover:bg-accent'
+                    }`}
                 >
                   <span className="text-lg font-bold leading-none">{formatPlayerName(player)}</span>
                   <span className="text-[12px] leading-none">

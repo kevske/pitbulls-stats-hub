@@ -1,19 +1,9 @@
 import { Player, TaggedEvent } from '@/types/basketball';
+import { SaveData, SaveDataMetadata } from '@/types/video';
 
-export interface SaveData {
-  version: string;
-  timestamp: string;
-  lastModified?: string; // For version tracking and conflict detection
-  videoId?: string;
-  playlistId?: string;
-  players: Player[];
-  events: TaggedEvent[];
-  metadata: {
-    totalEvents: number;
-    totalTimeSpan: number;
-    exportFormat: 'youtube-timestamps';
-  };
-}
+// Re-export for backward compatibility
+export type { SaveData, SaveDataMetadata };
+
 
 export function generateSaveData(
   players: Player[],
@@ -22,7 +12,7 @@ export function generateSaveData(
   playlistId?: string
 ): SaveData {
   const sortedEvents = [...events].sort((a, b) => a.timestamp - b.timestamp);
-  const totalTimeSpan = sortedEvents.length > 0 
+  const totalTimeSpan = sortedEvents.length > 0
     ? Math.max(...sortedEvents.map(e => e.timestamp))
     : 0;
   const now = new Date().toISOString();
@@ -56,11 +46,11 @@ export function downloadSaveFile(saveData: SaveData, filename?: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  
+
   // Generate filename with timestamp
   const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
   a.download = filename || `basketball-tags-${timestamp}.json`;
-  
+
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -71,10 +61,10 @@ export function downloadYouTubeTimestamps(events: TaggedEvent[], filename?: stri
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  
+
   const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
   a.download = filename || `youtube-timestamps-${timestamp}.txt`;
-  
+
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -82,27 +72,27 @@ export function downloadYouTubeTimestamps(events: TaggedEvent[], filename?: stri
 export async function loadSaveFile(file: File): Promise<SaveData> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    
+
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
         const saveData = JSON.parse(content) as SaveData;
-        
+
         // Basic validation
         if (!saveData.version || !saveData.players || !saveData.events) {
           throw new Error('Invalid save file format');
         }
-        
+
         resolve(saveData);
       } catch (error) {
         reject(new Error('Failed to parse save file: ' + (error as Error).message));
       }
     };
-    
+
     reader.onerror = () => {
       reject(new Error('Failed to read file'));
     };
-    
+
     reader.readAsText(file);
   });
 }
@@ -113,16 +103,16 @@ export function hasUnsavedChanges(
   lastSavedData: SaveData | null
 ): boolean {
   if (!lastSavedData) return currentEvents.length > 0;
-  
+
   // Compare players
   if (currentPlayers.length !== lastSavedData.players.length) return true;
   if (JSON.stringify(currentPlayers) !== JSON.stringify(lastSavedData.players)) return true;
-  
+
   // Compare events
   if (currentEvents.length !== lastSavedData.events.length) return true;
-  if (JSON.stringify(currentEvents.sort((a, b) => a.timestamp - b.timestamp)) !== 
-      JSON.stringify(lastSavedData.events.sort((a, b) => a.timestamp - b.timestamp))) return true;
-  
+  if (JSON.stringify(currentEvents.sort((a, b) => a.timestamp - b.timestamp)) !==
+    JSON.stringify(lastSavedData.events.sort((a, b) => a.timestamp - b.timestamp))) return true;
+
   return false;
 }
 
@@ -138,7 +128,7 @@ export interface TimestampComparisonResult {
 export function compareTimestamps(timestamp1: string, timestamp2: string): TimestampComparisonResult {
   const date1 = new Date(timestamp1);
   const date2 = new Date(timestamp2);
-  
+
   if (isNaN(date1.getTime()) || isNaN(date2.getTime())) {
     return {
       isNewer: false,
@@ -148,12 +138,12 @@ export function compareTimestamps(timestamp1: string, timestamp2: string): Times
       summary: 'Invalid timestamp(s)'
     };
   }
-  
+
   const timeDifference = date1.getTime() - date2.getTime();
   const isNewer = timeDifference > 0;
   const isOlder = timeDifference < 0;
   const isSame = timeDifference === 0;
-  
+
   let summary = '';
   if (isSame) {
     summary = 'Versions are identical';
@@ -164,7 +154,7 @@ export function compareTimestamps(timestamp1: string, timestamp2: string): Times
     const minutes = Math.floor(Math.abs(timeDifference) / 60000);
     summary = `Remote version is ${minutes} minute(s) newer`;
   }
-  
+
   return {
     isNewer,
     isOlder,

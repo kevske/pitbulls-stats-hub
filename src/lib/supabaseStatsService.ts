@@ -1,35 +1,17 @@
 import { supabase } from './supabase';
 import { PlayerStats, PlayerGameLog, GameStats } from '../types/stats';
 import { generateImageFilename } from '../utils/playerUtils';
+import { calculateAge } from '../utils/dateUtils';
+import { BASE_PATH } from '../config';
 
-// Calculate age from birth date
-const calculateAge = (birthDate?: string): number => {
-  if (!birthDate) return 0;
-  
-  const birth = new Date(birthDate);
-  const today = new Date();
-  
-  // Check if birth date is valid
-  if (isNaN(birth.getTime())) return 0;
-  
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  
-  // Adjust age if birthday hasn't occurred yet this year
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--;
-  }
-  
-  return age;
-};
 
 // Transform Supabase player stats to match frontend PlayerStats interface
 export function transformSupabaseStatsToPlayerStats(row: any): PlayerStats {
-  const imageUrl = `/pitbulls-stats-hub/players/${generateImageFilename(row.first_name, row.last_name)}`;
-  
+  const imageUrl = `${BASE_PATH}/players/${generateImageFilename(row.first_name, row.last_name)}`;
+
   // Handle direct birth_date field (now merged from player_info)
   const birthDate = row.birth_date || '';
-  
+
   return {
     id: row.player_slug,
     firstName: row.first_name,
@@ -66,7 +48,7 @@ export function transformSupabaseGameLog(row: any, gameNumberMap: Map<string, nu
   if (row.games) {
     const homeTeam = row.games.home_team_name?.toLowerCase() || '';
     const awayTeam = row.games.away_team_name?.toLowerCase() || '';
-    
+
     if (homeTeam.includes('neuenstadt') || homeTeam.includes('pitbull')) {
       gameType = 'Heim';
     } else if (awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull')) {
@@ -101,11 +83,11 @@ export function transformSupabaseGameLog(row: any, gameNumberMap: Map<string, nu
 // Transform Supabase games to match frontend GameStats interface
 export function transformSupabaseGame(row: any, index: number): GameStats {
   // Check if this is a TSV Neuenstadt game
-  const isNeuenstadtGame = row.home_team_name?.toLowerCase().includes('neuenstadt') || 
-                           row.away_team_name?.toLowerCase().includes('neuenstadt') ||
-                           row.home_team_name?.toLowerCase().includes('pitbull') || 
-                           row.away_team_name?.toLowerCase().includes('pitbull');
-  
+  const isNeuenstadtGame = row.home_team_name?.toLowerCase().includes('neuenstadt') ||
+    row.away_team_name?.toLowerCase().includes('neuenstadt') ||
+    row.home_team_name?.toLowerCase().includes('pitbull') ||
+    row.away_team_name?.toLowerCase().includes('pitbull');
+
   // Use TSV_game_number for TSV games, fallback to generated number for others
   let gameNumber: number;
   if (isNeuenstadtGame && row.tsv_game_number) {
@@ -115,15 +97,15 @@ export function transformSupabaseGame(row: any, index: number): GameStats {
   } else {
     gameNumber = 999 + index; // Non-TSV games get high numbers
   }
-  
+
   // Extract quarter scores from quarter_scores if available
-  const q1Score = row.quarter_scores ? 
+  const q1Score = row.quarter_scores ?
     `${row.quarter_scores.first_quarter_home || 0}:${row.quarter_scores.first_quarter_away || 0}` : '-';
-  const halfTimeScore = row.quarter_scores ? 
+  const halfTimeScore = row.quarter_scores ?
     `${row.quarter_scores.halftime_home || 0}:${row.quarter_scores.halftime_away || 0}` : '-';
-  const q3Score = row.quarter_scores ? 
+  const q3Score = row.quarter_scores ?
     `${row.quarter_scores.third_quarter_home || 0}:${row.quarter_scores.third_quarter_away || 0}` : '-';
-  
+
   return {
     gameNumber,
     date: row.game_date,
@@ -253,7 +235,7 @@ export class SupabaseStatsService {
   }
 
   // Get all games
-  static async fetchAllGames(): Promise<{games: GameStats[], gameNumberMap: Map<string, number>}> {
+  static async fetchAllGames(): Promise<{ games: GameStats[], gameNumberMap: Map<string, number> }> {
     try {
       // Fetch games
       const { data: gamesData, error: gamesError } = await supabase
@@ -276,12 +258,12 @@ export class SupabaseStatsService {
       // Create a map of TSV_game_number to video data (consolidates playlist entries)
       const videoMap = new Map<number, { link: string; events: any[]; players: any[]; videoIndex: number }>();
       const videoOnlyGameNumbers = new Set<number>(); // Track games that only exist in video projects
-      
+
       if (videoProjects) {
         videoProjects.forEach((vp: any) => {
           // Handle both old and new table structures
           let gameNumber: number | undefined;
-          
+
           if (vp.tsv_game_number !== undefined && vp.tsv_game_number !== null) {
             // New structure: use TSV_game_number directly
             gameNumber = vp.tsv_game_number;
@@ -292,11 +274,11 @@ export class SupabaseStatsService {
               gameNumber = parsedGameNumber;
             }
           }
-          
+
           if (gameNumber !== undefined && !isNaN(gameNumber)) {
             // Track games that only exist in video projects
             videoOnlyGameNumbers.add(gameNumber);
-            
+
             // Construct youtube link
             let link = '';
             if (vp.video_id) {
@@ -320,26 +302,26 @@ export class SupabaseStatsService {
                 const existingVideo = videoMap.get(gameNumber)!;
                 const newEvents = vp.data?.events || [];
                 const newPlayers = vp.data?.players || [];
-                
+
                 // Merge events (avoid duplicates based on timestamp or unique identifier)
                 const allEvents = [...existingVideo.events];
                 newEvents.forEach((newEvent: any) => {
-                  if (!allEvents.some((existingEvent: any) => 
-                    existingEvent.time === newEvent.time && 
+                  if (!allEvents.some((existingEvent: any) =>
+                    existingEvent.time === newEvent.time &&
                     existingEvent.type === newEvent.type)) {
                     allEvents.push(newEvent);
                   }
                 });
-                
+
                 // Merge players (avoid duplicates based on player ID)
                 const allPlayers = [...existingVideo.players];
                 newPlayers.forEach((newPlayer: any) => {
-                  if (!allPlayers.some((existingPlayer: any) => 
+                  if (!allPlayers.some((existingPlayer: any) =>
                     existingPlayer.id === newPlayer.id)) {
                     allPlayers.push(newPlayer);
                   }
                 });
-                
+
                 // Update the existing video entry
                 videoMap.set(gameNumber, {
                   ...existingVideo,
@@ -355,29 +337,29 @@ export class SupabaseStatsService {
       // Create gameNumberMap for mapping game_id to gameNumber
       const gameNumberMap = new Map<string, number>();
       let neuenstadtGameCounter = 1;
-      
+
       // First, process games from the games table and remove them from video-only set
       const games = (gamesData || []).map((row, index) => {
         const gameStats = transformSupabaseGame(row, index);
-        
+
         // Map game_id to gameNumber for game logs
         if (gameStats.gameNumber <= 999) { // TSV Neuenstadt games
           gameNumberMap.set(row.game_id, gameStats.gameNumber);
         }
-        
+
         // Remove this game from video-only set if it exists in both tables
         if (videoOnlyGameNumbers.has(gameStats.gameNumber)) {
           videoOnlyGameNumbers.delete(gameStats.gameNumber);
         }
-        
+
         // Attach video data if available (using TSV_game_number)
         const videoData = videoMap.get(gameStats.gameNumber); // Use the actual TSV game number
-        
+
         if (videoData) {
           // Extract just the link for backward compatibility
           gameStats.youtubeLink = videoData.link;
           gameStats.youtubeLinks = [videoData.link]; // Single video per game
-          
+
           // Store full video data for advanced features (events, players)
           gameStats.videoData = [videoData];
         }
