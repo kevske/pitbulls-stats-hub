@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import { PlayerStats, GameStats, PlayerGameLog, CachedData } from '@/types/stats';
 import { config } from '@/config';
+import { storage } from '@/utils/storage';
 
 // Types for CSV Data
 interface PlayerBioRow {
@@ -269,16 +270,15 @@ async function fetchCSV<T>(url: string, transform: (data: any[]) => T[], forceRe
   const now = Date.now();
 
   if (!forceRefresh) {
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        const { data, timestamp } = JSON.parse(cached) as CachedData<T>;
-        if (now - timestamp < config.data.cacheDuration) {
-          return data;
+    try {
+      const cached = await storage.get<CachedData<T>>(cacheKey);
+      if (cached) {
+        if (now - cached.timestamp < config.data.cacheDuration) {
+          return cached.data;
         }
-      } catch (e) {
-        console.warn('Failed to parse cached data', e);
       }
+    } catch (e) {
+      console.warn('Failed to retrieve cached data', e);
     }
   }
 
@@ -297,12 +297,12 @@ async function fetchCSV<T>(url: string, transform: (data: any[]) => T[], forceRe
     const transformed = transform(result);
 
     try {
-      localStorage.setItem(cacheKey, JSON.stringify({
+      await storage.set(cacheKey, {
         data: transformed,
         timestamp: now
-      }));
+      });
     } catch (e) {
-      console.warn('Failed to cache data (likely quota exceeded)', e);
+      console.warn('Failed to cache data', e);
     }
 
     return transformed;
