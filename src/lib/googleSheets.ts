@@ -6,8 +6,8 @@ const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
 // OAuth2 configuration - In production, these should be environment variables
-const CLIENT_ID = 'YOUR_CLIENT_ID_HERE'; // Replace with actual client ID
-const CLIENT_SECRET = 'YOUR_CLIENT_SECRET_HERE'; // Replace with actual client secret
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+const CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '';
 const REDIRECT_URI = 'http://localhost:5173/oauth/callback';
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 
