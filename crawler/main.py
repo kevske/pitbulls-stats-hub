@@ -658,11 +658,11 @@ class BasketballBundCrawler:
             game_ids = list(set([bs['game_id'] for bs in new_box_scores]))
             
             # Fetch existing box scores for these games
-            for game_id in game_ids:
+            if game_ids:
                 result = self.supabase.table('box_scores').select(
                     'game_id', 'team_id', 'player_first_name', 'player_last_name', 
                     'minutes_played', 'player_slug'
-                ).eq('game_id', game_id).execute()
+                ).in_('game_id', game_ids).execute()
                 
                 for row in result.data:
                     # Create a unique key for each player
