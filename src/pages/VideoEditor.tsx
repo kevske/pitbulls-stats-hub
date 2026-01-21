@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { Player, TaggedEvent, DEFAULT_PLAYERS, Position, PositionType, generateEventDescription, formatTime } from '@/types/basketball';
-import { YouTubePlayer, YouTubePlayerRef } from '@/components/video/YouTubePlayer';
+import { Player, TaggedEvent, DEFAULT_PLAYERS, PositionType, generateEventDescription, formatTime } from '@/types/basketball';
+import { YouTubePlayer } from '@/components/video/YouTubePlayer';
 import { VideoInput } from '@/components/video/VideoInput';
 import { VideoControls } from '@/components/video/VideoControls';
 import { EventInput } from '@/components/video/EventInput';
@@ -9,131 +9,87 @@ import { PlayerManager } from '@/components/video/PlayerManager';
 import { Statistics } from '@/components/video/Statistics';
 import { ExportPanel } from '@/components/video/ExportPanel';
 import { VideoStatsIntegration } from '@/components/video/VideoStatsIntegration';
-import { PlaylistPanel, PlaylistVideo } from '@/components/video/PlaylistPanel';
 import { PlaylistSideMenu } from '@/components/video/PlaylistSideMenu';
 import { CurrentPlayersOnField } from '@/components/video/CurrentPlayersOnField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, List, Upload, FileText, Plus, Save } from 'lucide-react';
-import { generateSaveData, SaveData, compareTimestamps, updateLastModified } from '@/lib/saveLoad';
-import { loadSaveFile } from '@/lib/saveLoad';
-import { VideoProjectService } from '@/lib/videoProjectService';
-import { supabase } from '@/lib/supabase';
+import { Card, CardContent } from '@/components/ui/card';
+import { Upload, FileText, List, Save } from 'lucide-react';
+import { generateSaveData, SaveData, loadSaveFile } from '@/lib/saveLoad';
 import { toast } from 'sonner';
 import Layout from '@/components/Layout';
 import { useSearchParams } from 'react-router-dom';
+import { useVideoProjectPersistence } from '@/hooks/useVideoProjectPersistence';
+import { usePlaylistManager } from '@/hooks/usePlaylistManager';
+import { useVideoPlayer } from '@/hooks/useVideoPlayer';
 
 const VideoEditor = () => {
   const [searchParams] = useSearchParams();
   const gameNumber = searchParams.get('game');
   const videoUrl = searchParams.get('video');
 
-
-
-
-
+  // Core State
   const [videoId, setVideoId] = useState('');
   const [playlistId, setPlaylistId] = useState<string | undefined>();
   const [players, setPlayers] = useState<Player[]>(DEFAULT_PLAYERS);
   const [events, setEvents] = useState<TaggedEvent[]>([]);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const seekToRef = useRef<((time: number) => void) | null>(null);
-  const youtubePlayerRef = useRef<YouTubePlayerRef>(null);
-  const [lastSavedData, setLastSavedData] = useState<SaveData | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Playlist state
-  const [playlistVideos, setPlaylistVideos] = useState<PlaylistVideo[]>([]);
-  const [currentPlaylistIndex, setCurrentPlaylistIndex] = useState(0);
-  const [completedVideos, setCompletedVideos] = useState<Set<string>>(new Set());
-
-  // Side menu state
+  // UI State
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
-  const [isQueueMode, setIsQueueMode] = useState(false);
   const [currentPlayersOnCourt, setCurrentPlayersOnCourt] = useState<Player[]>([]);
   const [shouldResetPlayers, setShouldResetPlayers] = useState(false);
 
-  // Timestamp conflict state
-  const [timestampConflict, setTimestampConflict] = useState<{
-    hasConflict: boolean;
-    localIsNewer: boolean;
-    comparison: any;
-  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load data with timestamp checking
-  const loadWithTimestampCheck = async (
-    gameNumber: string,
-    videoIndex: number
-  ) => {
-    try {
-      console.log('Loading data with timestamp check:', { gameNumber, videoIndex });
+  // Hooks
+  const {
+    currentTime,
+    isPlaying,
+    youtubePlayerRef,
+    setCurrentTime,
+    handleTimeUpdate,
+    handleStateChange,
+    handlePlayPause,
+    handleSeekBackward,
+    handleSeekForward,
+    handleRestart,
+    handleSeekTo
+  } = useVideoPlayer();
 
-      // Get remote metadata first to check timestamp
-      const remoteMeta = await VideoProjectService.getProjectMeta(gameNumber, videoIndex);
+  const {
+    playlistVideos,
+    currentPlaylistIndex,
+    setCurrentPlaylistIndex,
+    isQueueMode,
+    setIsQueueMode,
+    handleAddToQueue,
+    handleRemoveFromQueue,
+    handlePlaylistReady,
+    handleSelectPlaylistVideo,
+  } = usePlaylistManager({
+    videoId,
+    setVideoId,
+    youtubePlayerRef
+  });
 
-      // Load the actual data
-      const projectData = await VideoProjectService.loadProject(gameNumber, videoIndex);
-
-      if (projectData) {
-        const localTimestamp = lastSavedData?.lastModified || lastSavedData?.timestamp;
-        const remoteTimestamp = remoteMeta?.lastModified;
-
-        if (localTimestamp && remoteTimestamp) {
-          // Compare timestamps
-          const comparison = compareTimestamps(localTimestamp, remoteTimestamp);
-
-          console.log('Timestamp comparison:', comparison);
-
-          if (!comparison.isSame) {
-            setTimestampConflict({
-              hasConflict: true,
-              localIsNewer: comparison.isNewer,
-              comparison
-            });
-
-            if (comparison.isOlder) {
-              toast.warning(`Remote version is newer: ${comparison.summary}`);
-            } else {
-              toast.info(`Local version is newer: ${comparison.summary}`);
-            }
-          } else {
-            setTimestampConflict(null);
-          }
-        } else {
-          setTimestampConflict(null);
-        }
-
-        // Load the data
-        setEvents(projectData.events);
-        setPlayers(projectData.players);
-        if (projectData.videoId) setVideoId(projectData.videoId);
-        if (projectData.playlistId) setPlaylistId(projectData.playlistId);
-
-        setLastSavedData(projectData);
-        toast.success(`Loaded project for video ${videoIndex}`);
-      } else {
-        console.log('No saved data found on Supabase');
-        if (lastSavedData?.events?.length && lastSavedData.videoIndex !== videoIndex) {
-          setEvents([]);
-          setLastSavedData(null);
-          setTimestampConflict(null);
-        } else if (!lastSavedData && events.length === 0) {
-          setLastSavedData(null);
-          setTimestampConflict(null);
-        } else {
-          setEvents([]);
-          setLastSavedData(null);
-          setTimestampConflict(null);
-        }
-      }
-    } catch (error) {
-      console.error('Error in loadWithTimestampCheck:', error);
-    }
-  };
+  const {
+    lastSavedData,
+    timestampConflict,
+    setLastSavedData,
+    loadWithTimestampCheck,
+    handleSaveToStorage
+  } = useVideoProjectPersistence({
+    gameNumber,
+    currentPlaylistIndex,
+    events,
+    players,
+    videoId,
+    playlistId,
+    setEvents,
+    setPlayers,
+    setVideoId,
+    setPlaylistId
+  });
 
   // Handle URL parameters and load game data
   useEffect(() => {
@@ -158,165 +114,7 @@ const VideoEditor = () => {
     };
 
     initializeFromParams();
-  }, [gameNumber, videoUrl, currentPlaylistIndex]);
-
-  // Manual save function
-  const handleSaveToStorage = async () => {
-    if (!gameNumber) {
-      toast.error('No game number specified');
-      return;
-    }
-
-    try {
-      const now = new Date().toISOString();
-      const saveData: SaveData = {
-        gameNumber: parseInt(gameNumber),
-        videoIndex: currentPlaylistIndex + 1,
-        events,
-        players,
-        videoId,
-        playlistId,
-        timestamp: now,
-        lastModified: now,
-        version: '1.0.0'
-      };
-
-      console.log('Saving data to Supabase:', saveData);
-
-      const savedId = await VideoProjectService.saveProject(saveData);
-
-      if (savedId) {
-        toast.success(`Saved to Supabase`);
-        setLastSavedData(saveData);
-        setTimestampConflict(null);
-      } else {
-        toast.error('Failed to save to Supabase - check console');
-      }
-    } catch (error) {
-      console.error('Error saving:', error);
-      toast.error(`Failed to save data: ${(error as Error).message}`);
-    }
-  };
-
-  // Autosave and Realtime
-  useEffect(() => {
-    if (!gameNumber) return;
-
-    // 1. Realtime Subscription
-    const channelName = `video_project:${gameNumber}:${currentPlaylistIndex + 1}`;
-    console.log('Subscribing to realtime channel:', channelName);
-
-    const subscription = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'video_projects',
-          filter: `game_number=eq.${gameNumber}` // We filter further in callback
-        },
-        (payload) => {
-          console.log('Realtime update received:', payload);
-          const newData = payload.new as any;
-
-          // Ensure it matches our current video
-          if (newData.video_index !== (currentPlaylistIndex + 1)) return;
-
-          const remoteLastModified = newData.updated_at;
-          const localLastModified = lastSavedData?.lastModified;
-
-          // If remote is newer than what we have loaded/saved
-          if (remoteLastModified && (!localLastModified || new Date(remoteLastModified) > new Date(localLastModified))) {
-            console.log('Remote change detected, auto-updating...');
-            toast.info('Remote changes detected. Updating...');
-
-            const projectData = newData.data;
-            setEvents(projectData.events || []);
-            setPlayers(projectData.players || []);
-            if (newData.video_id) setVideoId(newData.video_id);
-            if (newData.playlist_id) setPlaylistId(newData.playlist_id);
-
-            setLastSavedData({
-              gameNumber: parseInt(newData.game_number),
-              videoIndex: newData.video_index,
-              videoId: newData.video_id,
-              playlistId: newData.playlist_id,
-              events: projectData.events || [],
-              players: projectData.players || [],
-              metadata: projectData.metadata,
-              timestamp: newData.created_at,
-              lastModified: newData.updated_at,
-              version: '1.0.0'
-            });
-
-            // Clear any conflict warnings since we just synced
-            setTimestampConflict(null);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, [gameNumber, currentPlaylistIndex, lastSavedData]);
-
-  // Auto-save debounce
-  useEffect(() => {
-    if (!gameNumber || !events.length) return;
-
-    const timeoutId = setTimeout(async () => {
-      // Check if changes exist compared to last saved
-      const hasUnsavedChanges = !lastSavedData ||
-        JSON.stringify(events) !== JSON.stringify(lastSavedData.events) ||
-        JSON.stringify(players) !== JSON.stringify(lastSavedData.players);
-
-      if (hasUnsavedChanges) {
-        console.log('Auto-saving changes...');
-        const now = new Date().toISOString();
-        const saveData: SaveData = {
-          gameNumber: parseInt(gameNumber),
-          videoIndex: currentPlaylistIndex + 1,
-          events,
-          players,
-          videoId,
-          playlistId,
-          timestamp: now,
-          lastModified: now,
-          version: '1.0.0'
-        };
-
-        const savedId = await VideoProjectService.saveProject(saveData);
-        if (savedId) {
-          setLastSavedData(saveData);
-          // toast.success('Auto-saved'); // Optional: don't spam toasts
-        }
-      }
-    }, 2000); // 2 second debounce
-
-    return () => clearTimeout(timeoutId);
-  }, [events, players, gameNumber, currentPlaylistIndex, videoId, playlistId, lastSavedData]);
-
-  // Exit protection
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (events.length > 0) {
-        const hasUnsaved = lastSavedData === null ||
-          JSON.stringify(events.sort((a, b) => a.timestamp - b.timestamp)) !==
-          JSON.stringify(lastSavedData.events.sort((a, b) => a.timestamp - b.timestamp));
-
-        if (hasUnsaved) {
-          e.preventDefault();
-          e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-          return e.returnValue;
-        }
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [events, lastSavedData]);
+  }, [gameNumber, videoUrl, currentPlaylistIndex, loadWithTimestampCheck]);
 
   const handleLoadData = useCallback((saveData: SaveData) => {
     console.log('Loading data:', saveData);
@@ -325,6 +123,7 @@ const VideoEditor = () => {
     setVideoId(saveData.videoId || '');
     setPlaylistId(saveData.playlistId);
     setLastSavedData(saveData);
+
     // Reset current players on court - user will select manually in edit mode
     console.log('Setting shouldResetPlayers to true');
     setShouldResetPlayers(true);
@@ -334,7 +133,7 @@ const VideoEditor = () => {
       console.log('Setting shouldResetPlayers to false');
       setShouldResetPlayers(false);
     }, 100);
-  }, []);
+  }, [setLastSavedData]);
 
   const handleLoadFile = () => {
     fileInputRef.current?.click();
@@ -375,14 +174,6 @@ const VideoEditor = () => {
     });
   }, [players, events]);
 
-  const handleTimeUpdate = useCallback((time: number) => {
-    setCurrentTime(time);
-  }, []);
-
-  const handleStateChange = useCallback((state: number) => {
-    setIsPlaying(state === 1);
-  }, []);
-
   const handleVideoSelect = (selectedVideoId: string, selectedPlaylistId?: string) => {
     if (selectedPlaylistId) {
       setPlaylistId(selectedPlaylistId);
@@ -395,96 +186,13 @@ const VideoEditor = () => {
     }
   };
 
-  const handleAddToQueue = (newVideoId: string) => {
-    const newVideo: PlaylistVideo = {
-      videoId: newVideoId,
-      index: playlistVideos.length,
-      isCompleted: false,
-    };
-    setPlaylistVideos(prev => [...prev, newVideo]);
-
-    // If this is the first video and no video is currently loaded, start playing it
-    if (playlistVideos.length === 0 && !videoId) {
-      setVideoId(newVideoId);
-      setCurrentPlaylistIndex(0);
-      setIsQueueMode(true);
-    }
-  };
-
-  const handleRemoveFromQueue = (index: number) => {
-    setPlaylistVideos(prev => {
-      const newVideos = prev.filter((_, i) => i !== index);
-      // Re-index the remaining videos
-      return newVideos.map((video, i) => ({ ...video, index: i }));
-    });
-
-    // Adjust current index if necessary
-    if (index < currentPlaylistIndex) {
-      setCurrentPlaylistIndex(prev => prev - 1);
-    } else if (index === currentPlaylistIndex && playlistVideos.length > 1) {
-      setCurrentPlaylistIndex(0);
-    }
-  };
-
-  const handlePlaylistReady = useCallback((videoIds: string[], currentIndex: number) => {
-    const videos: PlaylistVideo[] = videoIds.map((id, idx) => ({
-      videoId: id,
-      index: idx,
-      isCompleted: completedVideos.has(id),
-    }));
-    setPlaylistVideos(videos);
-    setCurrentPlaylistIndex(currentIndex);
-  }, [completedVideos]);
-
   const handleVideoChange = useCallback((newVideoId: string, index: number) => {
-    if (isQueueMode) {
-      setCurrentPlaylistIndex(index);
-    } else {
-      setCurrentPlaylistIndex(index);
-    }
+    setCurrentPlaylistIndex(index);
     // Reset time for new video
     setCurrentTime(0);
     // Clear events when switching to a different video
     setEvents([]);
-  }, [isQueueMode]);
-
-  const handleSelectPlaylistVideo = useCallback((index: number) => {
-    console.log('handleSelectPlaylistVideo called:', { index, isQueueMode, playlistVideosLength: playlistVideos.length });
-
-    if (playlistVideos[index]) {
-      // Use playVideoAt to switch to the specific video in the playlist
-      console.log('Switching to video at index:', index, 'videoId:', playlistVideos[index].videoId);
-      setCurrentPlaylistIndex(index);
-
-      // Use the YouTube player's playVideoAt method
-      youtubePlayerRef.current?.playVideoAt(index);
-    }
-  }, [playlistVideos]);
-
-  const handleMarkVideoComplete = useCallback(() => {
-    if (playlistVideos.length > 0) {
-      const currentVideoId = playlistVideos[currentPlaylistIndex]?.videoId;
-      if (currentVideoId) {
-        setCompletedVideos(prev => new Set([...prev, currentVideoId]));
-        setPlaylistVideos(prev => prev.map(v =>
-          v.videoId === currentVideoId ? { ...v, isCompleted: true } : v
-        ));
-      }
-    }
-  }, [playlistVideos, currentPlaylistIndex]);
-
-  const handleNextVideo = useCallback(() => {
-    if (currentPlaylistIndex < playlistVideos.length - 1) {
-      handleMarkVideoComplete();
-      handleSelectPlaylistVideo(currentPlaylistIndex + 1);
-    }
-  }, [currentPlaylistIndex, playlistVideos.length, handleMarkVideoComplete, handleSelectPlaylistVideo]);
-
-  const handlePrevVideo = useCallback(() => {
-    if (currentPlaylistIndex > 0) {
-      handleSelectPlaylistVideo(currentPlaylistIndex - 1);
-    }
-  }, [currentPlaylistIndex, handleSelectPlaylistVideo]);
+  }, [setCurrentPlaylistIndex, setCurrentTime]);
 
   const handleAddPlayer = (name: string, jerseyNumber: number, position: PositionType) => {
     setPlayers((prev) => [...prev, { id: crypto.randomUUID(), name, jerseyNumber, position }]);
@@ -512,48 +220,12 @@ const VideoEditor = () => {
       description: generateEventDescription(event),
     };
 
-    // Add video context for playlist mode
-    const eventWithVideo: TaggedEvent = {
-      ...completeEvent,
-      description: completeEvent.description,
-    };
-    setEvents((prev) => [...prev, eventWithVideo]);
+    setEvents((prev) => [...prev, completeEvent]);
   };
 
   const handleDeleteEvent = (id: string) => {
     setEvents((prev) => prev.filter((e) => e.id !== id));
   };
-
-  const handleSeekTo = (timestamp: number) => {
-    youtubePlayerRef.current?.seekTo(timestamp);
-    setCurrentTime(timestamp);
-  };
-
-  // Video control functions
-  const handlePlayPause = useCallback(() => {
-    if (isPlaying) {
-      youtubePlayerRef.current?.pauseVideo();
-    } else {
-      youtubePlayerRef.current?.playVideo();
-    }
-  }, [isPlaying]);
-
-  const handleSeekBackward = useCallback(() => {
-    const newTime = Math.max(0, currentTime - 10);
-    youtubePlayerRef.current?.seekTo(newTime);
-    setCurrentTime(newTime);
-  }, [currentTime]);
-
-  const handleSeekForward = useCallback(() => {
-    const newTime = currentTime + 15;
-    youtubePlayerRef.current?.seekTo(newTime);
-    setCurrentTime(newTime);
-  }, [currentTime]);
-
-  const handleRestart = useCallback(() => {
-    youtubePlayerRef.current?.seekTo(0);
-    setCurrentTime(0);
-  }, []);
 
   // Calculate available players (bench players)
   const availablePlayers = useMemo(() => {
@@ -696,7 +368,6 @@ const VideoEditor = () => {
                     onVideoChange={handleVideoChange}
                   />
 
-
                   {/* Save Button */}
                   <Button onClick={handleSaveToStorage} className="w-full gap-2">
                     <Save className="w-4 h-4" />
@@ -807,12 +478,6 @@ const VideoEditor = () => {
           )}
         </main>
 
-        {/* Keyboard Shortcut Hint */}
-        <footer className="fixed bottom-4 left-4 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-border/50">
-          💡 Tip: Add events while the video plays for accurate timestamps
-        </footer>
-
-        {/* Playlist Side Menu */}
         {isPlaylistMode && (
           <PlaylistSideMenu
             videos={playlistVideos}
