@@ -22,37 +22,48 @@ const ImageUploader = ({ value, onChange }: ImageUploaderProps) => {
     }
   }, []);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check if file is an image
-    if (!file.type.startsWith('image/')) {
-      toast.error('Bitte laden Sie ein gültiges Bild hoch.');
-      return;
-    }
-
-    // Check file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Das Bild darf maximal 2MB groß sein.');
-      return;
-    }
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setIsUploading(true);
 
-    // In a real app, you would upload the file to a server here
-    // For this example, we'll use a data URL
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const imageUrl = reader.result as string;
-      const updatedImages = [imageUrl, ...images];
+    const imagePromises = Array.from(files).map(file => {
+      return new Promise<string>((resolve, reject) => {
+        if (!file.type.startsWith('image/')) {
+          return reject({ fileName: file.name, message: 'Kein gültiges Bild.' });
+        }
+        if (file.size > 2 * 1024 * 1024) {
+          return reject({ fileName: file.name, message: 'Darf maximal 2MB groß sein.' });
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject({ fileName: file.name, message: 'Fehler beim Lesen der Datei.' });
+        reader.readAsDataURL(file);
+      });
+    });
+
+    const results = await Promise.allSettled(imagePromises);
+
+    const newImages: string[] = [];
+    results.forEach(result => {
+      if (result.status === 'fulfilled') {
+        newImages.push(result.value);
+      } else {
+        toast.error(`Fehler bei ${result.reason.fileName}: ${result.reason.message}`);
+      }
+    });
+
+    if (newImages.length > 0) {
+      const updatedImages = [...newImages, ...images];
       setImages(updatedImages);
-      onChange(imageUrl);
       localStorage.setItem('uploadedImages', JSON.stringify(updatedImages));
-      setIsUploading(false);
-      toast.success('Bild erfolgreich hochgeladen');
-    };
-    reader.readAsDataURL(file);
+      onChange(newImages[0]); // Select the first new image
+      toast.success(`${newImages.length} von ${files.length} Bild(ern) erfolgreich hochgeladen.`);
+    }
+
+    setIsUploading(false);
   };
 
   const handleRemoveImage = (index: number, e: React.MouseEvent) => {
@@ -87,6 +98,7 @@ const ImageUploader = ({ value, onChange }: ImageUploaderProps) => {
           accept="image/*"
           className="hidden"
           disabled={isUploading}
+          multiple
         />
         {value && (
           <Button
