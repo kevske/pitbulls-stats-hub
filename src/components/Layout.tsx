@@ -1,5 +1,7 @@
 import React, { ReactNode, useState } from "react";
 import Sidebar from "./Sidebar";
+import { useModernTheme } from "@/contexts/ModernThemeContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface LayoutProps {
   children: ReactNode;
@@ -7,9 +9,31 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isModernMode } = useModernTheme();
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className={`min-h-screen relative overflow-hidden transition-colors duration-1000 ${isModernMode ? 'bg-[#05070a]' : 'bg-background'}`}>
+      {/* Vision 2026 Background Elements */}
+      <AnimatePresence>
+        {isModernMode && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-0 pointer-events-none"
+            >
+              <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+              <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
+              <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-purple-500/10 rounded-full blur-[100px] animate-pulse [animation-delay:4s]" />
+
+              {/* Grid Overlay */}
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       <Sidebar isOpen={isSidebarOpen} onToggle={setIsSidebarOpen} />
 
       <div className={`transition-all duration-300 min-h-screen flex flex-col ${isSidebarOpen ? 'md:pl-64' : 'md:pl-0'}`}>

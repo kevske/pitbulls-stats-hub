@@ -9,6 +9,8 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { generateImageFilename } from "@/utils/playerUtils";
 import { calculateAge } from "@/utils/dateUtils";
 import { BASE_PATH } from "@/config";
+import { useModernTheme } from "@/contexts/ModernThemeContext";
+import { motion } from "framer-motion";
 
 interface PlayerCardProps {
   player: PlayerStats;
@@ -23,6 +25,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
   const [isBioExpanded, setIsBioExpanded] = useState(false);
   const [showExpandButton, setShowExpandButton] = useState(false);
   const bioRef = useRef<HTMLParagraphElement>(null);
+  const { isModernMode } = useModernTheme();
 
   // calculateAge imported from @/utils/dateUtils
 
@@ -105,25 +108,18 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
   }, [player, gameLogs, gameFilter]);
 
   const renderStats = () => (
-    <div className="grid grid-cols-4 gap-3 text-center">
-      <div>
-        <p className="text-xl font-bold text-primary">{filteredStats.points}</p>
-        <p className="text-xs text-muted-foreground">PTS</p>
-      </div>
-      <div>
-        <p className="text-xl font-bold text-primary">{filteredStats.threePointers}</p>
-        <p className="text-xs text-muted-foreground">3P</p>
-      </div>
-      <div>
-        <p className="text-xl font-bold text-primary">
-          {filteredStats.freeThrowsMade}
-        </p>
-        <p className="text-xs text-muted-foreground">FTM</p>
-      </div>
-      <div>
-        <p className="text-xl font-bold text-primary">{filteredStats.fouls}</p>
-        <p className="text-xs text-muted-foreground">FLS</p>
-      </div>
+    <div className={`grid grid-cols-4 gap-3 text-center ${isModernMode ? 'mt-6' : ''}`}>
+      {[
+        { val: filteredStats.points, label: 'PTS' },
+        { val: filteredStats.threePointers, label: '3P' },
+        { val: filteredStats.freeThrowsMade, label: 'FTM' },
+        { val: filteredStats.fouls, label: 'FLS' }
+      ].map((stat, i) => (
+        <div key={i} className={isModernMode ? 'p-2 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm' : ''}>
+          <p className={`text-xl font-bold ${isModernMode ? 'text-white' : 'text-primary'}`}>{stat.val}</p>
+          <p className={`text-xs ${isModernMode ? 'text-white/40 font-medium' : 'text-muted-foreground'}`}>{stat.label}</p>
+        </div>
+      ))}
     </div>
   );
 
@@ -132,6 +128,88 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
     // Use absolute path with base path included
     navigate(`/players/${player.id}`);
   };
+
+  const imageSrc = `${BASE_PATH}/players/${generateImageFilename(player.firstName, player.lastName).replace(/\.jpg$/, '.png')}`;
+
+  if (isModernMode) {
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{ scale: 1.02, y: -5 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={handleCardClick}
+        className="group relative cursor-pointer overflow-hidden rounded-[2rem] bg-card glass-card shadow-2xl transition-all duration-300"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-50 group-hover:opacity-100 transition-opacity" />
+
+        <CardContent className="p-0 flex flex-col sm:flex-row relative z-10">
+          {/* Left side - Player Image */}
+          <div className="sm:w-48 h-56 sm:h-auto flex-shrink-0 relative overflow-hidden">
+            <motion.img
+              layoutId={`player-img-${player.id}`}
+              src={imageSrc}
+              alt={`${player.firstName} ${player.lastName}`}
+              className="w-full h-full object-cover object-top scale-110 group-hover:scale-125 transition-transform duration-700"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (target.src.endsWith('.png')) {
+                  target.src = `${BASE_PATH}/players/${generateImageFilename(player.firstName, player.lastName)}`;
+                } else {
+                  target.src = `${BASE_PATH}/placeholder-player.png`;
+                }
+              }}
+            />
+            {/* Position Badge */}
+            <div className="absolute bottom-4 left-4">
+              <span className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-widest text-white border border-white/20">
+                {player.position || 'G/F'}
+              </span>
+            </div>
+            {/* Number Overlay */}
+            {player.jerseyNumber && (
+              <div className="absolute top-4 right-4 text-4xl font-black text-white/10 italic">
+                {player.jerseyNumber}
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 p-6 relative">
+            {/* Glow effect on hover */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            <div className="flex justify-between items-start mb-1">
+              <h3 className="text-2xl font-black tracking-tight text-white group-hover:text-primary transition-colors">
+                {player.firstName} <span className="text-primary">{player.lastName}</span>
+              </h3>
+              {player.jerseyNumber && (
+                <div className="p-2 bg-primary rounded-xl text-white font-black text-xs min-w-[2.5rem] text-center shadow-lg shadow-primary/30">
+                  #{player.jerseyNumber}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-4 mb-4 text-[11px] font-bold text-white/50 uppercase tracking-tighter">
+              {player.height && <span>{player.height} CM</span>}
+              {(player.age || calculateAge(player.birthDate)) && <span>{player.age || calculateAge(player.birthDate)} YRS</span>}
+              {player.weight && <span>{player.weight} KG</span>}
+            </div>
+
+            {renderStats()}
+
+            <div className="mt-6 flex items-center justify-between text-[11px] font-bold text-white/40 uppercase tracking-widest">
+              <div className="flex items-center gap-2">
+                <div className="h-1 w-8 bg-primary rounded-full" />
+                <span>{filteredStats.minutesPlayed} MPG</span>
+              </div>
+              <span>{filteredStats.gamesPlayed} GAMES</span>
+            </div>
+          </div>
+        </CardContent>
+      </motion.div>
+    );
+  }
 
   return (
     <Card
@@ -143,16 +221,14 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
           {/* Left side - Player Image */}
           <div className="md:w-48 h-48 md:h-auto flex-shrink-0 relative bg-secondary">
             <img
-              src={`${BASE_PATH}/players/${generateImageFilename(player.firstName, player.lastName).replace(/\.jpg$/, '.png')}`}
+              src={imageSrc}
               alt={`${player.firstName} ${player.lastName}`}
               className="w-full h-full object-cover object-top"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                // If PNG fails, try JPG
                 if (target.src.endsWith('.png')) {
                   target.src = `${BASE_PATH}/players/${generateImageFilename(player.firstName, player.lastName)}`;
                 } else {
-                  // If both fail, use placeholder with base path
                   target.src = `${BASE_PATH}/placeholder-player.png`;
                 }
               }}
@@ -218,6 +294,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
                   </div>
                 )}
             </div>
+
 
             {/* Bio */}
             {player.bio && (

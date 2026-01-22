@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { StatsProvider } from "@/contexts/StatsContext";
+import { ModernThemeProvider } from "@/contexts/ModernThemeContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import Home from "./pages/Home";
 import Stats from "./pages/Stats";
@@ -112,32 +113,34 @@ const App = () => {
       <ErrorBoundary>
         <TooltipProvider>
           <StatsProvider>
-            <BrowserRouter basename={import.meta.env.PROD ? "/pitbulls-stats-hub" : "/"}>
-              <ScrollToTop />
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/stats" element={<Stats />} />
-                <Route path="/players" element={<Players />} />
-                <Route path="/players/:id" element={<PlayerDetail />} />
-                <Route path="/player/:playerName" element={<PlayerProfile />} />
-                <Route path="/games" element={<Games />} />
-                <Route path="/games/:id" element={<GameDetail />} />
-                <Route path="/videos" element={<Videos />} />
-                <Route path="/video-editor" element={<VideoEditor />} />
-                <Route path="/spielplan" element={<Spielplan />} />
-                <Route path="/playbook" element={<Playbook />} />
-                <Route path="/impressum" element={<Impressum />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/admin/player-info" element={<AdminPlayerInfo />} />
-                <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
-                <Route path="/games/minutes" element={<GamesMinutesManager />} />
-                <Route path="/games/minutes/:gameNumber" element={<GamesMinutesManager />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </BrowserRouter>
-            <Toaster />
-            <Sonner />
+            <ModernThemeProvider>
+              <BrowserRouter basename={import.meta.env.PROD ? "/pitbulls-stats-hub" : "/"}>
+                <ScrollToTop />
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/stats" element={<Stats />} />
+                  <Route path="/players" element={<Players />} />
+                  <Route path="/players/:id" element={<PlayerDetail />} />
+                  <Route path="/player/:playerName" element={<PlayerProfile />} />
+                  <Route path="/games" element={<Games />} />
+                  <Route path="/games/:id" element={<GameDetail />} />
+                  <Route path="/videos" element={<Videos />} />
+                  <Route path="/video-editor" element={<VideoEditor />} />
+                  <Route path="/spielplan" element={<Spielplan />} />
+                  <Route path="/playbook" element={<Playbook />} />
+                  <Route path="/impressum" element={<Impressum />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/admin/player-info" element={<AdminPlayerInfo />} />
+                  <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+                  <Route path="/games/minutes" element={<GamesMinutesManager />} />
+                  <Route path="/games/minutes/:gameNumber" element={<GamesMinutesManager />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+              <Toaster />
+              <Sonner />
+            </ModernThemeProvider>
           </StatsProvider>
         </TooltipProvider>
       </ErrorBoundary>
