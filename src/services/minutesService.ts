@@ -243,6 +243,8 @@ export class MinutesService {
             const searchFirstName = existingPlayerInfo?.first_name || derivedFirstName;
             const searchLastName = existingPlayerInfo?.last_name || derivedLastName;
 
+            console.log(`Attempting update for ${playerId} using names: "${searchFirstName}" "${searchLastName}"`);
+
             // Try updating by name match (for rows with NULL player_slug)
             const { data: nameUpdateData, error: nameUpdateError } = await supabaseAdmin
               .from('box_scores')
@@ -266,56 +268,63 @@ export class MinutesService {
             } else {
               // If still no match, we need to INSERT a new row.
               // BUT FIRST: Ensure the player exists in player_info
+              try {
+                console.log(`Update failed/matched 0 rows. Attempting Insert/Create fallback for ${playerId}`);
 
-              let { data: playerInfo } = await supabaseAdmin
-                .from('player_info')
-                .select('first_name, last_name, player_slug')
-                .eq('player_slug', playerId)
-                .maybeSingle();
-
-              if (!playerInfo) {
-                // Player doesn't exist in player_info (e.g. "Markus Maurer" or "Nino de Bortoli" with new slug)
-                // We should CREATE them in player_info so they are known for future games
-                console.log(`Player ${playerId} not found in player_info. Creating...`);
-
-                const { error: createPlayerError } = await supabaseAdmin
+                let { data: playerInfo } = await supabaseAdmin
                   .from('player_info')
+                  .select('first_name, last_name, player_slug')
+                  .eq('player_slug', playerId)
+                  .maybeSingle();
+
+                if (!playerInfo) {
+                  // Player doesn't exist in player_info (e.g. "Markus Maurer" or "Nino de Bortoli" with new slug)
+                  // We should CREATE them in player_info so they are known for future games
+                  console.log(`Player ${playerId} not found in player_info. Creating...`);
+
+                  const { error: createPlayerError } = await supabaseAdmin
+                    .from('player_info')
+                    .insert({
+                      player_slug: playerId,
+                      first_name: derivedFirstName,
+                      last_name: derivedLastName,
+                      is_active: true // Default to active
+                    });
+
+                  if (createPlayerError) {
+                    console.error('Error creating new player in player_info:', createPlayerError);
+                    // Fallback: don't crash, just try inserting box_score with raw names
+                  } else {
+                    console.log(`Created new player ${derivedFirstName} ${derivedLastName} (${playerId})`);
+                  }
+                }
+
+                const { data: finalPlayerInfo } = await supabaseAdmin
+                  .from('player_info')
+                  .select('first_name, last_name')
+                  .eq('player_slug', playerId)
+                  .maybeSingle();
+
+                const { error: insertError } = await supabaseAdmin
+                  .from('box_scores')
                   .insert({
+                    game_id: realGameId,
+                    team_id: tsvNeuenstadtTeamId,
                     player_slug: playerId,
-                    first_name: derivedFirstName,
-                    last_name: derivedLastName,
-                    is_active: true // Default to active
+                    player_first_name: finalPlayerInfo?.first_name || derivedFirstName,
+                    player_last_name: finalPlayerInfo?.last_name || derivedLastName,
+                    minutes_played: decimalMinutes,
+                    points: 0
                   });
 
-                if (createPlayerError) {
-                  console.error('Error creating new player in player_info:', createPlayerError);
-                  // Fallback: don't crash, just try inserting box_score with raw names
-                } else {
-                  console.log(`Created new player ${derivedFirstName} ${derivedLastName} (${playerId})`);
+                if (insertError) {
+                  console.error('Insert failed for player:', playerId, insertError);
+                  // Do NOT throw here, so other players can save
+                  // throw insertError; 
                 }
-              }
-
-              const { data: finalPlayerInfo } = await supabaseAdmin
-                .from('player_info')
-                .select('first_name, last_name')
-                .eq('player_slug', playerId)
-                .maybeSingle();
-
-              const { error: insertError } = await supabaseAdmin
-                .from('box_scores')
-                .insert({
-                  game_id: realGameId,
-                  team_id: tsvNeuenstadtTeamId,
-                  player_slug: playerId,
-                  player_first_name: finalPlayerInfo?.first_name || derivedFirstName,
-                  player_last_name: finalPlayerInfo?.last_name || derivedLastName,
-                  minutes_played: decimalMinutes,
-                  points: 0
-                });
-
-              if (insertError) {
-                console.error('Insert failed for player:', playerId, insertError);
-                throw insertError;
+              } catch (fallbackError) {
+                console.error('Fallback operation failed for player:', playerId, fallbackError);
+                // Swallow error to allow partial success
               }
             }
           }
