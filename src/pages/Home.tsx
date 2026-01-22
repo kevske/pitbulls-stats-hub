@@ -11,11 +11,15 @@ import TeamGallery from "@/components/TeamGallery";
 import BirthdayNotification from "@/components/BirthdayNotification";
 import { BASE_PATH } from "@/config";
 
+import { useModernTheme } from "@/contexts/ModernThemeContext";
+import { motion } from "framer-motion";
+
 // Custom CSS for scrolling animation moved to index.css
 
 const Home = () => {
   const navigate = useNavigate();
   const { games, players, gameLogs, loading, error } = useStats();
+  const { isModernMode } = useModernTheme();
 
   // Get the last game (TSV Neuenstadt game with highest tsv_game_number that has a result)
   const lastGame = useMemo(() => {
@@ -243,6 +247,228 @@ const Home = () => {
       <Layout>
         <div className="container mx-auto p-4">
           <div className="text-center py-8">Keine Spieldaten verfügbar.</div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isModernMode) {
+    return (
+      <Layout>
+        <BirthdayNotification players={players} />
+
+        <div className="container mx-auto max-w-7xl px-4 space-y-12 pb-20">
+          {/* Vision 2026 Hero */}
+          <div className="relative pt-10 pb-6 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter text-white uppercase leading-none">
+                Pitbulls <span className="text-primary block md:inline">Stats</span> Hub
+              </h1>
+              <div className="mt-4 flex items-center justify-center gap-4">
+                <div className="h-[2px] w-12 bg-primary/50" />
+                <span className="text-[10px] font-bold tracking-[0.5em] text-white/40 uppercase">Beyond The Numbers</span>
+                <div className="h-[2px] w-12 bg-primary/50" />
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+            {/* Last Game Result - Modern Bento */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="md:col-span-8 group"
+            >
+              <div className="glass-card rounded-[2.5rem] p-8 relative overflow-hidden h-full bento-item">
+                <div className="absolute top-0 right-0 p-8 text-[8rem] font-black text-white/[0.03] leading-none select-none">
+                  {lastGame.gameNumber}
+                </div>
+
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-8">
+                    <span className="px-4 py-1.5 bg-primary rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-primary/20">
+                      Latest Result
+                    </span>
+                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{lastGame.date}</span>
+                  </div>
+
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+                    <div className="flex-1 text-center md:text-left">
+                      <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em] mb-2">Home</h4>
+                      <h2 className="text-4xl font-black text-white tracking-tight">{homeTeam}</h2>
+                      <div className="text-7xl font-black text-primary mt-4 select-none">{homeScore}</div>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-12 h-[2px] bg-white/10" />
+                      <div className="text-2xl font-black text-white/20 italic">VS</div>
+                      <div className="w-12 h-[2px] bg-white/10" />
+                    </div>
+
+                    <div className="flex-1 text-center md:text-right">
+                      <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em] mb-2">Away</h4>
+                      <h2 className="text-4xl font-black text-white tracking-tight">{awayTeam}</h2>
+                      <div className="text-7xl font-black text-white mt-4 select-none">{awayScore}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-12 flex justify-center">
+                    <button
+                      onClick={() => navigate(`/games/${lastGame.gameNumber}`)}
+                      className="group/btn relative px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-[0.2em] text-white hover:bg-primary hover:border-primary transition-all duration-500 overflow-hidden"
+                    >
+                      <span className="relative z-10 flex items-center gap-2">
+                        Full Match Report
+                        <span className="translate-x-0 group-hover/btn:translate-x-1 transition-transform">→</span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Streak Bento */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="md:col-span-4"
+            >
+              <div className="glass-card rounded-[2.5rem] p-8 h-full bento-item bg-gradient-to-br from-primary/20 via-transparent to-transparent">
+                <h4 className="text-[10px] font-black uppercase text-white/50 tracking-[0.3em] mb-8">Performance Streak</h4>
+
+                <div className="flex flex-col items-center justify-center py-6">
+                  <div className={`text-8xl font-black italic ${streak?.type === 'win' ? 'text-green-400' : 'text-red-400'}`}>
+                    {streak?.count}
+                  </div>
+                  <div className="text-xs font-black uppercase tracking-[0.5em] text-white/60 mt-2">
+                    {streak?.type === 'win' ? 'Winning Streak' : 'Losing Streak'}
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-white/5">
+                  <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-white/30">
+                    <span>Season 2026</span>
+                    <span className="text-primary">TSV 1892</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Top Performers Bento Section */}
+            <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-3 flex items-center justify-between mb-2">
+                <h3 className="text-2xl font-black italic text-white uppercase">Elite Performers</h3>
+                <button onClick={() => navigate("/players")} className="text-[10px] font-black uppercase tracking-widest text-primary/80 hover:text-primary">View All Database →</button>
+              </div>
+
+              {topPerformers.map((performer, idx) => (
+                <motion.div
+                  key={performer.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + (idx * 0.1) }}
+                  className="glass-card rounded-[2rem] p-6 bento-item group"
+                  onClick={() => navigate(`/players/${performer.id}`)}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-xl font-black text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                      {idx + 1}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] font-black text-white/30 uppercase tracking-widest">Efficiency</div>
+                      <div className="text-lg font-black text-primary">{performer.pointsPerGame.toFixed(1)} <span className="text-[10px] text-white/40">PPG</span></div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-black text-white mb-6 group-hover:translate-x-1 transition-transform">
+                    {performer.firstName} <span className="text-primary">{performer.lastName}</span>
+                  </h3>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                      <div className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-1">Total Pts</div>
+                      <div className="text-md font-bold text-white">{performer.totalPoints}</div>
+                    </div>
+                    <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                      <div className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-1">FT %</div>
+                      <div className="text-md font-bold text-white">{performer.freeThrowPercentage}</div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Rising Stars - Dynamic Scroll */}
+            {risingStars.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+                className="md:col-span-12 glass-card rounded-[2.5rem] p-8 overflow-hidden bento-item"
+              >
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-2 bg-orange-500 rounded-lg shadow-lg shadow-orange-500/20">
+                    <Flame className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight">Rapid Risers</h3>
+                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Weekly Momentum Leaders</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {risingStars.map((player, idx) => (
+                    <div key={player.playerId} className="flex flex-col gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-full border-2 border-orange-500/30 overflow-hidden">
+                          <img src={player.image} className="w-full h-full object-cover" alt="" />
+                        </div>
+                        <div>
+                          <div className="text-md font-black text-white">{player.firstName} {player.lastName}</div>
+                          <div className="text-[10px] font-bold text-orange-400">+{player.improvementCount} MILIESTONES</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Videos Quick Link */}
+            <motion.div
+              className="md:col-span-12"
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+            >
+              <button
+                onClick={() => navigate("/videos")}
+                className="w-full h-32 glass-card rounded-[2.5rem] flex items-center justify-center gap-8 group hover:bg-primary/10 transition-all border-white/5 hover:border-primary/30"
+              >
+                <div className="text-4xl group-hover:rotate-12 transition-transform">🎥</div>
+                <div className="text-center md:text-left">
+                  <div className="text-2xl font-black text-white uppercase tracking-tighter">Media Hub</div>
+                  <div className="text-[10px] font-bold text-white/40 tracking-[0.3em] uppercase">Access Video Database</div>
+                </div>
+                <div className="hidden md:block w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-white/50 group-hover:text-white group-hover:translate-x-2 transition-all">→</div>
+              </button>
+            </motion.div>
+          </div>
+
+          {/* Team Gallery - Modern Integration */}
+          <div id="team-gallery" className="pt-12">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="h-[1px] flex-1 bg-white/5" />
+              <h3 className="text-xl font-black text-white/20 uppercase tracking-[1em] italic">Squad Archives</h3>
+              <div className="h-[1px] flex-1 bg-white/5" />
+            </div>
+            <TeamGallery />
+          </div>
         </div>
       </Layout>
     );

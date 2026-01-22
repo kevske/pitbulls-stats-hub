@@ -3,14 +3,17 @@ import { useStats } from '@/contexts/StatsContext';
 import Layout from '@/components/Layout';
 import PlayerCard from '@/components/PlayerCard';
 import { Home, Plane } from 'lucide-react';
+import { useModernTheme } from '@/contexts/ModernThemeContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type GameFilter = 'all' | 'home' | 'away';
 
 const Players: React.FC = () => {
   const { players, gameLogs, loading, error, games } = useStats();
-  const [gameFilter, setGameFilter] = useState<GameFilter | null>(null);
+  const [gameFilter, setGameFilter] = useState<GameFilter | 'all'>('all'); // Initialize with 'all'
   const [searchQuery, setSearchQuery] = useState('');
   const [positionFilter, setPositionFilter] = useState<string>('all');
+  const { isModernMode } = useModernTheme();
 
   // Get the latest game number
   const latestGameNumber = useMemo(() => {
@@ -19,7 +22,7 @@ const Players: React.FC = () => {
 
   // Toggle filter function
   const toggleFilter = (filter: GameFilter) => {
-    setGameFilter(current => current === filter ? null : filter);
+    setGameFilter(current => current === filter ? 'all' : filter);
   };
 
   // Get unique positions
@@ -27,13 +30,6 @@ const Players: React.FC = () => {
     const uniquePositions = new Set(players.map(p => p.position).filter(Boolean));
     return Array.from(uniquePositions).sort();
   }, [players]);
-
-  // Debug: Log the players being received
-  console.log('Players received in component:', players.map(p => ({
-    name: `${p.firstName} ${p.lastName}`,
-    gamesPlayed: p.gamesPlayed,
-    id: p.id
-  })));
 
   // Filter and sort players
   const filteredPlayers = useMemo(() => {
@@ -80,6 +76,102 @@ const Players: React.FC = () => {
           <div className="text-red-500 text-center py-8">
             Fehler beim Laden der Spielerdaten: {error}
           </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isModernMode) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 pb-20">
+          <div className="pt-10 mb-12">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              <h1 className="text-5xl font-black italic text-white uppercase tracking-tighter mb-2">
+                The <span className="text-primary">Roster</span>
+              </h1>
+              <p className="text-[10px] font-bold tracking-[0.4em] text-white/30 uppercase">Elite Athlete Database // Season 26</p>
+            </motion.div>
+
+            <div className="mt-12 flex flex-col md:flex-row gap-6">
+              <div className="relative flex-1 group">
+                <input
+                  type="text"
+                  placeholder="SEARCH DATABASE..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-12 text-sm font-black uppercase tracking-widest text-white focus:outline-none focus:border-primary/50 transition-all placeholder:text-white/20"
+                />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10">
+                  <button
+                    onClick={() => toggleFilter('home')}
+                    className={`px-6 h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${gameFilter === 'home' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-white/40 hover:text-white'
+                      }`}
+                  >
+                    Home
+                  </button>
+                  <button
+                    onClick={() => toggleFilter('away')}
+                    className={`px-6 h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${gameFilter === 'away' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-white/40 hover:text-white'
+                      }`}
+                  >
+                    Away
+                  </button>
+                </div>
+
+                <select
+                  value={positionFilter}
+                  onChange={(e) => setPositionFilter(e.target.value)}
+                  className="h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-[10px] font-black uppercase tracking-widest text-white focus:outline-none focus:border-primary/50 transition-all"
+                >
+                  <option value="all" className="bg-slate-900">All Positions</option>
+                  {positions.map(pos => (
+                    <option key={pos} value={pos} className="bg-slate-900">{pos.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <motion.div
+            layout
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredPlayers.length === 0 ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="col-span-full py-20 text-center"
+                >
+                  <div className="text-6xl mb-4">🔍</div>
+                  <h3 className="text-xl font-black text-white uppercase italic">No Data Found</h3>
+                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mt-2">Try adjusting your database filters</p>
+                </motion.div>
+              ) : (
+                filteredPlayers.map((player) => (
+                  <PlayerCard
+                    key={player.id}
+                    player={player}
+                    gameLogs={gameLogs}
+                    currentGameNumber={latestGameNumber}
+                    gameFilter={gameFilter === 'all' ? undefined : gameFilter}
+                  />
+                ))
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
       </Layout>
     );
@@ -166,7 +258,7 @@ const Players: React.FC = () => {
                         player={player}
                         gameLogs={gameLogs}
                         currentGameNumber={latestGameNumber}
-                        gameFilter={gameFilter}
+                        gameFilter={gameFilter === 'all' ? undefined : gameFilter}
                       />
                     </div>
                   );
