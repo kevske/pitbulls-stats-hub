@@ -53,7 +53,8 @@ export class BasketballBundCrawler {
    */
   private static extractGameDataFromTable(tableHtml: string): ParsedGameResult | null {
     // Find all data rows in the table
-    const rowRegex = /<tr[^>]*class="sportItem(Even|Odd)"[^>]*>[\s\S]*?<\/tr>/g;
+    // Find all data rows in the table
+    const rowRegex = /<tr[\s\S]*?<\/tr>/g;
     const rows = tableHtml.match(rowRegex);
 
     if (!rows || rows.length === 0) {
@@ -76,12 +77,19 @@ export class BasketballBundCrawler {
    */
   private static parseRowData(rowHtml: string): ParsedGameResult | null {
     // Extract all cell data
-    const cellRegex = /<td[^>]*class="sportItem(Even|Odd)"[^>]*><NOBR>&nbsp;([^<]*)<\/NOBR><\/td>/g;
-    const cells = [];
+    // Extract all cell data
+    // Use a more lenient regex to capture td content
+    const cellRegex = /<td[^>]*>(?:<NOBR>)?(?:&nbsp;)?([\s\S]*?)(?:<\/NOBR>)?<\/td>/gi;
+    const cells: string[] = [];
     let match;
 
     while ((match = cellRegex.exec(rowHtml)) !== null) {
-      cells.push(match[2].trim());
+      // Clean up the extracted text: remove HTML tags, &nbsp;, and whitespace
+      const cleanText = match[1]
+        .replace(/&nbsp;/g, ' ')
+        .replace(/<[^>]*>/g, '') // Remove remaining tags
+        .trim();
+      cells.push(cleanText);
     }
 
     // We need at least: game number, match day, date, home team, away team, final score, Q1, halftime, Q3
