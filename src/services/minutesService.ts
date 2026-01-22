@@ -233,6 +233,16 @@ export class MinutesService {
             const derivedFirstName = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : 'Unknown';
             const derivedLastName = nameParts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') || 'Player';
 
+            // NEW: Fetch better names from player_info if available (handles umlauts like Mörsch)
+            const { data: existingPlayerInfo } = await supabaseAdmin
+              .from('player_info')
+              .select('first_name, last_name')
+              .eq('player_slug', playerId)
+              .maybeSingle();
+
+            const searchFirstName = existingPlayerInfo?.first_name || derivedFirstName;
+            const searchLastName = existingPlayerInfo?.last_name || derivedLastName;
+
             // Try updating by name match (for rows with NULL player_slug)
             const { data: nameUpdateData, error: nameUpdateError } = await supabaseAdmin
               .from('box_scores')
@@ -242,8 +252,8 @@ export class MinutesService {
               })
               .eq('game_id', realGameId)
               .eq('team_id', tsvNeuenstadtTeamId)
-              .ilike('player_first_name', derivedFirstName)
-              .ilike('player_last_name', derivedLastName)
+              .ilike('player_first_name', searchFirstName)
+              .ilike('player_last_name', searchLastName)
               .is('player_slug', null)
               .select();
 
