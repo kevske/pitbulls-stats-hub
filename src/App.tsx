@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Suspense, lazy } from 'react';
+import { Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,24 +11,26 @@ import { ModernThemeProvider } from "@/contexts/ModernThemeContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
+import { lazyLoad } from "@/utils/lazyLoad";
+
 // Lazy load pages
-const Home = lazy(() => import("./pages/Home"));
-const Stats = lazy(() => import("./pages/Stats"));
-const Players = lazy(() => import("./pages/Players"));
-const PlayerDetail = lazy(() => import("./pages/PlayerDetail"));
-const PlayerProfile = lazy(() => import("./pages/PlayerProfile"));
-const Games = lazy(() => import("./pages/Games"));
-const GameDetail = lazy(() => import("./pages/GameDetail"));
-const Videos = lazy(() => import("./pages/Videos"));
-const VideoEditor = lazy(() => import("./pages/VideoEditor"));
-const Spielplan = lazy(() => import("./pages/Spielplan"));
-const AdminPlayerInfo = lazy(() => import("./pages/AdminPlayerInfo"));
-const Login = lazy(() => import("./pages/Login"));
-const AdminAuditLogs = lazy(() => import("./pages/AdminAuditLogs"));
-const GamesMinutesManager = lazy(() => import("./components/GamesMinutesManager"));
-const Impressum = lazy(() => import("./pages/Impressum"));
-const Playbook = lazy(() => import("./pages/Playbook"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const Home = lazyLoad(() => import("./pages/Home"));
+const Stats = lazyLoad(() => import("./pages/Stats"));
+const Players = lazyLoad(() => import("./pages/Players"));
+const PlayerDetail = lazyLoad(() => import("./pages/PlayerDetail"));
+const PlayerProfile = lazyLoad(() => import("./pages/PlayerProfile"));
+const Games = lazyLoad(() => import("./pages/Games"));
+const GameDetail = lazyLoad(() => import("./pages/GameDetail"));
+const Videos = lazyLoad(() => import("./pages/Videos"));
+const VideoEditor = lazyLoad(() => import("./pages/VideoEditor"));
+const Spielplan = lazyLoad(() => import("./pages/Spielplan"));
+const AdminPlayerInfo = lazyLoad(() => import("./pages/AdminPlayerInfo"));
+const Login = lazyLoad(() => import("./pages/Login"));
+const AdminAuditLogs = lazyLoad(() => import("./pages/AdminAuditLogs"));
+const GamesMinutesManager = lazyLoad(() => import("./components/GamesMinutesManager"));
+const Impressum = lazyLoad(() => import("./pages/Impressum"));
+const Playbook = lazyLoad(() => import("./pages/Playbook"));
+const NotFound = lazyLoad(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
