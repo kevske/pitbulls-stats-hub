@@ -16,7 +16,7 @@ const PLAYER_IMAGE_MAP: Record<string, string> = {
   'jan crocoll': 'jan-crocoll.jpg',
   'marcus hayes': 'marcus-hayes.jpg',
   'danny seitz': 'danny-seitz.jpg',
-  'markus maurer': '../placeholder-player.png'
+  'markus maurer': 'markus-maurer.jpeg'
 };
 
 import { BASE_PATH } from '@/config';
