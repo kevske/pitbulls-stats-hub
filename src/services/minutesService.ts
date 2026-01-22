@@ -117,9 +117,13 @@ export class MinutesService {
       });
 
       return Array.from(uniquePlayers.values()).map(row => {
-        // Generate a slug if missing (e.g. "max-mustermann")
+        // Generate a slug if missing (e.g. "max-mustermann", "nino-de-bortoli")
         const generatedSlug = row.player_slug ||
-          `${row.player_first_name || ''}-${row.player_last_name || ''}`.toLowerCase().replace(/[^a-z0-9-]/g, '');
+          `${row.player_first_name || ''} ${row.player_last_name || ''}`
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, '-') // Replace spaces with dashes
+            .replace(/[^a-z0-9-]/g, ''); // Remove other special chars
 
         return {
           playerId: generatedSlug,
@@ -236,8 +240,38 @@ export class MinutesService {
             if (nameUpdateData && nameUpdateData.length > 0) {
               console.log(`Updated player ${playerId} by name match, also set player_slug`);
             } else {
-              // If still no match, try getting player info and insert new row
-              const { data: playerInfo } = await supabaseAdmin
+              // If still no match, we need to INSERT a new row.
+              // BUT FIRST: Ensure the player exists in player_info
+
+              let { data: playerInfo } = await supabaseAdmin
+                .from('player_info')
+                .select('first_name, last_name, player_slug')
+                .eq('player_slug', playerId)
+                .maybeSingle();
+
+              if (!playerInfo) {
+                // Player doesn't exist in player_info (e.g. "Markus Maurer" or "Nino de Bortoli" with new slug)
+                // We should CREATE them in player_info so they are known for future games
+                console.log(`Player ${playerId} not found in player_info. Creating...`);
+
+                const { error: createPlayerError } = await supabaseAdmin
+                  .from('player_info')
+                  .insert({
+                    player_slug: playerId,
+                    first_name: derivedFirstName,
+                    last_name: derivedLastName,
+                    is_active: true // Default to active
+                  });
+
+                if (createPlayerError) {
+                  console.error('Error creating new player in player_info:', createPlayerError);
+                  // Fallback: don't crash, just try inserting box_score with raw names
+                } else {
+                  console.log(`Created new player ${derivedFirstName} ${derivedLastName} (${playerId})`);
+                }
+              }
+
+              const { data: finalPlayerInfo } = await supabaseAdmin
                 .from('player_info')
                 .select('first_name, last_name')
                 .eq('player_slug', playerId)
@@ -249,8 +283,8 @@ export class MinutesService {
                   game_id: realGameId,
                   team_id: tsvNeuenstadtTeamId,
                   player_slug: playerId,
-                  player_first_name: playerInfo?.first_name || derivedFirstName,
-                  player_last_name: playerInfo?.last_name || derivedLastName,
+                  player_first_name: finalPlayerInfo?.first_name || derivedFirstName,
+                  player_last_name: finalPlayerInfo?.last_name || derivedLastName,
                   minutes_played: decimalMinutes,
                   points: 0,
                   game_date: gameData.game_date
