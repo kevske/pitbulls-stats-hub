@@ -364,7 +364,7 @@ const Home = () => {
             <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-3 flex items-center justify-between mb-2">
                 <h3 className="text-2xl font-black italic text-white uppercase">Top-Leistungsträger</h3>
-                <button onClick={() => navigate("/players")} className="text-[10px] font-black uppercase tracking-widest text-primary/80 hover:text-primary">View All Database →</button>
+                <button onClick={() => navigate("/players")} className="text-[10px] font-black uppercase tracking-widest text-primary/80 hover:text-primary">Zur Datenbank →</button>
               </div>
 
               {topPerformers.map((performer, idx) => (
