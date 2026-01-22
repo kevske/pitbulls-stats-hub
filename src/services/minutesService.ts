@@ -57,6 +57,20 @@ export class MinutesService {
 
       console.log(`Game ${gameNumber}: TSV Neuenstadt team ID is ${tsvNeuenstadtTeamId}`);
 
+      // Fetch active roster for name-to-slug lookup
+      const { data: rosterPlayers, error: rosterError } = await supabase
+        .from('player_info')
+        .select('player_slug, first_name, last_name')
+        .eq('is_active', true);
+
+      if (rosterError) console.error("Roster fetch warning", rosterError);
+
+      const rosterMap = new Map<string, string>();
+      (rosterPlayers || []).forEach(p => {
+        const nameKey = `${p.first_name || ''} ${p.last_name || ''}`.toLowerCase().trim();
+        rosterMap.set(nameKey, p.player_slug);
+      });
+
       // Try fetching box scores for this specific game
       const { data, error } = await supabase
         .from('box_scores')
@@ -77,22 +91,7 @@ export class MinutesService {
 
       // Check if we found any players
       if (!data || data.length === 0) {
-        console.warn('No box score entries found for this game. Attempting fallback to active roster.');
-
-        // Revised Fallback: Fetch all active players from player_info
-        // This is more reliable as it doesn't depend on previous games
-        const { data: rosterPlayers, error: rosterError } = await supabase
-          .from('player_info')
-          .select('player_slug, first_name, last_name')
-          .eq('is_active', true)
-          .order('last_name, first_name');
-
-        if (rosterError) {
-          console.error("Fallback roster fetch from player_info failed", rosterError);
-          return [];
-        }
-
-        // Return roster players initialized with 0 minutes
+        // Use the already fetched roster as fallback
         return (rosterPlayers || []).map(player => ({
           playerId: player.player_slug,
           playerSlug: player.player_slug,
@@ -117,8 +116,19 @@ export class MinutesService {
       });
 
       return Array.from(uniquePlayers.values()).map(row => {
-        // Generate a slug if missing (e.g. "max-mustermann", "nino-de-bortoli")
-        const generatedSlug = row.player_slug ||
+        // Try to find the correct slug if missing
+        let usedSlug = row.player_slug;
+
+        if (!usedSlug) {
+          // Try lookup in active roster by name
+          const nameToMatch = `${row.player_first_name || ''} ${row.player_last_name || ''}`.toLowerCase().trim();
+          if (rosterMap.has(nameToMatch)) {
+            usedSlug = rosterMap.get(nameToMatch);
+          }
+        }
+
+        // Generate a slug if STILL missing (e.g. "Markus Maurer" who is not in roster yet)
+        const generatedSlug = usedSlug ||
           `${row.player_first_name || ''} ${row.player_last_name || ''}`
             .toLowerCase()
             .trim()
