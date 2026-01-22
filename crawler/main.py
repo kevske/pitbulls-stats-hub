@@ -361,8 +361,12 @@ class BasketballBundCrawler:
                 header_texts = [h.get_text(strip=True) for h in headers]
                 
                 if '1.\xa0Viertel' in header_texts and 'Halbzeit' in header_texts and '3.\xa0Viertel' in header_texts:
-                    # Find data rows with sportItem classes
+                    # Find data rows (try sportItem first, then all rows)
                     rows = table.find_all('tr', class_=lambda x: x and ('sportItem' in str(x)))
+                    
+                    # If no sportItem rows found, try all rows
+                    if not rows:
+                        rows = table.find_all('tr')
                     
                     for row in rows:
                         cells = row.find_all('td', class_=lambda x: x and ('sportItem' in str(x)))
