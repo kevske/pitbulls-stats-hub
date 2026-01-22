@@ -66,45 +66,31 @@ export class MinutesService {
 
       // Check if we found any players
       if (!data || data.length === 0) {
-        console.warn('No box score entries found for this game. Attempting fallback to recent roster.');
-        // Fallback: Fetch distinct players from recent games for this team
-        // This allows manual entry even if the crawler missed the box score details
-        const { data: recentPlayers, error: recentError } = await supabase
-          .from('box_scores')
-          .select('player_slug, player_first_name, player_last_name')
-          .eq('team_id', tsvNeuenstadtTeamId)
-          .not('player_slug', 'is', null) // Only valid players
-          .order('scraped_at', { ascending: false })
-          .limit(50); // Get enough recent entries to cover the roster
+        console.warn('No box score entries found for this game. Attempting fallback to active roster.');
 
-        if (recentError) {
-          console.error("Fallback roster fetch failed", recentError);
+        // Revised Fallback: Fetch all active players from player_info
+        // This is more reliable as it doesn't depend on previous games
+        const { data: rosterPlayers, error: rosterError } = await supabase
+          .from('player_info')
+          .select('player_slug, first_name, last_name')
+          .eq('is_active', true)
+          .order('last_name, first_name');
+
+        if (rosterError) {
+          console.error("Fallback roster fetch from player_info failed", rosterError);
           return [];
         }
 
-        // Deduplicate recent players
-        const uniqueRecentPlayers = new Map<string, any>();
-        (recentPlayers || []).forEach(row => {
-          if (row.player_slug && !uniqueRecentPlayers.has(row.player_slug)) {
-            uniqueRecentPlayers.set(row.player_slug, {
-              ...row,
-              game_id: gameNumber.toString(),
-              points: 0,
-              minutes_played: 0
-            });
-          }
-        });
-
-        // Return deduplicated fallback list
-        return Array.from(uniqueRecentPlayers.values()).map(row => ({
-          playerId: row.player_slug,
-          playerSlug: row.player_slug,
-          firstName: row.player_first_name,
-          lastName: row.player_last_name,
+        // Return roster players initialized with 0 minutes
+        return (rosterPlayers || []).map(player => ({
+          playerId: player.player_slug,
+          playerSlug: player.player_slug,
+          firstName: player.first_name,
+          lastName: player.last_name,
           minutes: 0,
-          gameId: row.game_id,
-          gameNumber: parseInt(row.game_id)
-        })).sort((a, b) => a.lastName.localeCompare(b.lastName));
+          gameId: gameNumber.toString(),
+          gameNumber: gameNumber
+        }));
       }
 
       // Get unique players by grouping by player name and taking the first occurrence (handle null names)
@@ -199,25 +185,38 @@ export class MinutesService {
           }
 
           if (!data || data.length === 0) {
-            console.warn(`No rows updated for player ${playerId} - this might be an RLS (Row Level Security) issue`);
+            console.warn(`No rows updated for player ${playerId} - attempting INSERT`);
 
-            // Try an alternative approach - try updating without the .select() to see if that's the issue
-            const { error: error2, count } = await supabaseAdmin
+            // If update found no rows, it means the row doesn't exist yet for this game
+            // We need to insert a new row
+
+            // First get player details from player_info to populate name fields if needed
+            const { data: playerInfo } = await supabaseAdmin
+              .from('player_info')
+              .select('first_name, last_name')
+              .eq('player_slug', playerId)
+              .single();
+
+            const { error: insertError } = await supabaseAdmin
               .from('box_scores')
-              .update({ minutes_played: decimalMinutes }, { count: 'exact' })
-              .eq('game_id', gameNumber.toString())
-              .eq('team_id', tsvNeuenstadtTeamId)
-              .eq('player_slug', playerId);
+              .insert({
+                game_id: gameNumber.toString(),
+                team_id: tsvNeuenstadtTeamId,
+                player_slug: playerId,
+                player_first_name: playerInfo?.first_name || 'Unknown',
+                player_last_name: playerInfo?.last_name || 'Player',
+                minutes_played: decimalMinutes,
+                points: 0, // Default to 0 if creating new row
+                game_date: gameData.game_date // Use game date if available or let DB default
+              });
 
-            if (error2) {
-              console.error('Alternative update also failed for player:', playerId, error2);
-              throw error2;
-            } else if (count === 0) {
-              console.error(`Alternative update also returned 0 rows for player ${playerId} - this is likely an RLS permission issue`);
+            if (insertError) {
+              console.error('Insert failed for player:', playerId, insertError);
+              throw insertError;
             }
           }
         } catch (updateError) {
-          console.error(`Update failed for player ${playerId}:`, updateError);
+          console.error(`Update/Insert failed for player ${playerId}:`, updateError);
           throw updateError;
         }
       }
