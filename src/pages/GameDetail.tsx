@@ -418,6 +418,7 @@ const GameDetail: React.FC = () => {
             </TabsContent>
           </Tabs>
         </div>
+      </div>
     </Layout>
   );
 };
