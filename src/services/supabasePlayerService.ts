@@ -2,7 +2,7 @@ import { PlayerInfoService } from './playerInfoService';
 import { SupabaseStatsService } from './supabaseStatsService';
 import { PlayerInfo } from '@/types/supabase';
 import { PlayerStats } from '@/types/stats';
-import { BASE_PATH } from '@/config';
+import { getPlayerImageUrl } from '@/utils/playerUtils';
 
 // Service to fetch player data from Supabase with computed stats
 export class SupabasePlayerService {
@@ -19,7 +19,7 @@ export class SupabasePlayerService {
         id: player.player_slug,
         firstName: player.first_name,
         lastName: player.last_name,
-        imageUrl: `${BASE_PATH}/players/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}.jpg`,
+        imageUrl: getPlayerImageUrl(player.first_name, player.last_name),
         jerseyNumber: player.jersey_number || 0,
         position: player.position || '',
         age: player.birth_date ? new Date().getFullYear() - new Date(player.birth_date).getFullYear() : 0,
