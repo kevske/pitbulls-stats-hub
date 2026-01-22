@@ -46,6 +46,7 @@ export class MinutesService {
 
       console.log(`Game ${gameNumber}: TSV Neuenstadt team ID is ${tsvNeuenstadtTeamId}`);
 
+      // Try fetching box scores for this specific game
       const { data, error } = await supabase
         .from('box_scores')
         .select(`
@@ -63,9 +64,52 @@ export class MinutesService {
 
       if (error) throw error;
 
+      // Check if we found any players
+      if (!data || data.length === 0) {
+        console.warn('No box score entries found for this game. Attempting fallback to recent roster.');
+        // Fallback: Fetch distinct players from recent games for this team
+        // This allows manual entry even if the crawler missed the box score details
+        const { data: recentPlayers, error: recentError } = await supabase
+          .from('box_scores')
+          .select('player_slug, player_first_name, player_last_name')
+          .eq('team_id', tsvNeuenstadtTeamId)
+          .not('player_slug', 'is', null) // Only valid players
+          .order('scraped_at', { ascending: false })
+          .limit(50); // Get enough recent entries to cover the roster
+
+        if (recentError) {
+          console.error("Fallback roster fetch failed", recentError);
+          return [];
+        }
+
+        // Deduplicate recent players
+        const uniqueRecentPlayers = new Map<string, any>();
+        (recentPlayers || []).forEach(row => {
+          if (row.player_slug && !uniqueRecentPlayers.has(row.player_slug)) {
+            uniqueRecentPlayers.set(row.player_slug, {
+              ...row,
+              game_id: gameNumber.toString(),
+              points: 0,
+              minutes_played: 0
+            });
+          }
+        });
+
+        // Return deduplicated fallback list
+        return Array.from(uniqueRecentPlayers.values()).map(row => ({
+          playerId: row.player_slug,
+          playerSlug: row.player_slug,
+          firstName: row.player_first_name,
+          lastName: row.player_last_name,
+          minutes: 0,
+          gameId: row.game_id,
+          gameNumber: parseInt(row.game_id)
+        })).sort((a, b) => a.lastName.localeCompare(b.lastName));
+      }
+
       // Get unique players by grouping by player name and taking the first occurrence (handle null names)
       const uniquePlayers = new Map<string, any>();
-      
+
       (data || []).forEach(row => {
         const firstName = row.player_first_name || 'Unknown';
         const lastName = row.player_last_name || 'Player';
@@ -91,7 +135,7 @@ export class MinutesService {
   }
 
   // Update seconds for multiple players in a game
-  static async updatePlayerMinutes(gameNumber: number, playerSeconds: Array<{playerId: string, seconds: number}>): Promise<boolean> {
+  static async updatePlayerMinutes(gameNumber: number, playerSeconds: Array<{ playerId: string, seconds: number }>): Promise<boolean> {
     try {
       // First, get the game info to determine which team is TSV Neuenstadt (same as in getPlayersNeedingMinutes)
       const { data: gameData, error: gameError } = await supabaseAdmin
@@ -117,16 +161,16 @@ export class MinutesService {
         .select('game_id, team_id, player_slug, player_first_name, player_last_name, minutes_played')
         .eq('game_id', gameNumber.toString())
         .eq('team_id', tsvNeuenstadtTeamId);
-        
+
       if (checkError) {
         console.error('Error checking existing rows:', checkError);
       }
-      
+
       // Update each player's minutes individually (convert seconds to decimal for database)
       for (const { playerId, seconds } of playerSeconds) {
         // Use precise conversion to avoid floating point issues
         const decimalMinutes = Math.round((seconds / 60) * 100) / 100; // Round to 2 decimal places
-        
+
         // Check if this specific player exists
         const { error: playerCheckError } = await supabaseAdmin
           .from('box_scores')
@@ -134,11 +178,11 @@ export class MinutesService {
           .eq('game_id', gameNumber.toString())
           .eq('team_id', tsvNeuenstadtTeamId)
           .eq('player_slug', playerId);
-          
+
         if (playerCheckError) {
           console.error(`Error checking player ${playerId}:`, playerCheckError);
         }
-        
+
         // Try the update with more detailed error handling
         try {
           const { error, data } = await supabaseAdmin
@@ -148,15 +192,15 @@ export class MinutesService {
             .eq('team_id', tsvNeuenstadtTeamId)
             .eq('player_slug', playerId)
             .select();
-            
+
           if (error) {
             console.error('Error updating player:', playerId, error);
             throw error;
           }
-          
+
           if (!data || data.length === 0) {
             console.warn(`No rows updated for player ${playerId} - this might be an RLS (Row Level Security) issue`);
-            
+
             // Try an alternative approach - try updating without the .select() to see if that's the issue
             const { error: error2, count } = await supabaseAdmin
               .from('box_scores')
@@ -164,7 +208,7 @@ export class MinutesService {
               .eq('game_id', gameNumber.toString())
               .eq('team_id', tsvNeuenstadtTeamId)
               .eq('player_slug', playerId);
-            
+
             if (error2) {
               console.error('Alternative update also failed for player:', playerId, error2);
               throw error2;
@@ -224,7 +268,7 @@ export class MinutesService {
 
       // Get unique players by player name (handle null names)
       const uniquePlayers = new Map<string, any>();
-      
+
       (data || []).forEach(row => {
         const firstName = row.player_first_name || 'Unknown';
         const lastName = row.player_last_name || 'Player';
@@ -281,12 +325,12 @@ export class MinutesService {
         gameDate: string;
         tsvNeuenstadtTeamId: string;
       }>();
-      
+
       (allGames || []).forEach(game => {
         // Determine which team ID represents TSV Neuenstadt for this game
         const isTSVNeuenstadtHome = game.home_team_name?.toLowerCase().includes('neuenstadt');
         const tsvNeuenstadtTeamId = isTSVNeuenstadtHome ? game.home_team_id : game.away_team_id;
-        
+
         gameInfoMap.set(game.game_id, {
           homeTeam: game.home_team_name,
           awayTeam: game.away_team_name,
@@ -304,7 +348,7 @@ export class MinutesService {
           tsvTeamIds.add(tsvTeamId);
         }
       });
-      
+
       console.log('TSV Neuenstadt team IDs found:', Array.from(tsvTeamIds));
 
       // Single clean approach: Get box scores for TSV Neuenstadt games
@@ -322,7 +366,7 @@ export class MinutesService {
         const gameInfo = gameInfoMap.get(row.game_id.toString());
         return gameInfo && row.team_id === gameInfo.tsvNeuenstadtTeamId;
       });
-      
+
       // Deduplicate by player name and game_id
       const uniquePlayers = new Map<string, any>();
       filteredBoxScores.forEach(row => {
@@ -331,39 +375,39 @@ export class MinutesService {
           uniquePlayers.set(key, row);
         }
       });
-      
+
       const boxScoresData = Array.from(uniquePlayers.values());
       console.log('Found TSV Neuenstadt box scores:', boxScoresData.length);
 
       // Group by game and count unique players, also calculate total minutes
-      const gameStats = new Map<string, { 
-        totalPlayers: number; 
+      const gameStats = new Map<string, {
+        totalPlayers: number;
         needingMinutes: number;
         totalMinutes: number;
       }>();
-      
+
       // Use a Set to track unique players per game (using player names since slug may be null)
       const uniquePlayersPerGame = new Map<string, Set<string>>();
       const playersNeedingMinutesPerGame = new Map<string, Set<string>>();
       const gameMinutesPerGame = new Map<string, number>();
-      
+
       (boxScoresData || []).forEach(row => {
         const gameId = row.game_id.toString(); // Ensure string key
         const playerKey = `${row.player_first_name}-${row.player_last_name}`;
-        
+
         // Initialize sets if not exists
         if (!uniquePlayersPerGame.has(gameId)) {
           uniquePlayersPerGame.set(gameId, new Set());
           playersNeedingMinutesPerGame.set(gameId, new Set());
           gameMinutesPerGame.set(gameId, 0);
         }
-        
+
         // Add to unique players set
         uniquePlayersPerGame.get(gameId)!.add(playerKey);
-        
+
         // Add to total minutes
         gameMinutesPerGame.set(gameId, (gameMinutesPerGame.get(gameId) || 0) + (row.minutes_played || 0));
-        
+
         // Add to needing minutes set if minutes are null/undefined (truly missing data)
         if (row.minutes_played === null || row.minutes_played === undefined) {
           playersNeedingMinutesPerGame.get(gameId)!.add(playerKey);
@@ -374,16 +418,16 @@ export class MinutesService {
       uniquePlayersPerGame.forEach((players, gameId) => {
         const needingMinutes = playersNeedingMinutesPerGame.get(gameId) || new Set();
         const totalMinutes = gameMinutesPerGame.get(gameId) || 0;
-        
+
         // A game needs minutes if:
         // 1. Some players have no data at all, OR
         // 2. Total minutes is not exactly 200 (allowing 1 minute tolerance)
         const hasMissingData = needingMinutes.size > 0;
         const isInvalidTotal = Math.abs(totalMinutes - 200) > 1;
-        
+
         // Only count players who actually need minutes, not all players
         const finalNeedingMinutes = hasMissingData ? needingMinutes.size : (isInvalidTotal ? players.size : 0);
-        
+
         gameStats.set(gameId, {
           totalPlayers: players.size,
           needingMinutes: finalNeedingMinutes,

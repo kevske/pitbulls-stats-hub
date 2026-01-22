@@ -232,7 +232,13 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
           <div className="text-center text-muted-foreground">
             <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Keine Spielerdaten für dieses Spiel gefunden.</p>
-            <p className="text-sm">Dieses Spiel hat möglicherweise keine Boxscore-Daten in der Datenbank.</p>
+            <p className="text-sm mb-4">Dieses Spiel hat möglicherweise keine Boxscore-Daten in der Datenbank.</p>
+            {/* Fallback was handled in service, but if it returned nothing, give explicit manual option? 
+                Currently service handles fallback. If we are here, literally no players exist in DB for this team ever.
+            */}
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Erneut versuchen
+            </Button>
           </div>
         </CardContent>
       </Card>
