@@ -116,7 +116,8 @@ export function transformSupabaseGame(row: any, index: number): GameStats {
     halfTimeScore,
     q3Score,
     youtubeLink: undefined, // Will be set later from video_projects
-    boxScoreUrl: row.box_score_url
+    boxScoreUrl: row.box_score_url,
+    gameId: row.game_id
   };
 }
 

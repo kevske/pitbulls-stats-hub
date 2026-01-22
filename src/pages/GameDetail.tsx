@@ -33,8 +33,9 @@ const GameDetail: React.FC = () => {
       setBoxScoresError(null);
 
       try {
-        // Try to create a game ID from the game data
-        const gameId = `game-${game.gameNumber}-${game.date.replace(/[^\d]/g, '')}`;
+        // Use the real game ID from Supabase if available (e.g., "2786721")
+        // Fallback to constructed ID for older records or video-only games
+        const gameId = game.gameId || `game-${game.gameNumber}-${game.date.replace(/[^\d]/g, '')}`;
         const scores = await BoxscoreService.getBoxScoresByGame(gameId);
         setBoxScores(scores);
       } catch (error) {

@@ -39,6 +39,7 @@ export interface GameStats {
   youtubeLinks?: string[]; // New field for multiple videos
   videoData?: { link: string; events: any[]; players: any[]; videoIndex: number }[]; // Full video data with events and players
   boxScoreUrl?: string;
+  gameId?: string; // Real Supabase game_id (e.g., "2786721")
 }
 
 export interface PlayerGameLog {
