@@ -33,7 +33,7 @@ export class MinutesService {
         .from('games')
         .select('game_id, home_team_name, away_team_name, home_team_id, away_team_id')
         .or(`game_id.eq.${gameNumber},tsv_game_number.eq.${gameNumber}`)
-        .range(0, 0)
+        .limit(1)
         .maybeSingle();
 
       if (gameError) throw gameError;
@@ -146,7 +146,7 @@ export class MinutesService {
         .from('games')
         .select('game_id, home_team_name, away_team_name, home_team_id, away_team_id')
         .or(`game_id.eq.${gameNumber},tsv_game_number.eq.${gameNumber}`)
-        .range(0, 0)
+        .limit(1)
         .maybeSingle();
 
       if (gameError) throw gameError;
