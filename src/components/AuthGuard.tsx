@@ -62,11 +62,11 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p>Checking authentication...</p>
+            <p>Prüfe Anmeldung...</p>
           </CardContent>
         </Card>
       </div>
@@ -75,15 +75,15 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Authentication Required
+              Anmeldung erforderlich
             </CardTitle>
             <CardDescription>
-              You need to log in with your player email to access the admin panel.
+              Du musst dich mit deiner Spieler-E-Mail anmelden, um auf den Admin-Bereich zuzugreifen.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -91,7 +91,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
               onClick={() => window.location.href = '/login'}
               className="w-full"
             >
-              Go to Login
+              Zum Login
             </Button>
           </CardContent>
         </Card>
@@ -102,11 +102,11 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   return (
     <div>
       {/* User info header */}
-      <div className="bg-white border-b px-6 py-4">
+      <div className="bg-card border-b border-border px-6 py-4">
         <div className="flex justify-between items-center max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-gray-600" />
+              <User className="h-5 w-5 text-muted-foreground" />
               <span className="font-medium">
                 {playerInfo ?
                   `${playerInfo.first_name} ${playerInfo.last_name}` :
@@ -115,14 +115,14 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
               </span>
             </div>
             {playerInfo && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-muted-foreground">
                 ({playerInfo.position || 'Player'} #{playerInfo.jersey_number || 'N/A'})
               </span>
             )}
           </div>
           <Button variant="outline" onClick={handleSignOut}>
             <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
+            Abmelden
           </Button>
         </div>
       </div>

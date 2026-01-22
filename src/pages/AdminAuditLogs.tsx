@@ -65,7 +65,7 @@ const AdminAuditLogs: React.FC = () => {
       console.error('Error loading audit logs:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load audit logs.',
+        description: 'Änderungsprotokolle konnten nicht geladen werden.',
         variant: 'destructive',
       });
     } finally {
@@ -84,10 +84,10 @@ const AdminAuditLogs: React.FC = () => {
 
   const getActionColor = (action: string) => {
     switch (action) {
-      case 'CREATE': return 'bg-green-100 text-green-800';
-      case 'UPDATE': return 'bg-blue-100 text-blue-800';
-      case 'DELETE': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'CREATE': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'UPDATE': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'DELETE': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -117,7 +117,7 @@ const AdminAuditLogs: React.FC = () => {
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <RefreshCw className="h-12 w-12 mx-auto mb-4 animate-spin text-gray-400" />
-              <p>Loading audit logs...</p>
+              <p>Lade Änderungsprotokolle...</p>
             </div>
           </div>
         </div>
@@ -131,9 +131,9 @@ const AdminAuditLogs: React.FC = () => {
         <div className="mb-6">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <History className="h-8 w-8" />
-            Audit Logs
+            Änderungsprotokolle
           </h1>
-          <p className="text-gray-600">Track all changes made to player information</p>
+          <p className="text-gray-600">Verfolge alle Änderungen an Spielerinformationen</p>
         </div>
 
         {/* Filters */}
@@ -141,18 +141,18 @@ const AdminAuditLogs: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
-              Filters
+              Filter
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
-                <Label htmlFor="search">Search</Label>
+                <Label htmlFor="search">Suche</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="search"
-                    placeholder="Search logs..."
+                    placeholder="Protokolle durchsuchen..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -161,28 +161,28 @@ const AdminAuditLogs: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="action">Action</Label>
+                <Label htmlFor="action">Aktion</Label>
                 <Select value={filterAction} onValueChange={setFilterAction}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Filter by action" />
+                    <SelectValue placeholder="Nach Aktion filtern" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Actions</SelectItem>
-                    <SelectItem value="CREATE">Create</SelectItem>
-                    <SelectItem value="UPDATE">Update</SelectItem>
-                    <SelectItem value="DELETE">Delete</SelectItem>
+                    <SelectItem value="all">Alle Aktionen</SelectItem>
+                    <SelectItem value="CREATE">Erstellen</SelectItem>
+                    <SelectItem value="UPDATE">Aktualisieren</SelectItem>
+                    <SelectItem value="DELETE">Löschen</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="user">User</Label>
+                <Label htmlFor="user">Benutzer</Label>
                 <Select value={filterUser} onValueChange={setFilterUser}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Filter by user" />
+                    <SelectValue placeholder="Nach Benutzer filtern" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Users</SelectItem>
+                    <SelectItem value="">Alle Benutzer</SelectItem>
                     {getUniqueUsers().map(user => (
                       <SelectItem key={user} value={user}>{user}</SelectItem>
                     ))}
@@ -191,13 +191,13 @@ const AdminAuditLogs: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="table">Table</Label>
+                <Label htmlFor="table">Tabelle</Label>
                 <Select value={filterTable} onValueChange={setFilterTable}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Filter by table" />
+                    <SelectValue placeholder="Nach Tabelle filtern" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Tables</SelectItem>
+                    <SelectItem value="all">Alle Tabellen</SelectItem>
                     {getUniqueTables().map(table => (
                       <SelectItem key={table} value={table}>{table}</SelectItem>
                     ))}
@@ -208,7 +208,7 @@ const AdminAuditLogs: React.FC = () => {
               <div className="flex items-end">
                 <Button onClick={loadLogs} variant="outline" className="w-full">
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
+                  Aktualisieren
                 </Button>
               </div>
             </div>
@@ -250,7 +250,7 @@ const AdminAuditLogs: React.FC = () => {
                           onClick={() => setSelectedLog(log)}
                         >
                           <Eye className="h-4 w-4 mr-2" />
-                          View Details
+                          Details anzeigen
                         </Button>
                       </div>
                     )}
@@ -264,9 +264,9 @@ const AdminAuditLogs: React.FC = () => {
             <Card>
               <CardContent className="p-12 text-center">
                 <History className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-semibold mb-2">No audit logs found</h3>
+                <h3 className="text-lg font-semibold mb-2">Keine Protokolle gefunden</h3>
                 <p className="text-gray-600">
-                  No changes have been recorded yet, or no logs match your filters.
+                  Es wurden noch keine Änderungen aufgezeichnet, oder die Filter passen zu keinen Einträgen.
                 </p>
               </CardContent>
             </Card>
@@ -284,7 +284,7 @@ const AdminAuditLogs: React.FC = () => {
                     {selectedLog.action} Details
                   </span>
                   <Button variant="outline" onClick={() => setSelectedLog(null)}>
-                    Close
+                    Schließen
                   </Button>
                 </CardTitle>
                 <CardDescription>
@@ -295,7 +295,7 @@ const AdminAuditLogs: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {selectedLog.old_data && (
                     <div>
-                      <h4 className="font-medium mb-2 text-red-600">Before:</h4>
+                      <h4 className="font-medium mb-2 text-red-600">Vorher:</h4>
                       <ScrollArea className="h-64 w-full border rounded p-3">
                         <pre className="text-xs whitespace-pre-wrap">
                           {formatData(selectedLog.old_data)}
@@ -306,7 +306,7 @@ const AdminAuditLogs: React.FC = () => {
 
                   {selectedLog.new_data && (
                     <div>
-                      <h4 className="font-medium mb-2 text-green-600">After:</h4>
+                      <h4 className="font-medium mb-2 text-green-600">Nachher:</h4>
                       <ScrollArea className="h-64 w-full border rounded p-3">
                         <pre className="text-xs whitespace-pre-wrap">
                           {formatData(selectedLog.new_data)}
@@ -319,10 +319,10 @@ const AdminAuditLogs: React.FC = () => {
                 <div className="mt-4 pt-4 border-t text-sm text-gray-600">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="font-medium">User:</span> {selectedLog.user_email}
+                      <span className="font-medium">Benutzer:</span> {selectedLog.user_email}
                     </div>
                     <div>
-                      <span className="font-medium">Time:</span> {new Date(selectedLog.timestamp).toLocaleString()}
+                      <span className="font-medium">Zeit:</span> {new Date(selectedLog.timestamp).toLocaleString()}
                     </div>
                     {selectedLog.ip_address && (
                       <div>

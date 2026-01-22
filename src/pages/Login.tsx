@@ -19,8 +19,8 @@ const Login: React.FC = () => {
 
     if (!email.trim()) {
       toast({
-        title: 'Error',
-        description: 'Please enter your email address.',
+        title: 'Fehler',
+        description: 'Bitte gib deine E-Mail-Adresse ein.',
         variant: 'destructive',
       });
       return;
@@ -34,20 +34,20 @@ const Login: React.FC = () => {
       if (result.success) {
         setEmailSent(true);
         toast({
-          title: 'Magic Link Sent!',
-          description: 'Check your email for the login link.',
+          title: 'Link gesendet!',
+          description: 'Prüfe deine E-Mails für den Anmelde-Link.',
         });
       } else {
         toast({
-          title: 'Error',
-          description: result.error || 'Failed to send magic link.',
+          title: 'Fehler',
+          description: result.error || 'Link konnte nicht gesendet werden.',
           variant: 'destructive',
         });
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        title: 'Fehler',
+        description: 'Etwas ist schiefgelaufen. Bitte versuche es erneut.',
         variant: 'destructive',
       });
     } finally {
@@ -57,23 +57,23 @@ const Login: React.FC = () => {
 
   if (emailSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Magic Link Sent!</h2>
-            <p className="text-gray-600 mb-4">
-              Check your email for the login link. Click the link to access the admin panel.
+            <h2 className="text-xl font-semibold mb-2">Link gesendet!</h2>
+            <p className="text-muted-foreground mb-4">
+              Prüfe deine E-Mails für den Anmelde-Link. Klicke auf den Link, um zum Admin-Bereich zu gelangen.
             </p>
-            <p className="text-sm text-gray-500 mb-4">
-              The link will expire in 24 hours.
+            <p className="text-sm text-muted-foreground mb-4">
+              Der Link ist 24 Stunden gültig.
             </p>
             <Button
               variant="outline"
               onClick={() => setEmailSent(false)}
               className="w-full"
             >
-              Send Another Link
+              Neuen Link senden
             </Button>
           </CardContent>
         </Card>
@@ -82,27 +82,27 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Player Admin Login
+            Spieler Admin Login
           </CardTitle>
           <CardDescription>
-            Enter your player email to receive a magic link for secure access.
+            Gib deine Spieler-E-Mail ein, um einen sicheren Anmelde-Link zu erhalten.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">E-Mail-Adresse</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="your.email@example.com"
+                placeholder="deine.email@beispiel.de"
                 required
                 disabled={loading}
               />
@@ -111,12 +111,12 @@ const Login: React.FC = () => {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Only registered player emails can access the admin panel.
+                Nur registrierte Spieler-E-Mails können auf den Admin-Bereich zugreifen.
               </AlertDescription>
             </Alert>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Sending...' : 'Send Magic Link'}
+              {loading ? 'Wird gesendet...' : 'Anmelde-Link senden'}
             </Button>
           </form>
         </CardContent>

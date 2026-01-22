@@ -91,16 +91,16 @@ const Players: React.FC = () => {
               animate={{ opacity: 1, x: 0 }}
             >
               <h1 className="text-5xl font-black italic text-white uppercase tracking-tighter mb-2">
-                The <span className="text-primary">Roster</span>
+                Der <span className="text-primary">Kader</span>
               </h1>
-              <p className="text-[10px] font-bold tracking-[0.4em] text-white/30 uppercase">Elite Athlete Database // Season 26</p>
+              <p className="text-[10px] font-bold tracking-[0.4em] text-white/30 uppercase">Spielerdatenbank // Saison 26</p>
             </motion.div>
 
             <div className="mt-12 flex flex-col md:flex-row gap-6">
               <div className="relative flex-1 group">
                 <input
                   type="text"
-                  placeholder="SEARCH DATABASE..."
+                  placeholder="DATENBANK DURCHSUCHEN..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-12 text-sm font-black uppercase tracking-widest text-white focus:outline-none focus:border-primary/50 transition-all placeholder:text-white/20"
@@ -119,14 +119,14 @@ const Players: React.FC = () => {
                     className={`px-6 h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${gameFilter === 'home' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-white/40 hover:text-white'
                       }`}
                   >
-                    Home
+                    Heim
                   </button>
                   <button
                     onClick={() => toggleFilter('away')}
                     className={`px-6 h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${gameFilter === 'away' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-white/40 hover:text-white'
                       }`}
                   >
-                    Away
+                    Auswärts
                   </button>
                 </div>
 
@@ -135,7 +135,7 @@ const Players: React.FC = () => {
                   onChange={(e) => setPositionFilter(e.target.value)}
                   className="h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-[10px] font-black uppercase tracking-widest text-white focus:outline-none focus:border-primary/50 transition-all"
                 >
-                  <option value="all" className="bg-slate-900">All Positions</option>
+                  <option value="all" className="bg-slate-900">Alle Positionen</option>
                   {positions.map(pos => (
                     <option key={pos} value={pos} className="bg-slate-900">{pos.toUpperCase()}</option>
                   ))}
@@ -156,8 +156,8 @@ const Players: React.FC = () => {
                   className="col-span-full py-20 text-center"
                 >
                   <div className="text-6xl mb-4">🔍</div>
-                  <h3 className="text-xl font-black text-white uppercase italic">No Data Found</h3>
-                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mt-2">Try adjusting your database filters</p>
+                  <h3 className="text-xl font-black text-white uppercase italic">Keine Daten gefunden</h3>
+                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mt-2">Versuche deine Filtereinstellungen anzupassen</p>
                 </motion.div>
               ) : (
                 filteredPlayers.map((player) => (
