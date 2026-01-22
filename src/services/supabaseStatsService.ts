@@ -46,8 +46,51 @@ export class SupabaseStatsService {
                     : '-',
                 boxScoreUrl: game.box_score_url,
                 gameId: game.game_id,
-                // youtubeLink/videoData would need separate fetching or column if they exist
             }));
+
+            // 1.5 Fetch Video Projects to populate video fields
+            const { data: videoProjects, error: videoError } = await supabase
+                .from('video_projects')
+                .select('*');
+
+            if (videoError) {
+                console.warn('Error fetching video_projects:', videoError);
+            } else if (videoProjects) {
+                // Map videos to games
+                games.forEach(game => {
+                    const gameVideos = videoProjects.filter((vp: any) => vp.tsv_game_number === game.gameNumber);
+
+                    if (gameVideos.length > 0) {
+                        // Sort by video_index
+                        gameVideos.sort((a: any, b: any) => a.video_index - b.video_index);
+
+                        // Populate youtubeLink (backwards compatibility - use first video)
+                        const firstVideo = gameVideos[0];
+                        const firstLink = firstVideo.playlist_id
+                            ? `https://www.youtube.com/watch?v=${firstVideo.video_id}&list=${firstVideo.playlist_id}`
+                            : `https://www.youtube.com/watch?v=${firstVideo.video_id}`;
+
+                        game.youtubeLink = firstLink;
+
+                        // Populate youtubeLinks
+                        game.youtubeLinks = gameVideos.map((vp: any) =>
+                            vp.playlist_id
+                                ? `https://www.youtube.com/watch?v=${vp.video_id}&list=${vp.playlist_id}`
+                                : `https://www.youtube.com/watch?v=${vp.video_id}`
+                        );
+
+                        // Populate videoData
+                        game.videoData = gameVideos.map((vp: any) => ({
+                            link: vp.playlist_id
+                                ? `https://www.youtube.com/watch?v=${vp.video_id}&list=${vp.playlist_id}`
+                                : `https://www.youtube.com/watch?v=${vp.video_id}`,
+                            events: vp.data?.events || [],
+                            players: vp.data?.players || [],
+                            videoIndex: vp.video_index
+                        }));
+                    }
+                });
+            }
 
             // 2. Fetch Player Stats (Season Totals)
             // Using the view created in migration
