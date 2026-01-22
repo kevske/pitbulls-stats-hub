@@ -6,7 +6,7 @@ import { PlayerGameLog, PlayerStats } from "@/types/stats";
 import { PlayerTrendIndicator } from "./PlayerTrendIndicator";
 import { useStats } from "@/contexts/StatsContext";
 import { useState, useMemo, useRef, useEffect } from "react";
-import { generateImageFilename } from "@/utils/playerUtils";
+import { getPlayerImageUrl } from "@/utils/playerUtils";
 import { calculateAge } from "@/utils/dateUtils";
 import { BASE_PATH } from "@/config";
 import { useModernTheme } from "@/contexts/ModernThemeContext";
@@ -129,7 +129,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
     navigate(`/players/${player.id}`);
   };
 
-  const imageSrc = `${BASE_PATH}/players/${generateImageFilename(player.firstName, player.lastName).replace(/\.jpg$/, '.png')}`;
+  const imageSrc = player.imageUrl || getPlayerImageUrl(player.firstName, player.lastName);
 
   if (isModernMode) {
     return (
@@ -154,9 +154,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
               className="w-full h-full object-cover object-top scale-110 group-hover:scale-125 transition-transform duration-700"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                if (target.src.endsWith('.png')) {
-                  target.src = `${BASE_PATH}/players/${generateImageFilename(player.firstName, player.lastName)}`;
-                } else {
+                if (!target.src.includes('placeholder-player.png')) {
                   target.src = `${BASE_PATH}/placeholder-player.png`;
                 }
               }}
@@ -226,9 +224,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
               className="w-full h-full object-cover object-top"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                if (target.src.endsWith('.png')) {
-                  target.src = `${BASE_PATH}/players/${generateImageFilename(player.firstName, player.lastName)}`;
-                } else {
+                if (!target.src.includes('placeholder-player.png')) {
                   target.src = `${BASE_PATH}/placeholder-player.png`;
                 }
               }}

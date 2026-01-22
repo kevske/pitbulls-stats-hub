@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { GameStats, PlayerStats, PlayerGameLog } from '@/types/stats';
-import { BASE_PATH } from '@/config';
+import { getPlayerImageUrl } from '@/utils/playerUtils';
 
 export class SupabaseStatsService {
     /**
@@ -64,7 +64,7 @@ export class SupabaseStatsService {
                 id: p.player_slug,
                 firstName: p.first_name,
                 lastName: p.last_name,
-                imageUrl: `${BASE_PATH}/players/${p.first_name.toLowerCase()}-${p.last_name.toLowerCase()}.jpg`,
+                imageUrl: getPlayerImageUrl(p.first_name, p.last_name),
                 jerseyNumber: p.jersey_number,
                 position: p.position,
                 height: p.height,

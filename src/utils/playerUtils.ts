@@ -15,9 +15,36 @@ const PLAYER_IMAGE_MAP: Record<string, string> = {
   'marius scholl': 'marius-scholl.jpg',
   'jan crocoll': 'jan-crocoll.jpg',
   'marcus hayes': 'marcus-hayes.jpg',
-  'danny seitz': 'danny-seitz.jpg'
+  'danny seitz': 'danny-seitz.jpg',
+  'markus maurer': '../placeholder-player.png'
 };
 
+import { BASE_PATH } from '@/config';
+
+export function getPlayerImageUrl(firstName: string, lastName: string = ''): string {
+  const fullName = `${firstName} ${lastName}`.trim().toLowerCase();
+  let filename = '';
+
+  if (PLAYER_IMAGE_MAP[fullName]) {
+    filename = PLAYER_IMAGE_MAP[fullName];
+  } else {
+    const baseName = `${firstName}${lastName ? ' ' + lastName : ''}`
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    filename = baseName + '.jpg';
+  }
+
+  return `${BASE_PATH}/players/${filename}`;
+}
+
+/**
+ * @deprecated Use getPlayerImageUrl instead
+ */
 export function generateImageFilename(firstName: string, lastName: string = ''): string {
   const fullName = `${firstName} ${lastName}`.trim().toLowerCase();
 
