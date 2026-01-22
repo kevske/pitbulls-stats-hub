@@ -116,15 +116,21 @@ export class MinutesService {
         }
       });
 
-      return Array.from(uniquePlayers.values()).map(row => ({
-        playerId: row.player_slug,
-        playerSlug: row.player_slug,
-        firstName: row.player_first_name,
-        lastName: row.player_last_name,
-        minutes: row.minutes_played || 0,
-        gameId: row.game_id,
-        gameNumber: parseInt(row.game_id)
-      }));
+      return Array.from(uniquePlayers.values()).map(row => {
+        // Generate a slug if missing (e.g. "max-mustermann")
+        const generatedSlug = row.player_slug ||
+          `${row.player_first_name || ''}-${row.player_last_name || ''}`.toLowerCase().replace(/[^a-z0-9-]/g, '');
+
+        return {
+          playerId: generatedSlug,
+          playerSlug: generatedSlug,
+          firstName: row.player_first_name,
+          lastName: row.player_last_name,
+          minutes: row.minutes_played || 0,
+          gameId: row.game_id,
+          gameNumber: parseInt(row.game_id)
+        };
+      });
     } catch (error) {
       console.error('Error fetching players needing minutes:', error);
       throw error;
