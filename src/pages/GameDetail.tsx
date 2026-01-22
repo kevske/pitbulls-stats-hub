@@ -7,6 +7,7 @@ import { de } from 'date-fns/locale';
 import Layout from '@/components/Layout';
 import { BoxscoreService } from '@/services/boxscoreService';
 import { BoxScore } from '@/types/supabase';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const GameDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -140,6 +141,19 @@ const GameDetail: React.FC = () => {
               </div>
             </div>
 
+            {/* Minutes Editor Link - if no minute data available or manually requested */}
+            {(!gamePlayersLogs.some(l => l.minutesPlayed > 0) || gamePlayersLogs.every(l => l.minutesPlayed === 0)) && (
+              <div className="mt-4 mb-2 flex justify-center">
+                <button
+                  onClick={() => navigate(`/games/minutes/${game.gameNumber}`)}
+                  className="text-sm text-amber-600 hover:text-amber-800 hover:underline flex items-center gap-1"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clock"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                  Gespielte Minuten eintragen
+                </button>
+              </div>
+            )}
+
             {/* Box Score URL Link - if available */}
             {game.boxScoreUrl && (
               <div className="mt-6">
@@ -188,111 +202,222 @@ const GameDetail: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Box Scores Section */}
-        {boxScores.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Offizielle Box Scores</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-background">
-                  <thead>
-                    <tr className="bg-muted">
-                      <th className="py-2 px-4 border text-left">Spieler</th>
-                      <th className="py-2 px-4 border">Punkte</th>
-                      <th className="py-2 px-4 border">2P</th>
-                      <th className="py-2 px-4 border">3P</th>
-                      <th className="py-2 px-4 border">FT</th>
-                      <th className="py-2 px-4 border">Fouls</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {boxScores
-                      .sort((a, b) => b.points - a.points)
-                      .map((boxScore) => (
-                        <tr key={boxScore.id} className="hover:bg-muted/50">
-                          <td className="py-2 px-4 border">
-                            <div>
-                              <div className="font-medium">
-                                {boxScore.player_first_name} {boxScore.player_last_name}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-2 px-4 border text-center font-medium">{boxScore.points}</td>
-                          <td className="py-2 px-4 border text-center">{boxScore.two_pointers}</td>
-                          <td className="py-2 px-4 border text-center">{boxScore.three_pointers}</td>
-                          <td className="py-2 px-4 border text-center">
-                            {boxScore.free_throws_made}/{boxScore.free_throw_attempts}
-                          </td>
-                          <td className="py-2 px-4 border text-center">{boxScore.fouls}</td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {boxScoresLoading && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">Lade Box Scores...</div>
-            </CardContent>
-          </Card>
-        )}
-
-        {boxScoresError && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-red-500 text-center">{boxScoresError}</div>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Spielerstatistiken</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-background">
-                <thead>
-                  <tr className="bg-muted">
-                    <th className="py-2 px-4 border text-left">Spieler</th>
-                    <th className="py-2 px-4 border">Min</th>
-                    <th className="py-2 px-4 border">Punkte</th>
-                    <th className="py-2 px-4 border">2P</th>
-                    <th className="py-2 px-4 border">3P</th>
-                    <th className="py-2 px-4 border">FT</th>
-                    <th className="py-2 px-4 border">Fouls</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {gamePlayersLogs
-                    .sort((a, b) => b.points - a.points)
-                    .map((log) => (
-                      <tr key={log.playerId} className="hover:bg-muted/50">
-                        <td className="py-2 px-4 border">
-                          {getPlayerName(log.playerId, true)}
-                        </td>
-                        <td className="py-2 px-4 border text-center">{log.minutesPlayed}</td>
-                        <td className="py-2 px-4 border text-center font-medium">{log.points}</td>
-                        <td className="py-2 px-4 border text-center">{log.twoPointers}</td>
-                        <td className="py-2 px-4 border text-center">{log.threePointers}</td>
-                        <td className="py-2 px-4 border text-center">
-                          {log.freeThrowsMade}/{log.freeThrowAttempts}
-                        </td>
-                        <td className="py-2 px-4 border text-center">{log.fouls}</td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+        {/* Unified Stats Section */}
+        <div className="mt-8">
+          <Tabs defaultValue="our-team" className="w-full">
+            <div className="flex justify-center mb-6">
+              <TabsList className="grid w-full max-w-md grid-cols-2">
+                <TabsTrigger value="our-team">
+                  {game.homeTeam.includes('Neuenstadt') || game.homeTeam.includes('Pitbulls') ? game.homeTeam : game.awayTeam} (Stats)
+                </TabsTrigger>
+                <TabsTrigger value="opponent">
+                  {!game.homeTeam.includes('Neuenstadt') && !game.homeTeam.includes('Pitbulls') ? game.homeTeam : game.awayTeam} (Stats)
+                </TabsTrigger>
+              </TabsList>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            <TabsContent value="our-team">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Spielerstatistiken ({game.homeTeam.includes('Neuenstadt') || game.homeTeam.includes('Pitbulls') ? game.homeTeam : game.awayTeam})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full bg-background">
+                      <thead>
+                        <tr className="bg-muted">
+                          <th className="py-2 px-4 border text-left">Spieler</th>
+                          <th className="py-2 px-4 border text-center">Min</th>
+                          <th className="py-2 px-4 border text-center">Punkte</th>
+                          <th className="py-2 px-4 border text-center">2P</th>
+                          <th className="py-2 px-4 border text-center">3P</th>
+                          <th className="py-2 px-4 border text-center">FT</th>
+                          <th className="py-2 px-4 border text-center">Fouls</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {boxScores.length > 0 ? (
+                          // If we have box scores, try to identify our team
+                          (() => {
+                            // Identify our team ID by finding a player that exists in gamePlayersLogs or by name matching
+                            // Simple heuristic: If we have gamePlayersLogs, use that for 'Match' detection
+                            // Or simpler: Group box scores by team_id
+                            const teams = Array.from(new Set(boxScores.map(bs => bs.team_id)));
+                            let ourTeamId = '';
+
+                            // If we have 2 teams, try to find which is ours
+                            if (teams.length > 0) {
+                              // Check if any player in the first team is in our gameLogs
+                              const team1Players = boxScores.filter(bs => bs.team_id === teams[0]);
+                              const isTeam1Ours = team1Players.some(p =>
+                                gamePlayersLogs.some(log =>
+                                  // Fuzzy name match or just assume if one matches it's our team
+                                  // We don't have name in logs easily matching first/last perfectly without lookup
+                                  // But we have playerId usually being slug.
+                                  // BoxScore has player_slug if linked.
+                                  (p.player_slug && p.player_slug === log.playerId)
+                                )
+                              );
+
+                              ourTeamId = isTeam1Ours ? teams[0] : (teams.length > 1 ? teams[1] : teams[0]);
+
+                              // Fallback: if we didn't match anyone (e.g. no logs), assume the one with most linked players is ours
+                              if (!ourTeamId && teams.length > 1) {
+                                const team1Linked = team1Players.filter(p => p.player_slug).length;
+                                const team2Linked = boxScores.filter(bs => bs.team_id === teams[1]).filter(p => p.player_slug).length;
+                                ourTeamId = team1Linked >= team2Linked ? teams[0] : teams[1];
+                              }
+                            }
+
+                            const ourStats = boxScores.filter(bs => bs.team_id === ourTeamId);
+
+                            // Merge with minutes from gameLogs if available
+                            const mergedStats = ourStats.map(stat => {
+                              const log = stat.player_slug ? gamePlayersLogs.find(l => l.playerId === stat.player_slug) : null;
+                              return {
+                                ...stat,
+                                minutes: log?.minutesPlayed || '-'
+                              };
+                            }).sort((a, b) => b.points - a.points);
+
+                            // If NO box scores for our team found (rare), fallback to logs
+                            if (mergedStats.length === 0 && gamePlayersLogs.length > 0) {
+                              return gamePlayersLogs
+                                .sort((a, b) => b.points - a.points)
+                                .map((log) => (
+                                  <tr key={log.playerId} className="hover:bg-muted/50">
+                                    <td className="py-2 px-4 border">{getPlayerName(log.playerId, true)}</td>
+                                    <td className="py-2 px-4 border text-center">{log.minutesPlayed}</td>
+                                    <td className="py-2 px-4 border text-center font-medium">{log.points}</td>
+                                    <td className="py-2 px-4 border text-center">{log.twoPointers}</td>
+                                    <td className="py-2 px-4 border text-center">{log.threePointers}</td>
+                                    <td className="py-2 px-4 border text-center">{log.freeThrowsMade}/{log.freeThrowAttempts}</td>
+                                    <td className="py-2 px-4 border text-center">{log.fouls}</td>
+                                  </tr>
+                                ));
+                            }
+
+                            return mergedStats.map((stat) => (
+                              <tr key={stat.id} className="hover:bg-muted/50">
+                                <td className="py-2 px-4 border">
+                                  <div className="font-medium">
+                                    {stat.player_slug ? (
+                                      <Link to={`/players/${stat.player_slug}`} className="text-blue-600 hover:underline">
+                                        {stat.player_first_name} {stat.player_last_name}
+                                      </Link>
+                                    ) : (
+                                      `${stat.player_first_name} ${stat.player_last_name}`
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-2 px-4 border text-center">{stat.minutes}</td>
+                                <td className="py-2 px-4 border text-center font-medium">{stat.points}</td>
+                                <td className="py-2 px-4 border text-center">{stat.two_pointers}</td>
+                                <td className="py-2 px-4 border text-center">{stat.three_pointers}</td>
+                                <td className="py-2 px-4 border text-center text-nowrap">{stat.free_throws_made}/{stat.free_throw_attempts}</td>
+                                <td className="py-2 px-4 border text-center">{stat.fouls}</td>
+                              </tr>
+                            ));
+                          })()
+                        ) : (
+                          // Fallback to purely gameLogs if no box scores at all
+                          gamePlayersLogs
+                            .sort((a, b) => b.points - a.points)
+                            .map((log) => (
+                              <tr key={log.playerId} className="hover:bg-muted/50">
+                                <td className="py-2 px-4 border">{getPlayerName(log.playerId, true)}</td>
+                                <td className="py-2 px-4 border text-center">{log.minutesPlayed}</td>
+                                <td className="py-2 px-4 border text-center font-medium">{log.points}</td>
+                                <td className="py-2 px-4 border text-center">{log.twoPointers}</td>
+                                <td className="py-2 px-4 border text-center">{log.threePointers}</td>
+                                <td className="py-2 px-4 border text-center">{log.freeThrowsMade}/{log.freeThrowAttempts}</td>
+                                <td className="py-2 px-4 border text-center">{log.fouls}</td>
+                              </tr>
+                            ))
+                        )}
+                        {boxScores.length === 0 && gamePlayersLogs.length === 0 && (
+                          <tr><td colSpan={7} className="text-center py-4 text-muted-foreground">Keine Statistiken verfügbar</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="opponent">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Spielerstatistiken ({!game.homeTeam.includes('Neuenstadt') && !game.homeTeam.includes('Pitbulls') ? game.homeTeam : game.awayTeam})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full bg-background">
+                      <thead>
+                        <tr className="bg-muted">
+                          <th className="py-2 px-4 border text-left">Spieler</th>
+                          <th className="py-2 px-4 border text-center">Punkte</th>
+                          <th className="py-2 px-4 border text-center">2P</th>
+                          <th className="py-2 px-4 border text-center">3P</th>
+                          <th className="py-2 px-4 border text-center">FT</th>
+                          <th className="py-2 px-4 border text-center">Fouls</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          // Identify opponent team ID 
+                          // It's the one that is NOT 'ourTeamId' calculated above
+                          // To avoid code duplication, we re-derive or should have stored it. 
+                          // Since this is inside a render block, we re-derive quickly.
+
+                          const teams = Array.from(new Set(boxScores.map(bs => bs.team_id)));
+                          if (teams.length === 0) return <tr><td colSpan={6} className="text-center py-4">Keine Daten verfügbar</td></tr>;
+
+                          let ourTeamId = '';
+                          const team1Players = boxScores.filter(bs => bs.team_id === teams[0]);
+                          // Try to match specific player ID known to be ours (e.g. from logs)
+                          // This duplicate logic is acceptable for inline simplicity but could be refactored
+                          const isTeam1Ours = team1Players.some(p =>
+                            (p.player_slug && gamePlayersLogs.some(log => log.playerId === p.player_slug))
+                          );
+
+                          // If we have 2 teams
+                          if (teams.length > 1) {
+                            ourTeamId = isTeam1Ours ? teams[0] : teams[1];
+                          } else {
+                            // Only 1 team found. If it matched ours, assume it's ours. If not, assume it's opponent (rare).
+                            ourTeamId = isTeam1Ours ? teams[0] : '';
+                          }
+
+                          const opponentStats = boxScores.filter(bs => bs.team_id !== ourTeamId);
+
+                          if (opponentStats.length === 0) {
+                            return <tr><td colSpan={6} className="text-center py-4">Keine Daten verfügbar</td></tr>;
+                          }
+
+                          return opponentStats.sort((a, b) => b.points - a.points).map((stat) => (
+                            <tr key={stat.id} className="hover:bg-muted/50">
+                              <td className="py-2 px-4 border">
+                                <div className="font-medium">
+                                  {stat.player_first_name} {stat.player_last_name}
+                                </div>
+                              </td>
+                              <td className="py-2 px-4 border text-center font-medium">{stat.points}</td>
+                              <td className="py-2 px-4 border text-center">{stat.two_pointers}</td>
+                              <td className="py-2 px-4 border text-center">{stat.three_pointers}</td>
+                              <td className="py-2 px-4 border text-center text-nowrap">{stat.free_throws_made}/{stat.free_throw_attempts}</td>
+                              <td className="py-2 px-4 border text-center">{stat.fouls}</td>
+                            </tr>
+                          ));
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
     </Layout>
   );
 };
