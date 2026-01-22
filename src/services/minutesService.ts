@@ -27,13 +27,24 @@ export class MinutesService {
   static async getPlayersNeedingMinutes(gameNumber: number): Promise<PlayerMinutesData[]> {
     try {
       // First, get the game info to determine which team is TSV Neuenstadt
+      // First, get the game info to determine which team is TSV Neuenstadt
+      // Try finding by tsv_game_number (priority) or game_id
       const { data: gameData, error: gameError } = await supabase
         .from('games')
-        .select('home_team_name, away_team_name, home_team_id, away_team_id')
-        .eq('game_id', gameNumber.toString())
-        .single();
+        .select('game_id, home_team_name, away_team_name, home_team_id, away_team_id')
+        .or(`game_id.eq.${gameNumber},tsv_game_number.eq.${gameNumber}`)
+        .range(0, 0)
+        .maybeSingle();
 
       if (gameError) throw gameError;
+      if (!gameData) {
+        console.error('Game not found:', gameNumber);
+        return [];
+      }
+
+      // IMPORTANT: Use the actual game_id (Match ID, e.g. "2786721") for box_score lookups, 
+      // even if we searched by "9"
+      const realGameId = gameData.game_id;
 
       // Determine which team ID represents TSV Neuenstadt
       const isTSVNeuenstadtHome = gameData.home_team_name?.toLowerCase().includes('neuenstadt');
@@ -58,7 +69,7 @@ export class MinutesService {
           minutes_played,
           team_id
         `)
-        .eq('game_id', gameNumber.toString())
+        .eq('game_id', realGameId)
         .eq('team_id', tsvNeuenstadtTeamId) // Only TSV Neuenstadt players
         .order('player_last_name, player_first_name');
 
@@ -88,7 +99,7 @@ export class MinutesService {
           firstName: player.first_name,
           lastName: player.last_name,
           minutes: 0,
-          gameId: gameNumber.toString(),
+          gameId: realGameId,
           gameNumber: gameNumber
         }));
       }
@@ -124,13 +135,18 @@ export class MinutesService {
   static async updatePlayerMinutes(gameNumber: number, playerSeconds: Array<{ playerId: string, seconds: number }>): Promise<boolean> {
     try {
       // First, get the game info to determine which team is TSV Neuenstadt (same as in getPlayersNeedingMinutes)
+      // First, get the game info to determine which team is TSV Neuenstadt (same as in getPlayersNeedingMinutes)
       const { data: gameData, error: gameError } = await supabaseAdmin
         .from('games')
-        .select('home_team_name, away_team_name, home_team_id, away_team_id')
-        .eq('game_id', gameNumber.toString())
-        .single();
+        .select('game_id, home_team_name, away_team_name, home_team_id, away_team_id')
+        .or(`game_id.eq.${gameNumber},tsv_game_number.eq.${gameNumber}`)
+        .range(0, 0)
+        .maybeSingle();
 
       if (gameError) throw gameError;
+      if (!gameData) throw new Error(`Game not found: ${gameNumber}`);
+
+      const realGameId = gameData.game_id;
 
       // Determine which team ID represents TSV Neuenstadt
       const isTSVNeuenstadtHome = gameData.home_team_name?.toLowerCase().includes('neuenstadt');
@@ -145,7 +161,7 @@ export class MinutesService {
       const { error: checkError } = await supabaseAdmin
         .from('box_scores')
         .select('game_id, team_id, player_slug, player_first_name, player_last_name, minutes_played')
-        .eq('game_id', gameNumber.toString())
+        .eq('game_id', realGameId)
         .eq('team_id', tsvNeuenstadtTeamId);
 
       if (checkError) {
@@ -161,7 +177,7 @@ export class MinutesService {
         const { error: playerCheckError } = await supabaseAdmin
           .from('box_scores')
           .select('game_id, team_id, player_slug, player_first_name, player_last_name, minutes_played')
-          .eq('game_id', gameNumber.toString())
+          .eq('game_id', realGameId)
           .eq('team_id', tsvNeuenstadtTeamId)
           .eq('player_slug', playerId);
 
@@ -174,7 +190,7 @@ export class MinutesService {
           const { error, data } = await supabaseAdmin
             .from('box_scores')
             .update({ minutes_played: decimalMinutes })
-            .eq('game_id', gameNumber.toString())
+            .eq('game_id', realGameId)
             .eq('team_id', tsvNeuenstadtTeamId)
             .eq('player_slug', playerId)
             .select();
@@ -200,7 +216,7 @@ export class MinutesService {
             const { error: insertError } = await supabaseAdmin
               .from('box_scores')
               .insert({
-                game_id: gameNumber.toString(),
+                game_id: realGameId,
                 team_id: tsvNeuenstadtTeamId,
                 player_slug: playerId,
                 player_first_name: playerInfo?.first_name || 'Unknown',
