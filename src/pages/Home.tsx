@@ -25,7 +25,7 @@ const Home = () => {
   const lastGame = useMemo(() => {
     if (!games.length) return null;
     return [...games]
-      .filter(g => g.finalScore && g.finalScore !== '-') // Only games with results
+      .filter(g => g.finalScore && g.finalScore !== '-' && g.finalScore !== '-:-') // Only games with results
       .filter(g => {
         // Only TSV Neuenstadt games - check if either team is TSV Neuenstadt or Pitbulls
         const homeTeam = g.homeTeam?.toLowerCase() || '';
@@ -74,7 +74,7 @@ const Home = () => {
 
     // Sort games by tsv_game_number descending (latest first) and only include TSV Neuenstadt games with results
     const sortedGames = [...games]
-      .filter(g => g.finalScore && g.finalScore !== '-') // Only finished games
+      .filter(g => g.finalScore && g.finalScore !== '-' && g.finalScore !== '-:-') // Only finished games
       .filter(g => {
         // Only TSV Neuenstadt games - check if either team is TSV Neuenstadt or Pitbulls
         const homeTeam = g.homeTeam?.toLowerCase() || '';
