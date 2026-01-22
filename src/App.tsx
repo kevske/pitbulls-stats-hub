@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Suspense, lazy } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,23 +9,26 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { StatsProvider } from "@/contexts/StatsContext";
 import { ModernThemeProvider } from "@/contexts/ModernThemeContext";
 import ScrollToTop from "@/components/ScrollToTop";
-import Home from "./pages/Home";
-import Stats from "./pages/Stats";
-import Players from "./pages/Players";
-import PlayerDetail from "./pages/PlayerDetail";
-import PlayerProfile from "./pages/PlayerProfile";
-import Games from "./pages/Games";
-import GameDetail from "./pages/GameDetail";
-import Videos from "./pages/Videos";
-import VideoEditor from "./pages/VideoEditor";
-import Spielplan from "./pages/Spielplan";
-import AdminPlayerInfo from "./pages/AdminPlayerInfo";
-import Login from "./pages/Login";
-import AdminAuditLogs from "./pages/AdminAuditLogs";
-import GamesMinutesManager from "./components/GamesMinutesManager";
-import Impressum from "./pages/Impressum";
-import Playbook from "./pages/Playbook";
-import NotFound from "./pages/NotFound";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+
+// Lazy load pages
+const Home = lazy(() => import("./pages/Home"));
+const Stats = lazy(() => import("./pages/Stats"));
+const Players = lazy(() => import("./pages/Players"));
+const PlayerDetail = lazy(() => import("./pages/PlayerDetail"));
+const PlayerProfile = lazy(() => import("./pages/PlayerProfile"));
+const Games = lazy(() => import("./pages/Games"));
+const GameDetail = lazy(() => import("./pages/GameDetail"));
+const Videos = lazy(() => import("./pages/Videos"));
+const VideoEditor = lazy(() => import("./pages/VideoEditor"));
+const Spielplan = lazy(() => import("./pages/Spielplan"));
+const AdminPlayerInfo = lazy(() => import("./pages/AdminPlayerInfo"));
+const Login = lazy(() => import("./pages/Login"));
+const AdminAuditLogs = lazy(() => import("./pages/AdminAuditLogs"));
+const GamesMinutesManager = lazy(() => import("./components/GamesMinutesManager"));
+const Impressum = lazy(() => import("./pages/Impressum"));
+const Playbook = lazy(() => import("./pages/Playbook"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -116,27 +120,29 @@ const App = () => {
             <ModernThemeProvider>
               <BrowserRouter basename={import.meta.env.PROD ? "/pitbulls-stats-hub" : "/"}>
                 <ScrollToTop />
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/stats" element={<Stats />} />
-                  <Route path="/players" element={<Players />} />
-                  <Route path="/players/:id" element={<PlayerDetail />} />
-                  <Route path="/player/:playerName" element={<PlayerProfile />} />
-                  <Route path="/games" element={<Games />} />
-                  <Route path="/games/:id" element={<GameDetail />} />
-                  <Route path="/videos" element={<Videos />} />
-                  <Route path="/video-editor" element={<VideoEditor />} />
-                  <Route path="/spielplan" element={<Spielplan />} />
-                  <Route path="/playbook" element={<Playbook />} />
-                  <Route path="/impressum" element={<Impressum />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/admin/player-info" element={<AdminPlayerInfo />} />
-                  <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
-                  <Route path="/games/minutes" element={<GamesMinutesManager />} />
-                  <Route path="/games/minutes/:gameNumber" element={<GamesMinutesManager />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/stats" element={<Stats />} />
+                    <Route path="/players" element={<Players />} />
+                    <Route path="/players/:id" element={<PlayerDetail />} />
+                    <Route path="/player/:playerName" element={<PlayerProfile />} />
+                    <Route path="/games" element={<Games />} />
+                    <Route path="/games/:id" element={<GameDetail />} />
+                    <Route path="/videos" element={<Videos />} />
+                    <Route path="/video-editor" element={<VideoEditor />} />
+                    <Route path="/spielplan" element={<Spielplan />} />
+                    <Route path="/playbook" element={<Playbook />} />
+                    <Route path="/impressum" element={<Impressum />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/admin/player-info" element={<AdminPlayerInfo />} />
+                    <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+                    <Route path="/games/minutes" element={<GamesMinutesManager />} />
+                    <Route path="/games/minutes/:gameNumber" element={<GamesMinutesManager />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Suspense>
               </BrowserRouter>
               <Toaster />
               <Sonner />
