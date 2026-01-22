@@ -144,7 +144,7 @@ export class MinutesService {
       // First, get the game info to determine which team is TSV Neuenstadt (same as in getPlayersNeedingMinutes)
       const { data: gameData, error: gameError } = await supabaseAdmin
         .from('games')
-        .select('game_id, home_team_name, away_team_name, home_team_id, away_team_id')
+        .select('game_id, game_date, home_team_name, away_team_name, home_team_id, away_team_id')
         .or(`game_id.eq.${gameNumber},tsv_game_number.eq.${gameNumber}`)
         .limit(1)
         .maybeSingle();
@@ -207,34 +207,59 @@ export class MinutesService {
           }
 
           if (!data || data.length === 0) {
-            console.warn(`No rows updated for player ${playerId} - attempting INSERT`);
+            console.warn(`No rows updated for player ${playerId} - attempting UPDATE by name or INSERT`);
 
-            // If update found no rows, it means the row doesn't exist yet for this game
-            // We need to insert a new row
+            // The playerId might be a generated slug (e.g. "max-mustermann") that doesn't match DB
+            // Try to find existing row by matching first/last name derived from slug
+            const nameParts = playerId.split('-');
+            const derivedFirstName = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : 'Unknown';
+            const derivedLastName = nameParts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') || 'Player';
 
-            // First get player details from player_info to populate name fields if needed
-            const { data: playerInfo } = await supabaseAdmin
-              .from('player_info')
-              .select('first_name, last_name')
-              .eq('player_slug', playerId)
-              .single();
-
-            const { error: insertError } = await supabaseAdmin
+            // Try updating by name match (for rows with NULL player_slug)
+            const { data: nameUpdateData, error: nameUpdateError } = await supabaseAdmin
               .from('box_scores')
-              .insert({
-                game_id: realGameId,
-                team_id: tsvNeuenstadtTeamId,
-                player_slug: playerId,
-                player_first_name: playerInfo?.first_name || 'Unknown',
-                player_last_name: playerInfo?.last_name || 'Player',
+              .update({
                 minutes_played: decimalMinutes,
-                points: 0, // Default to 0 if creating new row
-                game_date: gameData.game_date // Use game date if available or let DB default
-              });
+                player_slug: playerId // Also set the slug so future updates work
+              })
+              .eq('game_id', realGameId)
+              .eq('team_id', tsvNeuenstadtTeamId)
+              .ilike('player_first_name', derivedFirstName)
+              .ilike('player_last_name', derivedLastName)
+              .is('player_slug', null)
+              .select();
 
-            if (insertError) {
-              console.error('Insert failed for player:', playerId, insertError);
-              throw insertError;
+            if (nameUpdateError) {
+              console.error('Name-based update failed:', nameUpdateError);
+            }
+
+            if (nameUpdateData && nameUpdateData.length > 0) {
+              console.log(`Updated player ${playerId} by name match, also set player_slug`);
+            } else {
+              // If still no match, try getting player info and insert new row
+              const { data: playerInfo } = await supabaseAdmin
+                .from('player_info')
+                .select('first_name, last_name')
+                .eq('player_slug', playerId)
+                .maybeSingle();
+
+              const { error: insertError } = await supabaseAdmin
+                .from('box_scores')
+                .insert({
+                  game_id: realGameId,
+                  team_id: tsvNeuenstadtTeamId,
+                  player_slug: playerId,
+                  player_first_name: playerInfo?.first_name || derivedFirstName,
+                  player_last_name: playerInfo?.last_name || derivedLastName,
+                  minutes_played: decimalMinutes,
+                  points: 0,
+                  game_date: gameData.game_date
+                });
+
+              if (insertError) {
+                console.error('Insert failed for player:', playerId, insertError);
+                throw insertError;
+              }
             }
           }
         } catch (updateError) {
