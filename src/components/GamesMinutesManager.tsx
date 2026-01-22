@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import PasswordProtection from '@/components/PasswordProtection';
 import MinutesPlayedInput from '@/components/MinutesPlayedInput';
@@ -15,7 +15,10 @@ interface GamesMinutesManagerProps {
 
 const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber }) => {
   const [hasAccess, setHasAccess] = useState(false);
-  const [selectedGame, setSelectedGame] = useState<number | null>(gameNumber || null);
+  const { gameNumber: paramGameNumber } = useParams<{ gameNumber: string }>();
+  const [selectedGame, setSelectedGame] = useState<number | null>(
+    gameNumber || (paramGameNumber ? parseInt(paramGameNumber) : null)
+  );
   const [gamesNeedingMinutes, setGamesNeedingMinutes] = useState<Array<{
     gameNumber: number;
     gameDate?: string;

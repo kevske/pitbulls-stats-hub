@@ -7,7 +7,7 @@ Fetches data from basketball-bund.net REST API and stores it in Supabase
 import os
 import requests
 import asyncio
-import aiohttp
+
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import logging
