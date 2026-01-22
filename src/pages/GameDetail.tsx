@@ -22,8 +22,11 @@ const GameDetail: React.FC = () => {
     return null;
   }
 
-  const game = games.find(g => g.gameNumber === parseInt(id));
-  const gamePlayersLogs = gameLogs.filter(log => log.gameNumber === parseInt(id));
+  const game = games.find(g =>
+    g.gameNumber === parseInt(id) ||
+    g.gameId === id
+  );
+  const gamePlayersLogs = game ? gameLogs.filter(log => log.gameNumber === game.gameNumber) : [];
 
   // Load box scores for the game
   useEffect(() => {

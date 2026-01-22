@@ -22,7 +22,7 @@ export class SupabaseStatsService {
 
             // Map games to generic GameStats type
             const games: GameStats[] = (gamesData || []).map((game) => ({
-                gameNumber: parseInt(game.game_id), // Use Match ID as game number
+                gameNumber: game.tsv_game_number ? parseInt(game.tsv_game_number) : parseInt(game.game_id), // Use TSV Game Number (1-N) if available, else Match ID
                 date: game.game_date ? new Date(game.game_date).toLocaleDateString('de-DE', {
                     day: '2-digit',
                     month: '2-digit',
@@ -101,7 +101,7 @@ export class SupabaseStatsService {
 
                 return {
                     playerId: log.player_slug,
-                    gameNumber: parseInt(log.game_id),
+                    gameNumber: game?.tsv_game_number ? parseInt(game.tsv_game_number) : parseInt(log.game_id),
                     minutesPlayed: log.minutes_played || 0,
                     points: log.points || 0,
                     twoPointers: log.two_pointers || 0,
