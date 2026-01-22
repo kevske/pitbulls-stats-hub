@@ -145,7 +145,7 @@ const GameDetail: React.FC = () => {
             {(!gamePlayersLogs.some(l => l.minutesPlayed > 0) || gamePlayersLogs.every(l => l.minutesPlayed === 0)) && (
               <div className="mt-4 mb-2 flex justify-center">
                 <button
-                  onClick={() => navigate(`/games/minutes/${game.gameNumber}`)}
+                  onClick={() => navigate(`/games/minutes/${game.gameId || game.gameNumber}`)}
                   className="text-sm text-amber-600 hover:text-amber-800 hover:underline flex items-center gap-1"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clock"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
