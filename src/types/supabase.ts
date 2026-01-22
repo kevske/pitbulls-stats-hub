@@ -41,6 +41,7 @@ export interface BoxScore {
   three_pointers: number;
   fouls: number;
   league_id: string;
+  minutes_played?: number;
   scraped_at: string;
   created_at: string;
   updated_at: string;
