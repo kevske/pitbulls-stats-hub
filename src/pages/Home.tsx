@@ -340,20 +340,20 @@ const Home = () => {
               className="md:col-span-4"
             >
               <div className="glass-card rounded-[2.5rem] p-8 h-full bento-item bg-gradient-to-br from-primary/20 via-transparent to-transparent">
-                <h4 className="text-[10px] font-black uppercase text-white/50 tracking-[0.3em] mb-8">Performance Streak</h4>
+                <h4 className="text-[10px] font-black uppercase text-white/50 tracking-[0.3em] mb-8">Aktuelle Serie</h4>
 
                 <div className="flex flex-col items-center justify-center py-6">
                   <div className={`text-8xl font-black italic ${streak?.type === 'win' ? 'text-green-400' : 'text-red-400'}`}>
                     {streak?.count}
                   </div>
                   <div className="text-xs font-black uppercase tracking-[0.5em] text-white/60 mt-2">
-                    {streak?.type === 'win' ? 'Winning Streak' : 'Losing Streak'}
+                    {streak?.type === 'win' ? 'Siegesserie' : 'Niederlagenserie'}
                   </div>
                 </div>
 
                 <div className="mt-8 pt-8 border-t border-white/5">
                   <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-white/30">
-                    <span>Season 2026</span>
+                    <span>Saison 2026</span>
                     <span className="text-primary">TSV 1892</span>
                   </div>
                 </div>
