@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface StatsTableProps {
   players: PlayerStats[];
@@ -48,6 +49,13 @@ const StatsTable = ({ players }: StatsTableProps) => {
       return <ArrowUp size={16} className="text-primary" />;
     }
     return <ArrowDown size={16} className="text-primary" />;
+  };
+
+  const getAriaSort = (field: SortField) => {
+    if (sortField !== field) {
+      return "none";
+    }
+    return sortDirection === "asc" ? "ascending" : "descending";
   };
 
   const playersWithStats = players;
@@ -108,6 +116,24 @@ const StatsTable = ({ players }: StatsTableProps) => {
       }
     });
 
+  const renderHeader = (label: string, field: SortField, alignCenter = true) => (
+    <TableHead
+      aria-sort={getAriaSort(field)}
+      className="p-0"
+    >
+      <Button
+        variant="ghost"
+        onClick={() => handleSort(field)}
+        className={`w-full h-full rounded-none font-bold text-primary hover:bg-transparent hover:text-primary p-4 ${alignCenter ? 'justify-center' : 'justify-start'}`}
+      >
+        <div className="flex items-center gap-2">
+          {label}
+          {getSortIcon(field)}
+        </div>
+      </Button>
+    </TableHead>
+  );
+
   return (
     <div className="space-y-4">
       <Input
@@ -115,101 +141,22 @@ const StatsTable = ({ players }: StatsTableProps) => {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="max-w-sm border-primary/30 focus:border-primary"
+        aria-label="Nach Spielern suchen"
       />
       <div className="rounded-lg border border-primary/20 overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-secondary hover:bg-secondary">
-              <TableHead
-                className="text-primary font-bold cursor-pointer select-none"
-                onClick={() => handleSort("name")}
-              >
-                <div className="flex items-center gap-2">
-                  Name
-                  {getSortIcon("name")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("games")}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  Spiele
-                  {getSortIcon("games")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("points")}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  Punkte
-                  {getSortIcon("points")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("threePointers")}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  3-Punkte
-                  {getSortIcon("threePointers")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("fouls")}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  Fouls
-                  {getSortIcon("fouls")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("minutes")}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  Minuten
-                  {getSortIcon("minutes")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("freeThrowPercentage")}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  FW-Quote
-                  {getSortIcon("freeThrowPercentage")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("pointsPer40")}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  Pkt/40
-                  {getSortIcon("pointsPer40")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("threePointersPer40")}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  3er/40
-                  {getSortIcon("threePointersPer40")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-primary font-bold cursor-pointer select-none text-center"
-                onClick={() => handleSort("foulsPer40")}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  Fouls/40
-                  {getSortIcon("foulsPer40")}
-                </div>
-              </TableHead>
+              {renderHeader("Name", "name", false)}
+              {renderHeader("Spiele", "games")}
+              {renderHeader("Punkte", "points")}
+              {renderHeader("3-Punkte", "threePointers")}
+              {renderHeader("Fouls", "fouls")}
+              {renderHeader("Minuten", "minutes")}
+              {renderHeader("FW-Quote", "freeThrowPercentage")}
+              {renderHeader("Pkt/40", "pointsPer40")}
+              {renderHeader("3er/40", "threePointersPer40")}
+              {renderHeader("Fouls/40", "foulsPer40")}
             </TableRow>
           </TableHeader>
           <TableBody>
