@@ -270,7 +270,7 @@ const Home = () => {
               </h1>
               <div className="mt-4 flex items-center justify-center gap-4">
                 <div className="h-[2px] w-12 bg-primary/50" />
-                <span className="text-[10px] font-bold tracking-[0.5em] text-white/40 uppercase">Beyond The Numbers</span>
+                <span className="text-[10px] font-bold tracking-[0.5em] text-white/40 uppercase">Mehr als nur Zahlen</span>
                 <div className="h-[2px] w-12 bg-primary/50" />
               </div>
             </motion.div>
@@ -292,14 +292,14 @@ const Home = () => {
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-8">
                     <span className="px-4 py-1.5 bg-primary rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-primary/20">
-                      Latest Result
+                      Letztes Ergebnis
                     </span>
                     <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{lastGame.date}</span>
                   </div>
 
                   <div className="flex flex-col md:flex-row items-center justify-between gap-12">
                     <div className="flex-1 text-center md:text-left">
-                      <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em] mb-2">Home</h4>
+                      <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em] mb-2">Heim</h4>
                       <h2 className="text-4xl font-black text-white tracking-tight">{homeTeam}</h2>
                       <div className="text-7xl font-black text-primary mt-4 select-none">{homeScore}</div>
                     </div>
@@ -311,7 +311,7 @@ const Home = () => {
                     </div>
 
                     <div className="flex-1 text-center md:text-right">
-                      <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em] mb-2">Away</h4>
+                      <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em] mb-2">Gast</h4>
                       <h2 className="text-4xl font-black text-white tracking-tight">{awayTeam}</h2>
                       <div className="text-7xl font-black text-white mt-4 select-none">{awayScore}</div>
                     </div>
@@ -323,7 +323,7 @@ const Home = () => {
                       className="group/btn relative px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-[0.2em] text-white hover:bg-primary hover:border-primary transition-all duration-500 overflow-hidden"
                     >
                       <span className="relative z-10 flex items-center gap-2">
-                        Full Match Report
+                        Zum Spielbericht
                         <span className="translate-x-0 group-hover/btn:translate-x-1 transition-transform">→</span>
                       </span>
                     </button>
@@ -363,7 +363,7 @@ const Home = () => {
             {/* Top Performers Bento Section */}
             <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-3 flex items-center justify-between mb-2">
-                <h3 className="text-2xl font-black italic text-white uppercase">Elite Performers</h3>
+                <h3 className="text-2xl font-black italic text-white uppercase">Top-Leistungsträger</h3>
                 <button onClick={() => navigate("/players")} className="text-[10px] font-black uppercase tracking-widest text-primary/80 hover:text-primary">View All Database →</button>
               </div>
 
@@ -417,8 +417,8 @@ const Home = () => {
                     <Flame className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-white uppercase tracking-tight">Rapid Risers</h3>
-                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Weekly Momentum Leaders</p>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight">Aufsteiger</h3>
+                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Momentum-Spieler der Woche</p>
                   </div>
                 </div>
 
@@ -452,7 +452,7 @@ const Home = () => {
               >
                 <div className="text-4xl group-hover:rotate-12 transition-transform">🎥</div>
                 <div className="text-center md:text-left">
-                  <div className="text-2xl font-black text-white uppercase tracking-tighter">Media Hub</div>
+                  <div className="text-2xl font-black text-white uppercase tracking-tighter">Medienzentrum</div>
                   <div className="text-[10px] font-bold text-white/40 tracking-[0.3em] uppercase">Access Video Database</div>
                 </div>
                 <div className="hidden md:block w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-white/50 group-hover:text-white group-hover:translate-x-2 transition-all">→</div>
@@ -464,7 +464,7 @@ const Home = () => {
           <div id="team-gallery" className="pt-12">
             <div className="flex items-center gap-4 mb-8">
               <div className="h-[1px] flex-1 bg-white/5" />
-              <h3 className="text-xl font-black text-white/20 uppercase tracking-[1em] italic">Squad Archives</h3>
+              <h3 className="text-xl font-black text-white/20 uppercase tracking-[1em] italic">Mannschafts-Archiv</h3>
               <div className="h-[1px] flex-1 bg-white/5" />
             </div>
             <TeamGallery />

@@ -111,30 +111,30 @@ const GameDetail: React.FC = () => {
             <div className="grid grid-cols-3 items-center text-center mb-6">
               <div>
                 <div className="text-xl font-bold">{game.homeTeam}</div>
-                <div className="text-sm text-gray-500">Heim</div>
+                <div className="text-sm text-muted-foreground">Heim</div>
               </div>
               <div className="text-4xl font-bold">{game.finalScore}</div>
               <div>
                 <div className="text-xl font-bold">{game.awayTeam}</div>
-                <div className="text-sm text-gray-500">Gast</div>
+                <div className="text-sm text-muted-foreground">Gast</div>
               </div>
             </div>
 
             <div className="grid grid-cols-4 gap-4 text-center mb-6">
               <div>
-                <div className="text-sm text-gray-500">1. Viertel</div>
+                <div className="text-sm text-muted-foreground">1. Viertel</div>
                 <div className="font-medium">{game.q1Score}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">Halbzeit</div>
+                <div className="text-sm text-muted-foreground">Halbzeit</div>
                 <div className="font-medium">{game.halfTimeScore}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">3. Viertel</div>
+                <div className="text-sm text-muted-foreground">3. Viertel</div>
                 <div className="font-medium">{game.q3Score}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">Endstand</div>
+                <div className="text-sm text-muted-foreground">Endstand</div>
                 <div className="font-bold text-lg">{game.finalScore}</div>
               </div>
             </div>
@@ -157,13 +157,13 @@ const GameDetail: React.FC = () => {
               <h3 className="text-lg font-semibold mb-4">Top-Scorer</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {topPerformers.map((player, index) => (
-                  <div key={player.playerId} className="bg-gray-50 p-4 rounded-lg">
+                  <div key={player.playerId} className="bg-muted p-4 rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className="text-2xl font-bold text-gray-400">#{index + 1}</div>
+                      <div className="text-2xl font-bold text-muted-foreground">#{index + 1}</div>
                       <div>
                         <div className="font-medium">{getPlayerName(player.playerId, true)}</div>
                         <div className="text-2xl font-bold">{player.points} Punkte</div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-muted-foreground">
                           {player.threePointers} 3P • {player.twoPointers} 2P • {player.freeThrowsMade}/{player.freeThrowAttempts} FT
                         </div>
                       </div>
@@ -175,7 +175,7 @@ const GameDetail: React.FC = () => {
 
             {/* Video Link - if available */}
             {game.youtubeLink && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="mt-6 pt-6 border-t border-border">
                 <button
                   onClick={() => navigate('/videos')}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -195,9 +195,9 @@ const GameDetail: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="min-w-full bg-white">
+                <table className="min-w-full bg-background">
                   <thead>
-                    <tr className="bg-gray-100">
+                    <tr className="bg-muted">
                       <th className="py-2 px-4 border text-left">Spieler</th>
                       <th className="py-2 px-4 border">Punkte</th>
                       <th className="py-2 px-4 border">2P</th>
@@ -210,7 +210,7 @@ const GameDetail: React.FC = () => {
                     {boxScores
                       .sort((a, b) => b.points - a.points)
                       .map((boxScore) => (
-                        <tr key={boxScore.id} className="hover:bg-gray-50">
+                        <tr key={boxScore.id} className="hover:bg-muted/50">
                           <td className="py-2 px-4 border">
                             <div>
                               <div className="font-medium">
@@ -256,9 +256,9 @@ const GameDetail: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="min-w-full bg-white">
+              <table className="min-w-full bg-background">
                 <thead>
-                  <tr className="bg-gray-100">
+                  <tr className="bg-muted">
                     <th className="py-2 px-4 border text-left">Spieler</th>
                     <th className="py-2 px-4 border">Min</th>
                     <th className="py-2 px-4 border">Punkte</th>
@@ -272,7 +272,7 @@ const GameDetail: React.FC = () => {
                   {gamePlayersLogs
                     .sort((a, b) => b.points - a.points)
                     .map((log) => (
-                      <tr key={log.playerId} className="hover:bg-gray-50">
+                      <tr key={log.playerId} className="hover:bg-muted/50">
                         <td className="py-2 px-4 border">
                           {getPlayerName(log.playerId, true)}
                         </td>

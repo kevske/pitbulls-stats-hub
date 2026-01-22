@@ -32,22 +32,22 @@ const PlayerGallery = ({ playerName }: PlayerGalleryProps) => {
   useEffect(() => {
     // This would be replaced with an actual API call in production
     // For now, we'll use a placeholder that will be replaced with actual images
-    
+
     // In a real implementation, you would have an API endpoint that returns the list of images
     // Example: const response = await fetch(`/api/players/${playerName}/images`);
     // const imageFiles = await response.json();
-    
+
     // For now, we'll use an empty array and the component will show "Keine Bilder verfügbar"
     const imageFiles: string[] = [];
-    
+
     const processedImages = imageFiles
       .map(path => {
         // Extract date from filename (format: YYYY-MM-DD-playername-XX.extension)
         const dateMatch = path.match(/^(\d{4}-\d{2}-\d{2})/);
         if (!dateMatch) return null;
-        
+
         const dateStr = dateMatch[1];
-        
+
         return {
           path: `/players/${playerName}/${path}`,
           date: dateStr,
@@ -56,7 +56,7 @@ const PlayerGallery = ({ playerName }: PlayerGalleryProps) => {
       })
       .filter((img): img is GalleryImage => img !== null)
       .sort((a, b) => b.date.localeCompare(a.date));
-      
+
     setImages(processedImages);
     setLoadedImages(processedImages);
     setIsLoading(false);
@@ -83,7 +83,7 @@ const PlayerGallery = ({ playerName }: PlayerGalleryProps) => {
       <h3 className="text-2xl font-semibold mb-4">Galerie</h3>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {loadedImages.map((img, index) => (
-          <motion.div 
+          <motion.div
             key={index}
             className="group cursor-pointer"
             whileHover={{ scale: 1.02 }}
@@ -99,7 +99,7 @@ const PlayerGallery = ({ playerName }: PlayerGalleryProps) => {
                 onError={() => handleImageError(img.path)}
               />
             </div>
-            <div className="text-center text-sm text-gray-600">
+            <div className="text-center text-sm text-muted-foreground">
               {img.formattedDate}
             </div>
           </motion.div>
@@ -108,7 +108,7 @@ const PlayerGallery = ({ playerName }: PlayerGalleryProps) => {
 
       {/* Image Modal */}
       {selectedImage && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedImage(null)}
         >
@@ -117,7 +117,7 @@ const PlayerGallery = ({ playerName }: PlayerGalleryProps) => {
               <span className="text-white text-lg">
                 {selectedImage.formattedDate}
               </span>
-              <button 
+              <button
                 className="text-white text-2xl hover:text-gray-300 transition-colors"
                 onClick={() => setSelectedImage(null)}
                 aria-label="Schließen"
@@ -125,7 +125,7 @@ const PlayerGallery = ({ playerName }: PlayerGalleryProps) => {
                 ✕
               </button>
             </div>
-            <div className="bg-white p-1 rounded-lg shadow-2xl">
+            <div className="bg-card p-1 rounded-lg shadow-2xl">
               <LazyLoadImage
                 src={selectedImage.path}
                 alt={`${playerName} - ${selectedImage.date}`}

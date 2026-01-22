@@ -192,7 +192,7 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
 
             <div className="flex gap-4 mb-4 text-[11px] font-bold text-white/50 uppercase tracking-tighter">
               {player.height && <span>{player.height} CM</span>}
-              {(player.age || calculateAge(player.birthDate)) && <span>{player.age || calculateAge(player.birthDate)} YRS</span>}
+              {(player.age || calculateAge(player.birthDate)) && <span>{player.age || calculateAge(player.birthDate)} JAHRE</span>}
               {player.weight && <span>{player.weight} KG</span>}
             </div>
 
@@ -201,9 +201,9 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
             <div className="mt-6 flex items-center justify-between text-[11px] font-bold text-white/40 uppercase tracking-widest">
               <div className="flex items-center gap-2">
                 <div className="h-1 w-8 bg-primary rounded-full" />
-                <span>{filteredStats.minutesPlayed} MPG</span>
+                <span>{filteredStats.minutesPlayed} MIN</span>
               </div>
-              <span>{filteredStats.gamesPlayed} GAMES</span>
+              <span>{filteredStats.gamesPlayed} SPIELE</span>
             </div>
           </div>
         </CardContent>

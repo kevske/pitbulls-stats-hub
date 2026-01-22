@@ -31,10 +31,10 @@ const Games: React.FC = () => {
 
   // Filter games based on selected team and upcoming games toggle
   const filteredGames = useMemo(() => {
-    let filtered = games.filter(game => 
+    let filtered = games.filter(game =>
       game.homeTeam === selectedTeam || game.awayTeam === selectedTeam
     );
-    
+
     // Filter out upcoming games if toggle is enabled
     if (hideUpcoming) {
       filtered = filtered.filter(game => {
@@ -42,11 +42,11 @@ const Games: React.FC = () => {
         if (!game.finalScore || game.finalScore.trim() === '') {
           return false; // No final score means game hasn't been played
         }
-        
+
         // Additionally check if the game date is in the past or today
         try {
           let gameDate: Date;
-          
+
           // Try ISO format first (from Supabase)
           if (game.date.includes('T') || game.date.includes('-')) {
             gameDate = new Date(game.date);
@@ -54,12 +54,12 @@ const Games: React.FC = () => {
             // Try DD.MM.YYYY HH:mm format (old format)
             gameDate = parse(game.date, 'dd.MM.yyyy HH:mm', new Date());
           }
-          
+
           // Check if date is valid and not in the future
           if (isNaN(gameDate.getTime())) {
             return true; // If we can't parse the date, include it (has final score)
           }
-          
+
           const now = new Date();
           // Include games that have already happened or are happening today
           return gameDate <= now;
@@ -68,7 +68,7 @@ const Games: React.FC = () => {
         }
       });
     }
-    
+
     return filtered;
   }, [games, selectedTeam, hideUpcoming]);
 
@@ -76,7 +76,7 @@ const Games: React.FC = () => {
     try {
       // Handle different date formats from Supabase
       let date: Date;
-      
+
       // Try ISO format first (from Supabase)
       if (dateString.includes('T') || dateString.includes('-')) {
         date = new Date(dateString);
@@ -84,12 +84,12 @@ const Games: React.FC = () => {
         // Try DD.MM.YYYY HH:mm format (old format)
         date = parse(dateString, 'dd.MM.yyyy HH:mm', new Date());
       }
-      
+
       // Check if date is valid
       if (isNaN(date.getTime())) {
         return dateString; // Return original if parsing fails
       }
-      
+
       return format(date, 'EEEE, dd.MM.yyyy - HH:mm', { locale: de });
     } catch (e) {
       return dateString;
@@ -149,8 +149,8 @@ const Games: React.FC = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => navigate('/games/minutes')}
               className="flex items-center gap-2"
             >
@@ -164,7 +164,7 @@ const Games: React.FC = () => {
           {filteredGames.map((game) => (
             <Card
               key={game.gameNumber}
-              className="hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden border border-gray-200"
+              className="hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden border border-border"
               onClick={() => navigate(`/games/${game.gameNumber}`)}
             >
               <CardContent className="p-4 md:p-6">
@@ -173,10 +173,10 @@ const Games: React.FC = () => {
                   <div className="flex-1 space-y-4">
                     {/* Game details */}
                     <div className="space-y-1">
-                      <div className="text-lg font-semibold text-gray-900">
+                      <div className="text-lg font-semibold text-foreground">
                         Spieltag {game.gameNumber}
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-muted-foreground">
                         {formatGameDate(game.date)}
                       </div>
                     </div>
@@ -186,7 +186,7 @@ const Games: React.FC = () => {
                       <div className="hidden md:grid grid-cols-12 items-center gap-4">
                         <div className="col-span-5 text-right">
                           <div className="font-medium text-base">{game.homeTeam || 'Pitbulls'}</div>
-                          <div className="text-sm text-gray-500">Heim</div>
+                          <div className="text-sm text-muted-foreground">Heim</div>
                         </div>
 
                         <div className="col-span-2">
@@ -201,13 +201,13 @@ const Games: React.FC = () => {
                               </span>
                             </div>
                           ) : (
-                            <div className="text-2xl text-gray-400 text-center">vs</div>
+                            <div className="text-2xl text-muted-foreground text-center">vs</div>
                           )}
                         </div>
 
                         <div className="col-span-5">
                           <div className="font-medium text-base">{game.awayTeam || 'Gegner'}</div>
-                          <div className="text-sm text-gray-500">Gast</div>
+                          <div className="text-sm text-muted-foreground">Gast</div>
                         </div>
                       </div>
 
@@ -215,7 +215,7 @@ const Games: React.FC = () => {
                       <div className="md:hidden space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="text-sm font-medium">{game.homeTeam || 'Pitbulls'}</div>
-                          <div className="text-sm text-gray-500">Heim</div>
+                          <div className="text-sm text-muted-foreground">Heim</div>
                         </div>
 
                         <div className="text-center py-1">
@@ -224,13 +224,13 @@ const Games: React.FC = () => {
                               {game.finalScore}
                             </div>
                           ) : (
-                            <div className="text-xl text-gray-400">vs</div>
+                            <div className="text-xl text-muted-foreground">vs</div>
                           )}
                         </div>
 
                         <div className="flex items-center justify-between">
                           <div className="text-sm font-medium">{game.awayTeam || 'Gegner'}</div>
-                          <div className="text-sm text-gray-500">Gast</div>
+                          <div className="text-sm text-muted-foreground">Gast</div>
                         </div>
 
                         {/* Mobile Top Scorers */}
@@ -238,32 +238,32 @@ const Games: React.FC = () => {
                           .filter(log => log.gameNumber === game.gameNumber)
                           .sort((a, b) => b.points - a.points)
                           .slice(0, 2).length > 0 && (
-                          <div className="pt-2">
-                            <div className="text-xs font-medium text-gray-700 mb-1">Topscorer</div>
-                            <div className="flex justify-center gap-3">
-                              {gameLogs
-                                .filter(log => log.gameNumber === game.gameNumber)
-                                .sort((a, b) => b.points - a.points)
-                                .slice(0, 2)
-                                .map((player) => {
-                                  const playerData = players.find(p => p.id === player.playerId);
-                                  const playerName = playerData ? `${playerData.firstName} ${playerData.lastName}` : 'Unbekannt';
-                                  return (
-                                    <div key={player.playerId} className="text-center">
-                                      <div className="text-xs font-medium">{playerName.split(' ')[0]}</div>
-                                      <div className="text-sm font-bold text-primary">{player.points}P</div>
-                                    </div>
-                                  );
-                                })}
+                            <div className="pt-2">
+                              <div className="text-xs font-medium text-foreground mb-1">Topscorer</div>
+                              <div className="flex justify-center gap-3">
+                                {gameLogs
+                                  .filter(log => log.gameNumber === game.gameNumber)
+                                  .sort((a, b) => b.points - a.points)
+                                  .slice(0, 2)
+                                  .map((player) => {
+                                    const playerData = players.find(p => p.id === player.playerId);
+                                    const playerName = playerData ? `${playerData.firstName} ${playerData.lastName}` : 'Unbekannt';
+                                    return (
+                                      <div key={player.playerId} className="text-center">
+                                        <div className="text-xs font-medium">{playerName.split(' ')[0]}</div>
+                                        <div className="text-sm font-bold text-primary">{player.points}P</div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
                       </div>
                     </div>
 
                     {/* Top scorers - Desktop only */}
                     <div className="hidden md:block pt-2">
-                      <div className="text-sm font-medium text-gray-700 mb-2">Topscorer</div>
+                      <div className="text-sm font-medium text-foreground mb-2">Topscorer</div>
                       <div className="grid grid-cols-3 gap-2">
                         {gameLogs
                           .filter(log => log.gameNumber === game.gameNumber)
@@ -275,7 +275,7 @@ const Games: React.FC = () => {
                             const avatarSrc = playerData?.imageUrl || '/players/placeholder-player.png';
 
                             return (
-                              <div key={player.playerId} className="bg-gray-50 p-2 rounded-lg">
+                              <div key={player.playerId} className="bg-muted p-2 rounded-lg">
                                 <div className="flex items-center space-x-2">
                                   <Avatar className="h-10 w-10 border-2 border-primary">
                                     <AvatarImage src={avatarSrc} alt={playerName} />

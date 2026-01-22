@@ -104,9 +104,9 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
   };
 
   const getCardClass = (daysUntil: number) => {
-    if (daysUntil === 0) return 'border-pink-200 bg-pink-50';
-    if (daysUntil > 0) return 'border-blue-200 bg-blue-50';
-    return 'border-green-200 bg-green-50';
+    if (daysUntil === 0) return 'border-pink-200 bg-pink-50 dark:border-pink-500 dark:bg-zinc-950';
+    if (daysUntil > 0) return 'border-blue-200 bg-blue-50 dark:border-blue-500 dark:bg-zinc-950';
+    return 'border-green-200 bg-green-50 dark:border-green-500 dark:bg-zinc-950';
   };
 
   if (!isVisible || birthdayInfos.length === 0) {
@@ -136,16 +136,16 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
 
           <div className="space-y-3">
             {birthdayInfos.map((info, index) => (
-              <div key={info.player.id} className={`flex items-start gap-3 ${index > 0 ? 'pt-2 border-t border-gray-200' : ''}`}>
+              <div key={info.player.id} className={`flex items-start gap-3 ${index > 0 ? 'pt-2 border-t border-border' : ''}`}>
                 <div className="flex-shrink-0 mt-1">
                   {getBirthdayIcon(info.daysUntil)}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-foreground">
                     {getBirthdayMessage(info)}
                   </p>
                   {info.player.position && (
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {info.player.position} {info.player.jerseyNumber && `#${info.player.jerseyNumber}`}
                     </p>
                   )}
@@ -155,8 +155,8 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
           </div>
 
           {birthdayInfos.length > 1 && (
-            <div className="mt-3 pt-3 border-t border-gray-200 text-center">
-              <p className="text-xs text-gray-500">
+            <div className="mt-3 pt-3 border-t border-border text-center">
+              <p className="text-xs text-muted-foreground">
                 {birthdayInfos.filter(info => info.daysUntil === 0).length} Geburtstage heute,
                 {birthdayInfos.filter(info => info.daysUntil > 0).length} in Kürze,
                 {birthdayInfos.filter(info => info.daysUntil < 0).length} kürzlich

@@ -40,9 +40,9 @@ const Stats = () => {
               animate={{ opacity: 1, x: 0 }}
             >
               <h1 className="text-5xl font-black italic text-white uppercase tracking-tighter mb-2">
-                Core <span className="text-primary">Analytics</span>
+                Kern <span className="text-primary">Statistiken</span>
               </h1>
-              <p className="text-[10px] font-bold tracking-[0.4em] text-white/30 uppercase">Performance Metrics // Data Visualization</p>
+              <p className="text-[10px] font-bold tracking-[0.4em] text-white/30 uppercase">Leistungskennzahlen // Datenvisualisierung</p>
             </motion.div>
           </div>
 
