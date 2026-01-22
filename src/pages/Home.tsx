@@ -24,8 +24,30 @@ const Home = () => {
   // Get the last game (TSV Neuenstadt game with highest tsv_game_number that has a result)
   const lastGame = useMemo(() => {
     if (!games.length) return null;
+    const now = new Date();
     return [...games]
-      .filter(g => g.finalScore && g.finalScore !== '-' && g.finalScore !== '-:-') // Only games with results
+      .filter(g => {
+        // Filter out games without a valid score
+        if (!g.finalScore || g.finalScore === '-' || g.finalScore === '-:-') return false;
+
+        // Parse date to check if it's in the future
+        try {
+          // Format is typically "dd.MM.yyyy, HH:mm" or similar from de-DE locale
+          // Simple parser for German date format
+          const [datePart, timePart] = g.date.split(', ');
+          if (!datePart) return true; // keep if can't parse
+
+          const [day, month, year] = datePart.split('.').map(Number);
+          const [hour, minute] = (timePart || '00:00').split(':').map(Number);
+
+          const gameDate = new Date(year, month - 1, day, hour, minute);
+
+          // Only show games that have happened (with a small buffer for ongoing games if needed, but 'finalScore' check should cover it)
+          return gameDate <= now;
+        } catch (e) {
+          return true; // keep if can't parse
+        }
+      })
       .filter(g => {
         // Only TSV Neuenstadt games - check if either team is TSV Neuenstadt or Pitbulls
         const homeTeam = g.homeTeam?.toLowerCase() || '';
@@ -33,7 +55,14 @@ const Home = () => {
         return homeTeam.includes('neuenstadt') || homeTeam.includes('pitbull') ||
           awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull');
       })
-      .sort((a, b) => b.gameNumber - a.gameNumber)[0];
+    // Since games are already sorted by date descending from the service, we can likely trust the order.
+    // But to be safe, knowing we have mixed IDs, let's rely on the service's sort order (which is by Date).
+    // So we just take the first one after filtering.
+    // But we made a copy with [...games].
+    // The service returns games sorted by date descending.
+    // So filtering preserves order.
+    // So the first element is the correct one.
+    [0];
   }, [games]);
 
   // Parse the final score into home and away scores
@@ -72,17 +101,31 @@ const Home = () => {
   const streak = useMemo(() => {
     if (!games.length) return null;
 
+    const now = new Date();
     // Sort games by tsv_game_number descending (latest first) and only include TSV Neuenstadt games with results
     const sortedGames = [...games]
-      .filter(g => g.finalScore && g.finalScore !== '-' && g.finalScore !== '-:-') // Only finished games
+      .filter(g => {
+        // Filter out games without a valid score
+        if (!g.finalScore || g.finalScore === '-' || g.finalScore === '-:-') return false;
+
+        // Parse date to check if it's in the future
+        try {
+          const [datePart, timePart] = g.date.split(', ');
+          if (!datePart) return true;
+          const [day, month, year] = datePart.split('.').map(Number);
+          const [hour, minute] = (timePart || '00:00').split(':').map(Number);
+          const gameDate = new Date(year, month - 1, day, hour, minute);
+          return gameDate <= now;
+        } catch (e) { return true; }
+      })
       .filter(g => {
         // Only TSV Neuenstadt games - check if either team is TSV Neuenstadt or Pitbulls
         const homeTeam = g.homeTeam?.toLowerCase() || '';
         const awayTeam = g.awayTeam?.toLowerCase() || '';
         return homeTeam.includes('neuenstadt') || homeTeam.includes('pitbull') ||
           awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull');
-      })
-      .sort((a, b) => b.gameNumber - a.gameNumber);
+      });
+    // Already sorted by date descending from service, so no need to sort by ID which is flawed
 
     if (sortedGames.length === 0) return null;
 
