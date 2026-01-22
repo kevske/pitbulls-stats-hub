@@ -4,6 +4,7 @@ import { X, Cake, Gift, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlayerStats } from '@/types/stats';
+import { useModernTheme } from '@/contexts/ModernThemeContext';
 
 interface BirthdayInfo {
   player: PlayerStats;
@@ -16,6 +17,7 @@ interface BirthdayNotificationProps {
 }
 
 const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) => {
+  const { isModernMode } = useModernTheme();
   const [isVisible, setIsVisible] = useState(false);
 
   // Calculate birthdays within ±10 days
@@ -104,9 +106,16 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
   };
 
   const getCardClass = (daysUntil: number) => {
-    if (daysUntil === 0) return 'border-pink-200 bg-pink-50 dark:border-pink-500 dark:bg-zinc-950';
-    if (daysUntil > 0) return 'border-blue-200 bg-blue-50 dark:border-blue-500 dark:bg-zinc-950';
-    return 'border-green-200 bg-green-50 dark:border-green-500 dark:bg-zinc-950';
+    // Force dark styles if in modern mode, regardless of system preference
+    if (isModernMode) {
+      if (daysUntil === 0) return 'border-pink-500 bg-gray-900 text-white shadow-xl shadow-pink-500/10';
+      if (daysUntil > 0) return 'border-blue-500 bg-gray-900 text-white shadow-xl shadow-blue-500/10';
+      return 'border-green-500 bg-gray-900 text-white shadow-xl shadow-green-500/10';
+    }
+
+    if (daysUntil === 0) return 'border-pink-200 bg-pink-50 !dark:bg-gray-900 dark:border-pink-500';
+    if (daysUntil > 0) return 'border-blue-200 bg-blue-50 !dark:bg-gray-900 dark:border-blue-500';
+    return 'border-green-200 bg-green-50 !dark:bg-gray-900 dark:border-green-500';
   };
 
   if (!isVisible || birthdayInfos.length === 0) {
