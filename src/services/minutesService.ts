@@ -122,6 +122,10 @@ export class MinutesService {
           `${row.player_first_name || ''} ${row.player_last_name || ''}`
             .toLowerCase()
             .trim()
+            .replace(/ä/g, 'ae')
+            .replace(/ö/g, 'oe')
+            .replace(/ü/g, 'ue')
+            .replace(/ß/g, 'ss')
             .replace(/\s+/g, '-') // Replace spaces with dashes
             .replace(/[^a-z0-9-]/g, ''); // Remove other special chars
 
@@ -286,8 +290,7 @@ export class MinutesService {
                   player_first_name: finalPlayerInfo?.first_name || derivedFirstName,
                   player_last_name: finalPlayerInfo?.last_name || derivedLastName,
                   minutes_played: decimalMinutes,
-                  points: 0,
-                  game_date: gameData.game_date
+                  points: 0
                 });
 
               if (insertError) {
