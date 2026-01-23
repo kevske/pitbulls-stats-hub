@@ -22,6 +22,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useVideoProjectPersistence } from '@/hooks/useVideoProjectPersistence';
 import { usePlaylistManager } from '@/hooks/usePlaylistManager';
 import { useVideoPlayer } from '@/hooks/useVideoPlayer';
+import { PlayerInfoService } from '@/services/playerInfoService';
 
 const VideoEditor = () => {
   const [searchParams] = useSearchParams();
@@ -40,6 +41,7 @@ const VideoEditor = () => {
   const [shouldResetPlayers, setShouldResetPlayers] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasLoadedProjectRef = useRef(false);
 
   // Hooks
   const {
@@ -86,10 +88,42 @@ const VideoEditor = () => {
     videoId,
     playlistId,
     setEvents,
-    setPlayers,
+    setPlayers: (newPlayers) => {
+      hasLoadedProjectRef.current = true;
+      setPlayers(newPlayers);
+    },
     setVideoId,
     setPlaylistId
   });
+
+  // Fetch active players from DB on mount
+  useEffect(() => {
+    const fetchActivePlayers = async () => {
+      // If we already loaded a project (e.g. from file or fast DB load), don't overwrite
+      if (hasLoadedProjectRef.current) return;
+
+      try {
+        const activePlayers = await PlayerInfoService.getActivePlayers();
+
+        // Check again before setting state
+        if (hasLoadedProjectRef.current) return;
+
+        if (activePlayers && activePlayers.length > 0) {
+          const mappedPlayers: Player[] = activePlayers.map(p => ({
+            id: p.id,
+            name: `${p.first_name} ${p.last_name}`,
+            jerseyNumber: p.jersey_number || 0,
+            position: (['Guard', 'Forward', 'Center'].includes(p.position || '') ? p.position : 'Guard') as PositionType
+          }));
+          setPlayers(mappedPlayers);
+        }
+      } catch (error) {
+        console.error('Failed to fetch active players:', error);
+      }
+    };
+
+    fetchActivePlayers();
+  }, []);
 
   // Handle URL parameters and load game data
   useEffect(() => {
@@ -118,6 +152,7 @@ const VideoEditor = () => {
 
   const handleLoadData = useCallback((saveData: SaveData) => {
     console.log('Loading data:', saveData);
+    hasLoadedProjectRef.current = true;
     setPlayers(saveData.players);
     setEvents(saveData.events);
     setVideoId(saveData.videoId || '');

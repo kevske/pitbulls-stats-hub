@@ -2,8 +2,9 @@ import { TaggedEvent, EVENT_TEMPLATES, formatTime } from '@/types/basketball';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Clock } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface EventListProps {
@@ -18,6 +19,7 @@ interface EventListProps {
 export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0, className, scrollAreaClassName }: EventListProps) {
   const sortedEvents = [...events].sort((a, b) => a.timestamp - b.timestamp);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [startEarly, setStartEarly] = useState(false);
 
   // Find where to insert the current time indicator
   const getCurrentTimePosition = () => {
@@ -64,6 +66,13 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0, cl
     }
   }, [currentTime]);
 
+  const handleSeek = (timestamp: number) => {
+    if (onSeekTo) {
+      const seekTime = startEarly ? Math.max(0, timestamp - 5) : timestamp;
+      onSeekTo(seekTime);
+    }
+  };
+
   if (events.length === 0) {
     return (
       <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 text-center text-muted-foreground">
@@ -75,8 +84,21 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0, cl
 
   return (
     <Card className={cn("bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden", className)}>
-      <div className="p-3 border-b border-border/50">
+      <div className="p-3 border-b border-border/50 flex flex-row items-center justify-between">
         <h3 className="font-semibold text-sm">Events ({events.length})</h3>
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="start-early"
+            checked={startEarly}
+            onCheckedChange={(checked) => setStartEarly(checked as boolean)}
+          />
+          <label
+            htmlFor="start-early"
+            className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+          >
+            5 Sekunden früher starten
+          </label>
+        </div>
       </div>
       <ScrollArea ref={scrollAreaRef} className={cn("h-[300px]", scrollAreaClassName)}>
         <div className="p-2 space-y-1">
@@ -106,7 +128,7 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0, cl
                   data-event-index={index}
                 >
                   <button
-                    onClick={() => onSeekTo?.(event.timestamp)}
+                    onClick={() => handleSeek(event.timestamp)}
                     className="font-mono text-xs text-primary hover:underline cursor-pointer bg-primary/10 px-2 py-1 rounded flex-shrink-0"
                   >
                     {event.formattedTime}
