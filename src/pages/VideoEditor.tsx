@@ -46,6 +46,12 @@ const VideoEditor = () => {
 
   // Helper to merge player lists
   const mergePlayers = useCallback((baseList: Player[], newPlayers: Player[]) => {
+    // If baseList looks like DEFAULT_PLAYERS (simple numeric IDs), and we have new DB players (UUIDs),
+    // we should prioritize the NEW players and filter out defaults to avoid clutter/confusion,
+    // BUT only if we haven't loaded a project (which might rely on those defaults).
+    // This is hard to detect perfectly.
+
+    // Standard merge:
     const existingIds = new Set(baseList.map(p => p.id));
     const existingNames = new Set(baseList.map(p => p.name));
 
@@ -129,7 +135,14 @@ const VideoEditor = () => {
           dbPlayersRef.current = mappedPlayers;
 
           // Merge with current state immediately
-          setPlayers(current => mergePlayers(current, mappedPlayers));
+          setPlayers(current => {
+            // If we are still on default players (check first ID '1'), replace them entirely with DB players
+            // This ensures we don't have duplicates or "ghost" default players for new projects
+            if (current.length === DEFAULT_PLAYERS.length && current[0]?.id === '1') {
+              return mappedPlayers;
+            }
+            return mergePlayers(current, mappedPlayers);
+          });
         }
       } catch (error) {
         console.error('Failed to fetch active players:', error);
