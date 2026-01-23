@@ -3,6 +3,7 @@ import { AuthService } from '@/services/authService';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { User, LogOut, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<any>(null);
   const [playerInfo, setPlayerInfo] = useState<any>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     checkAuth();
@@ -88,7 +90,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
           </CardHeader>
           <CardContent>
             <Button
-              onClick={() => window.location.href = '/login'}
+              onClick={() => navigate('/login')}
               className="w-full"
             >
               Zum Login
