@@ -30,7 +30,6 @@ const AdminAuditLogs = lazyLoad(() => import("./pages/AdminAuditLogs"));
 const GamesMinutesManager = lazyLoad(() => import("./components/GamesMinutesManager"));
 const Impressum = lazyLoad(() => import("./pages/Impressum"));
 const Playbook = lazyLoad(() => import("./pages/Playbook"));
-const NotFound = lazyLoad(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
