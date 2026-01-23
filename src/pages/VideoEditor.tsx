@@ -42,6 +42,19 @@ const VideoEditor = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasLoadedProjectRef = useRef(false);
+  const dbPlayersRef = useRef<Player[]>([]);
+
+  // Helper to merge player lists
+  const mergePlayers = useCallback((baseList: Player[], newPlayers: Player[]) => {
+    const existingIds = new Set(baseList.map(p => p.id));
+    const existingNames = new Set(baseList.map(p => p.name));
+
+    const playersToAdd = newPlayers.filter(p =>
+      !existingIds.has(p.id) && !existingNames.has(p.name)
+    );
+
+    return [...baseList, ...playersToAdd];
+  }, []);
 
   // Hooks
   const {
@@ -90,8 +103,10 @@ const VideoEditor = () => {
     setEvents,
     setPlayers: useCallback((newPlayers) => {
       hasLoadedProjectRef.current = true;
-      setPlayers(newPlayers);
-    }, [setPlayers]),
+      // Merge loaded players with any DB players we already fetched
+      const merged = mergePlayers(newPlayers, dbPlayersRef.current);
+      setPlayers(merged);
+    }, [mergePlayers]),
     setVideoId,
     setPlaylistId
   });
@@ -99,14 +114,8 @@ const VideoEditor = () => {
   // Fetch active players from DB on mount
   useEffect(() => {
     const fetchActivePlayers = async () => {
-      // If we already loaded a project (e.g. from file or fast DB load), don't overwrite
-      if (hasLoadedProjectRef.current) return;
-
       try {
         const activePlayers = await PlayerInfoService.getActivePlayers();
-
-        // Check again before setting state
-        if (hasLoadedProjectRef.current) return;
 
         if (activePlayers && activePlayers.length > 0) {
           const mappedPlayers: Player[] = activePlayers.map(p => ({
@@ -115,7 +124,12 @@ const VideoEditor = () => {
             jerseyNumber: p.jersey_number || 0,
             position: (['Guard', 'Forward', 'Center'].includes(p.position || '') ? p.position : 'Guard') as PositionType
           }));
-          setPlayers(mappedPlayers);
+
+          // Save to ref so future project loads can use it
+          dbPlayersRef.current = mappedPlayers;
+
+          // Merge with current state immediately
+          setPlayers(current => mergePlayers(current, mappedPlayers));
         }
       } catch (error) {
         console.error('Failed to fetch active players:', error);
@@ -123,7 +137,7 @@ const VideoEditor = () => {
     };
 
     fetchActivePlayers();
-  }, []);
+  }, [mergePlayers]);
 
   // Handle URL parameters and load game data
   useEffect(() => {
