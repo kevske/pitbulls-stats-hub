@@ -260,6 +260,7 @@ const PlayerCard = memo(({ player, gameLogs = [], currentGameNumber = 0, gameFil
                 <Badge
                   variant="outline"
                   className="bg-blue-50 text-blue-600 border-blue-200 text-lg font-bold"
+                  aria-label={`Trikotnummer ${player.jerseyNumber}`}
                 >
                   #{player.jerseyNumber}
                 </Badge>
@@ -299,6 +300,7 @@ const PlayerCard = memo(({ player, gameLogs = [], currentGameNumber = 0, gameFil
               <div className="mb-4">
                 <p
                   ref={bioRef}
+                  id={`bio-${player.id}`}
                   className={`text-sm text-muted-foreground ${!isBioExpanded ? 'line-clamp-3' : ''}`}
                 >
                   {player.bio}
@@ -309,7 +311,10 @@ const PlayerCard = memo(({ player, gameLogs = [], currentGameNumber = 0, gameFil
                       e.stopPropagation();
                       setIsBioExpanded(!isBioExpanded);
                     }}
-                    className="text-xs text-blue-500 hover:text-blue-600 hover:underline mt-1 focus:outline-none"
+                    aria-expanded={isBioExpanded}
+                    aria-controls={`bio-${player.id}`}
+                    aria-label={isBioExpanded ? `Weniger über ${player.firstName} anzeigen` : `Mehr über ${player.firstName} anzeigen`}
+                    className="text-xs text-blue-500 hover:text-blue-600 hover:underline mt-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     {isBioExpanded ? 'Weniger anzeigen' : '...mehr'}
                   </button>
