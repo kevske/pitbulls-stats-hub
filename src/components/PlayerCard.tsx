@@ -5,7 +5,7 @@ import { TrendingUp, Home, Plane } from "lucide-react";
 import { PlayerGameLog, PlayerStats } from "@/types/stats";
 import { PlayerTrendIndicator } from "./PlayerTrendIndicator";
 import { useStats } from "@/contexts/StatsContext";
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, memo } from "react";
 import { getPlayerImageUrl } from "@/utils/playerUtils";
 import { calculateAge } from "@/utils/dateUtils";
 import { BASE_PATH } from "@/config";
@@ -19,7 +19,9 @@ interface PlayerCardProps {
   gameFilter?: 'all' | 'home' | 'away';
 }
 
-const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter = 'all' }: PlayerCardProps) => {
+// Wrapped in React.memo to prevent unnecessary re-renders of all cards when filtering the list (e.g. searching).
+// Props are stable references from context, so this ensures O(1) updates for unchanged items.
+const PlayerCard = memo(({ player, gameLogs = [], currentGameNumber = 0, gameFilter = 'all' }: PlayerCardProps) => {
 
   const navigate = useNavigate();
   const [isBioExpanded, setIsBioExpanded] = useState(false);
@@ -336,6 +338,8 @@ const PlayerCard = ({ player, gameLogs = [], currentGameNumber = 0, gameFilter =
       </CardContent>
     </Card>
   );
-};
+});
 
 export default PlayerCard;
+
+PlayerCard.displayName = 'PlayerCard';
