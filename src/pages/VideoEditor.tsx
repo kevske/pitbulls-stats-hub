@@ -88,10 +88,10 @@ const VideoEditor = () => {
     videoId,
     playlistId,
     setEvents,
-    setPlayers: (newPlayers) => {
+    setPlayers: useCallback((newPlayers) => {
       hasLoadedProjectRef.current = true;
       setPlayers(newPlayers);
-    },
+    }, [setPlayers]),
     setVideoId,
     setPlaylistId
   });
