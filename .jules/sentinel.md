@@ -1,0 +1,4 @@
+## 2025-02-19 - Critical: Exposed Service Role Key in Client Bundle
+**Vulnerability:** The `VITE_SUPABASE_SERVICE_KEY` was being imported in `src/lib/supabase.ts` and used to create a `supabaseAdmin` client. By prefixing the environment variable with `VITE_`, it was embedded into the client-side JavaScript bundle, exposing full administrative database access (bypassing RLS) to any user who inspected the application code.
+**Learning:** Even if an environment variable is intended for "admin" logic, if it's used in client-side code (React), it is public. `VITE_` prefix explicitly makes it public.
+**Prevention:** Never use service role keys in client-side code. If admin privileges are needed, move the logic to a server-side environment (e.g., Supabase Edge Functions, backend API) where the key can be kept secret. Use RLS policies to manage permissions for client-side operations.
