@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, memo } from "react";
 import { Link } from "react-router-dom";
 import { PlayerStats } from "@/types/stats";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,8 @@ interface StatsTableProps {
 type SortField = "name" | "games" | "points" | "threePointers" | "fouls" | "minutes" | "freeThrowPercentage" | "pointsPer40" | "threePointersPer40" | "foulsPer40";
 type SortDirection = "asc" | "desc" | null;
 
-const StatsTable = ({ players }: StatsTableProps) => {
+// Memoized to prevent re-renders when parent updates but players prop is unchanged
+const StatsTable = memo(({ players }: StatsTableProps) => {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
@@ -58,63 +59,64 @@ const StatsTable = ({ players }: StatsTableProps) => {
     return sortDirection === "asc" ? "ascending" : "descending";
   };
 
-  const playersWithStats = players;
+  // Memoize sorted/filtered players to prevent expensive recalculation on every render
+  const sortedPlayers = useMemo(() => {
+    return [...players]
+      .filter((player) => {
+        const fullName = `${player.firstName} ${player.lastName}`.toLowerCase();
+        return fullName.includes(search.toLowerCase()) ||
+          player.firstName.toLowerCase().includes(search.toLowerCase()) ||
+          player.lastName.toLowerCase().includes(search.toLowerCase());
+      })
+      .sort((a, b) => {
+        if (!sortField || !sortDirection) return 0;
 
-  const sortedPlayers = [...playersWithStats]
-    .filter((player) => {
-      const fullName = `${player.firstName} ${player.lastName}`.toLowerCase();
-      return fullName.includes(search.toLowerCase()) ||
-        player.firstName.toLowerCase().includes(search.toLowerCase()) ||
-        player.lastName.toLowerCase().includes(search.toLowerCase());
-    })
-    .sort((a, b) => {
-      if (!sortField || !sortDirection) return 0;
+        let aValue: number | string;
+        let bValue: number | string;
 
-      let aValue: number | string;
-      let bValue: number | string;
+        if (sortField === "name") {
+          aValue = `${a.firstName} ${a.lastName}`.toLowerCase();
+          bValue = `${b.firstName} ${b.lastName}`.toLowerCase();
+        } else if (sortField === "games") {
+          aValue = a.gamesPlayed;
+          bValue = b.gamesPlayed;
+        } else if (sortField === "points") {
+          aValue = a.pointsPerGame;
+          bValue = b.pointsPerGame;
+        } else if (sortField === "threePointers") {
+          aValue = a.threePointersPerGame;
+          bValue = b.threePointersPerGame;
+        } else if (sortField === "fouls") {
+          aValue = a.foulsPerGame;
+          bValue = b.foulsPerGame;
+        } else if (sortField === "minutes") {
+          aValue = a.minutesPerGame;
+          bValue = b.minutesPerGame;
+        } else if (sortField === "freeThrowPercentage") {
+          // Convert percentage string to number for proper sorting
+          aValue = parseFloat(a.freeThrowPercentage) || 0;
+          bValue = parseFloat(b.freeThrowPercentage) || 0;
+        } else if (sortField === "pointsPer40") {
+          aValue = a.pointsPer40;
+          bValue = b.pointsPer40;
+        } else if (sortField === "threePointersPer40") {
+          aValue = a.threePointersPer40;
+          bValue = b.threePointersPer40;
+        } else if (sortField === "foulsPer40") {
+          aValue = a.foulsPer40;
+          bValue = b.foulsPer40;
+        } else {
+          aValue = 0;
+          bValue = 0;
+        }
 
-      if (sortField === "name") {
-        aValue = `${a.firstName} ${a.lastName}`.toLowerCase();
-        bValue = `${b.firstName} ${b.lastName}`.toLowerCase();
-      } else if (sortField === "games") {
-        aValue = a.gamesPlayed;
-        bValue = b.gamesPlayed;
-      } else if (sortField === "points") {
-        aValue = a.pointsPerGame;
-        bValue = b.pointsPerGame;
-      } else if (sortField === "threePointers") {
-        aValue = a.threePointersPerGame;
-        bValue = b.threePointersPerGame;
-      } else if (sortField === "fouls") {
-        aValue = a.foulsPerGame;
-        bValue = b.foulsPerGame;
-      } else if (sortField === "minutes") {
-        aValue = a.minutesPerGame;
-        bValue = b.minutesPerGame;
-      } else if (sortField === "freeThrowPercentage") {
-        // Convert percentage string to number for proper sorting
-        aValue = parseFloat(a.freeThrowPercentage) || 0;
-        bValue = parseFloat(b.freeThrowPercentage) || 0;
-      } else if (sortField === "pointsPer40") {
-        aValue = a.pointsPer40;
-        bValue = b.pointsPer40;
-      } else if (sortField === "threePointersPer40") {
-        aValue = a.threePointersPer40;
-        bValue = b.threePointersPer40;
-      } else if (sortField === "foulsPer40") {
-        aValue = a.foulsPer40;
-        bValue = b.foulsPer40;
-      } else {
-        aValue = 0;
-        bValue = 0;
-      }
-
-      if (sortDirection === "asc") {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
+        if (sortDirection === "asc") {
+          return aValue > bValue ? 1 : -1;
+        } else {
+          return aValue < bValue ? 1 : -1;
+        }
+      });
+  }, [players, search, sortField, sortDirection]);
 
   const renderHeader = (label: string, field: SortField, alignCenter = true) => (
     <TableHead
@@ -189,6 +191,8 @@ const StatsTable = ({ players }: StatsTableProps) => {
       </div>
     </div>
   );
-};
+});
 
 export default StatsTable;
+
+StatsTable.displayName = 'StatsTable';
