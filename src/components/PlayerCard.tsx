@@ -131,6 +131,19 @@ const PlayerCard = memo(({ player, gameLogs = [], currentGameNumber = 0, gameFil
     navigate(`/players/${player.id}`);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Stop propagation if the event target is not the card itself (e.g. inner buttons)
+    if (e.target !== e.currentTarget) return;
+
+    if (e.key === 'Enter' || e.key === ' ') {
+      // Prevent scrolling for Space
+      if (e.key === ' ') {
+        e.preventDefault();
+      }
+      handleCardClick();
+    }
+  };
+
   const imageSrc = player.imageUrl || getPlayerImageUrl(player.firstName, player.lastName);
 
   if (isModernMode) {
@@ -142,7 +155,10 @@ const PlayerCard = memo(({ player, gameLogs = [], currentGameNumber = 0, gameFil
         whileHover={{ scale: 1.02, y: -5 }}
         whileTap={{ scale: 0.98 }}
         onClick={handleCardClick}
-        className="group relative cursor-pointer overflow-hidden rounded-[2rem] bg-card glass-card shadow-2xl transition-all duration-300"
+        onKeyDown={handleKeyDown}
+        role="button"
+        tabIndex={0}
+        className="group relative cursor-pointer overflow-hidden rounded-[2rem] bg-card glass-card shadow-2xl transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-50 group-hover:opacity-100 transition-opacity" />
 
@@ -213,8 +229,11 @@ const PlayerCard = memo(({ player, gameLogs = [], currentGameNumber = 0, gameFil
 
   return (
     <Card
-      className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border overflow-hidden"
+      className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
     >
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row">
