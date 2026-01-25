@@ -1,0 +1,4 @@
+## 2025-05-24 - Critical: Service Key Exposed in Client Bundle
+**Vulnerability:** The Supabase Service Key (Role: service_role) was explicitly bundled in the frontend application via `VITE_SUPABASE_SERVICE_KEY`.
+**Learning:** The application was designed to use a client-side password check (`VITE_ADMIN_PASSWORD`) to "protect" admin features, but then used the Service Key to bypass RLS for database writes. This meant anyone who inspected the client code could extract the Service Key and gain full administrative access to the Supabase database, bypassing all RLS policies.
+**Prevention:** NEVER bundle service keys in client-side code (variables prefixed with `VITE_`, `NEXT_PUBLIC_`, etc.). Admin operations that require the service key must be performed in a secure backend environment (Supabase Edge Functions, backend API) or RLS policies should be configured to allow specific authenticated users to perform these actions without needing the service key.
