@@ -171,8 +171,16 @@ const Games: React.FC = () => {
           {filteredGames.map((game) => (
             <Card
               key={game.gameNumber}
-              className="hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden border border-border"
+              className="hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               onClick={() => navigate(`/games/${game.gameNumber}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate(`/games/${game.gameNumber}`);
+                }
+              }}
             >
               <CardContent className="p-4 md:p-6">
                 <div className="flex flex-col md:flex-row md:gap-8">
@@ -338,16 +346,11 @@ interface ScoreProgressionChartProps {
 }
 
 const ScoreProgressionChart: React.FC<ScoreProgressionChartProps> = ({ game }) => {
-  // Hide chart if no score data is available
-  if (!game.q1Score && !game.halfTimeScore && !game.q3Score && !game.finalScore) {
-    return null;
-  }
-
   const chartData = useMemo(() => {
     const parseScore = (score: string) => {
       if (!score) return { home: 0, away: 0 };
       // Handle both '14:14' and '14 - 14' formats
-      const [home, away] = score.split(/[:\-]/).map(s => parseInt(s.trim()));
+      const [home, away] = score.split(/[:-]/).map(s => parseInt(s.trim()));
       return { home: isNaN(home) ? 0 : home, away: isNaN(away) ? 0 : away };
     };
 
@@ -382,6 +385,11 @@ const ScoreProgressionChart: React.FC<ScoreProgressionChartProps> = ({ game }) =
       }
     ];
   }, [game]);
+
+  // Hide chart if no score data is available
+  if (!game.q1Score && !game.halfTimeScore && !game.q3Score && !game.finalScore) {
+    return null;
+  }
 
   // Add starting point at 0
   const chartDataWithStart = [
