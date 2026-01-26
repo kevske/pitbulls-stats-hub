@@ -11,3 +11,7 @@
 ## 2026-01-24 - Keyboard Accessible Cards
 **Learning:** `div` elements with `onClick` are invisible to keyboard users. Simply adding `role="button"` isn't enough; they need `tabIndex` and `onKeyDown` (Enter/Space) handlers.
 **Action:** When making cards clickable, always implement full button semantics and keyboard handlers, ensuring `focus-visible` styles are present.
+
+## 2026-01-24 - Mobile Data Entry UX
+**Learning:** `inputMode="numeric"` triggers the best keyboard for data entry on mobile, but `pattern` validation applies to the formatted *value* (e.g. "20:30"), not just the keystrokes.
+**Action:** Use `inputMode="numeric"` for digit-heavy inputs, add `onFocus={(e) => e.target.select()}` for quick editing, and ensure `pattern` regex accounts for formatting characters like separators.

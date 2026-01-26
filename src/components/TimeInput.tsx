@@ -159,9 +159,13 @@ const TimeInput: React.FC<TimeInputProps> = ({
       ref={inputRef}
       id={id}
       type="text"
+      inputMode="numeric"
+      pattern="[0-9:]*"
+      autoComplete="off"
       value={displayValue}
       onChange={handleInputChange}
       onKeyDown={handleKeyDown}
+      onFocus={(e) => e.target.select()}
       placeholder={placeholder}
       disabled={disabled}
       className={`font-mono text-center ${className}`}
