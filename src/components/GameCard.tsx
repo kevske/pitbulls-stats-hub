@@ -16,6 +16,19 @@ interface GameCardProps {
 const GameCard: React.FC<GameCardProps> = React.memo(({ game, topScorers, playerMap }) => {
   const navigate = useNavigate();
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Stop propagation if the event target is not the card itself (e.g. inner buttons)
+    if (e.target !== e.currentTarget) return;
+
+    if (e.key === 'Enter' || e.key === ' ') {
+      // Prevent scrolling for Space
+      if (e.key === ' ') {
+        e.preventDefault();
+      }
+      navigate(`/games/${game.gameNumber}`);
+    }
+  };
+
   const formatGameDate = (dateString: string) => {
     try {
       // Handle different date formats from Supabase
@@ -42,8 +55,11 @@ const GameCard: React.FC<GameCardProps> = React.memo(({ game, topScorers, player
 
   return (
     <Card
-      className="hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden border border-border"
+      className="hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       onClick={() => navigate(`/games/${game.gameNumber}`)}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
     >
       <CardContent className="p-4 md:p-6">
         <div className="flex flex-col md:flex-row md:gap-8">
