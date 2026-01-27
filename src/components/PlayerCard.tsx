@@ -15,13 +15,14 @@ import { motion } from "framer-motion";
 interface PlayerCardProps {
   player: PlayerStats;
   gameLogs?: PlayerGameLog[];
+  playerLogs?: PlayerGameLog[];
   currentGameNumber?: number;
   gameFilter?: 'all' | 'home' | 'away';
 }
 
 // Wrapped in React.memo to prevent unnecessary re-renders of all cards when filtering the list (e.g. searching).
 // Props are stable references from context, so this ensures O(1) updates for unchanged items.
-const PlayerCard = memo(({ player, gameLogs = [], currentGameNumber = 0, gameFilter = 'all' }: PlayerCardProps) => {
+const PlayerCard = memo(({ player, gameLogs = [], playerLogs, currentGameNumber = 0, gameFilter = 'all' }: PlayerCardProps) => {
 
   const navigate = useNavigate();
   const [isBioExpanded, setIsBioExpanded] = useState(false);
@@ -71,8 +72,11 @@ const PlayerCard = memo(({ player, gameLogs = [], currentGameNumber = 0, gameFil
     }
 
     // Filter game logs by type
-    const playerGameLogs = gameLogs.filter(log =>
-      log.playerId === player.id &&
+    // If playerLogs is provided (O(K)), use it. Otherwise fall back to filtering all gameLogs (O(M)).
+    const logsToFilter = playerLogs || gameLogs;
+
+    const playerGameLogs = logsToFilter.filter(log =>
+      (playerLogs ? true : log.playerId === player.id) &&
       (filter === 'home' ? log.gameType === 'Heim' : log.gameType === 'Auswärts')
     );
 
@@ -107,7 +111,7 @@ const PlayerCard = memo(({ player, gameLogs = [], currentGameNumber = 0, gameFil
         ? `${Math.round((totalFreeThrowsMade / totalFreeThrowAttempts) * 100)}%`
         : ''
     };
-  }, [player, gameLogs, gameFilter]);
+  }, [player, gameLogs, playerLogs, gameFilter]);
 
   const renderStats = () => (
     <div className={`grid grid-cols-4 gap-3 text-center ${isModernMode ? 'mt-6' : ''}`}>
@@ -263,11 +267,11 @@ const PlayerCard = memo(({ player, gameLogs = [], currentGameNumber = 0, gameFil
                 <div className="flex items-center gap-2">
                   <h3 className="text-2xl font-bold text-foreground">
                     {player.firstName} {player.lastName}
-                    {currentGameNumber > 1 && gameLogs.length > 1 && (
+                    {currentGameNumber > 1 && (playerLogs || gameLogs).length > 1 && (
                       <PlayerTrendIndicator
                         playerId={player.id}
                         currentGameNumber={currentGameNumber}
-                        allGameLogs={gameLogs}
+                        playerLogs={playerLogs || gameLogs}
                         className="ml-2 -mt-1"
                       />
                     )}

@@ -20,6 +20,18 @@ const Players: React.FC = () => {
     return games.length > 0 ? Math.max(...games.map(g => g.gameNumber)) : 0;
   }, [games]);
 
+  // Pre-compute player logs map for faster lookups (O(1))
+  const playerLogsMap = useMemo(() => {
+    const map = new Map<string, typeof gameLogs>();
+    gameLogs.forEach(log => {
+      if (!map.has(log.playerId)) {
+        map.set(log.playerId, []);
+      }
+      map.get(log.playerId)!.push(log);
+    });
+    return map;
+  }, [gameLogs]);
+
   // Toggle filter function
   const toggleFilter = (filter: GameFilter) => {
     setGameFilter(current => current === filter ? 'all' : filter);
@@ -165,6 +177,7 @@ const Players: React.FC = () => {
                     key={player.id}
                     player={player}
                     gameLogs={gameLogs}
+                    playerLogs={playerLogsMap.get(player.id) || []}
                     currentGameNumber={latestGameNumber}
                     gameFilter={gameFilter === 'all' ? undefined : gameFilter}
                   />
@@ -257,6 +270,7 @@ const Players: React.FC = () => {
                       <PlayerCard
                         player={player}
                         gameLogs={gameLogs}
+                        playerLogs={playerLogsMap.get(player.id) || []}
                         currentGameNumber={latestGameNumber}
                         gameFilter={gameFilter === 'all' ? undefined : gameFilter}
                       />

@@ -6,17 +6,19 @@ import { Flame } from "lucide-react";
 interface PlayerTrendIndicatorProps {
   playerId: string;
   currentGameNumber: number;
-  allGameLogs: PlayerGameLog[];
+  playerLogs: PlayerGameLog[];
   className?: string;
 }
 
 export function PlayerTrendIndicator({
   playerId,
   currentGameNumber,
-  allGameLogs,
+  playerLogs,
   className = ""
 }: PlayerTrendIndicatorProps) {
-  const improvement = getTopImprovement(playerId, currentGameNumber, allGameLogs);
+  // We pass playerLogs (which are likely already filtered by player) to getTopImprovement.
+  // The utility function will filter by ID again, but filtering a small array is fast (O(K)).
+  const improvement = getTopImprovement(playerId, currentGameNumber, playerLogs);
 
   if (!improvement) return null;
 
