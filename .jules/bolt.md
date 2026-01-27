@@ -9,3 +9,7 @@
 ## 2025-05-22 - Games List Optimization
 **Learning:** Filtering and sorting arrays inside a map loop (O(N*M)) kills performance on lists.
 **Action:** Pre-compute lookup maps (O(N)) using useMemo before rendering.
+
+## 2026-01-27 - Players List Optimization
+**Learning:** `PlayerCard` was filtering the global `gameLogs` array for every player, causing O(N*M) complexity. This mirrors the issue previously found in `Games` list.
+**Action:** Always pre-compute data maps (e.g. `playerId -> logs[]`) in the parent component using `useMemo` and pass specific data to list items.
