@@ -56,11 +56,27 @@ export class SupabaseStatsService {
             if (videoError) {
                 console.warn('Error fetching video_projects:', videoError);
             } else if (videoProjects) {
-                // Map videos to games
-                games.forEach(game => {
-                    const gameVideos = videoProjects.filter((vp: any) => vp.tsv_game_number === game.gameNumber);
+                // Pre-group videos by game number for O(1) lookup
+                const videosByGame = new Map<number, any[]>();
+                videoProjects.forEach((vp: any) => {
+                    // Ensure tsv_game_number is treated as number to match game.gameNumber
+                    const gameNum = typeof vp.tsv_game_number === 'string'
+                        ? parseInt(vp.tsv_game_number)
+                        : vp.tsv_game_number;
 
-                    if (gameVideos.length > 0) {
+                    if (!isNaN(gameNum)) {
+                        if (!videosByGame.has(gameNum)) {
+                            videosByGame.set(gameNum, []);
+                        }
+                        videosByGame.get(gameNum)!.push(vp);
+                    }
+                });
+
+                // Map videos to games using the map
+                games.forEach(game => {
+                    const gameVideos = videosByGame.get(game.gameNumber);
+
+                    if (gameVideos && gameVideos.length > 0) {
                         // Sort by video_index
                         gameVideos.sort((a: any, b: any) => a.video_index - b.video_index);
 
@@ -134,11 +150,19 @@ export class SupabaseStatsService {
                 console.warn('Error fetching player_game_logs', logsError);
             }
 
+            // Create a map of games by game_id for O(1) lookup
+            const gamesById = new Map<string, any>();
+            if (gamesData) {
+                gamesData.forEach(game => {
+                    gamesById.set(game.game_id, game);
+                });
+            }
+
             // We need to determine game type (Heim/Auswärts) which might be missing in view or needs join
             // For now we map what we have
             const gameLogs: PlayerGameLog[] = (logsData || []).map((log: any) => {
-                // Try to find the game to determine home/away
-                const game = gamesData?.find(g => g.game_id === log.game_id);
+                // Try to find the game to determine home/away using the map
+                const game = gamesById.get(log.game_id);
                 const isHome = game?.home_team_name?.toLowerCase().includes('neuenstadt') ||
                     game?.home_team_name?.toLowerCase().includes('pitbulls');
 

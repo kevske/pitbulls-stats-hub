@@ -13,3 +13,7 @@
 ## 2026-01-27 - Players List Optimization
 **Learning:** `PlayerCard` was filtering the global `gameLogs` array for every player, causing O(N*M) complexity. This mirrors the issue previously found in `Games` list.
 **Action:** Always pre-compute data maps (e.g. `playerId -> logs[]`) in the parent component using `useMemo` and pass specific data to list items.
+
+## 2025-05-23 - Data Processing Optimization
+**Learning:** `SupabaseStatsService` was performing multiple O(N*M) nested loop joins (Games<->Videos, Games<->Logs) during data fetching, which scales poorly as data grows.
+**Action:** Use Hash Maps (O(1) lookup) for all client-side data joining operations immediately after fetching.
