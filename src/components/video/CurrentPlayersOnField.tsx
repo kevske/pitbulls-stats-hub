@@ -99,7 +99,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
     }
 
     // Start with the current players (user-selected starting five and any manual subs)
-    let activePlayers = new Set<string>();
+    const activePlayers = new Set<string>();
     const playerEntries: Record<string, number> = {};
 
     // Initialize with current players state (this preserves user-selected starting five)
@@ -293,6 +293,8 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
               size="sm"
               onClick={handleResetStartingFive}
               className="h-8 px-2"
+              aria-label="Reset lineup"
+              title="Reset lineup"
             >
               <RotateCcw className="h-3 w-3" />
             </Button>
@@ -312,16 +314,18 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
                 <p className="text-xs font-medium">Selected ({currentPlayers.length}/5):</p>
                 <div className="flex flex-wrap gap-1">
                   {currentPlayers.map(({ player }) => (
-                    <Badge
+                    <Button
                       key={player.id}
                       variant="default"
-                      className="text-xs cursor-pointer"
                       onClick={() => {
                         setCurrentPlayers(prev => prev.filter(cp => cp.player.id !== player.id));
                       }}
+                      className="text-xs h-auto py-0.5 px-2.5 rounded-full hover:bg-destructive transition-colors"
+                      aria-label={`Remove ${player.name} from lineup`}
+                      title={`Remove ${player.name}`}
                     >
                       #{player.jerseyNumber} {player.name} ×
-                    </Badge>
+                    </Button>
                   ))}
                 </div>
               </div>
