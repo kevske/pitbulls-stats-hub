@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export interface PlayerMinutesData {
   playerId: string;
@@ -160,7 +160,7 @@ export class MinutesService {
     try {
       // First, get the game info to determine which team is TSV Neuenstadt (same as in getPlayersNeedingMinutes)
       // First, get the game info to determine which team is TSV Neuenstadt (same as in getPlayersNeedingMinutes)
-      const { data: gameData, error: gameError } = await supabaseAdmin
+      const { data: gameData, error: gameError } = await supabase
         .from('games')
         .select('game_id, game_date, home_team_name, away_team_name, home_team_id, away_team_id')
         .or(`game_id.eq.${gameNumber},tsv_game_number.eq.${gameNumber}`)
@@ -182,7 +182,7 @@ export class MinutesService {
       }
 
       // Let's first check what rows actually exist for this game and team
-      const { error: checkError } = await supabaseAdmin
+      const { error: checkError } = await supabase
         .from('box_scores')
         .select('game_id, team_id, player_slug, player_first_name, player_last_name, minutes_played')
         .eq('game_id', realGameId)
@@ -198,7 +198,7 @@ export class MinutesService {
         const decimalMinutes = Math.round((seconds / 60) * 100) / 100; // Round to 2 decimal places
 
         // Check if this specific player exists
-        const { error: playerCheckError } = await supabaseAdmin
+        const { error: playerCheckError } = await supabase
           .from('box_scores')
           .select('game_id, team_id, player_slug, player_first_name, player_last_name, minutes_played')
           .eq('game_id', realGameId)
@@ -211,7 +211,7 @@ export class MinutesService {
 
         // Try the update with more detailed error handling
         try {
-          const { error, data } = await supabaseAdmin
+          const { error, data } = await supabase
             .from('box_scores')
             .update({ minutes_played: decimalMinutes })
             .eq('game_id', realGameId)
@@ -234,7 +234,7 @@ export class MinutesService {
             const derivedLastName = nameParts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') || 'Player';
 
             // NEW: Fetch better names from player_info if available (handles umlauts like Mörsch)
-            const { data: existingPlayerInfo } = await supabaseAdmin
+            const { data: existingPlayerInfo } = await supabase
               .from('player_info')
               .select('first_name, last_name')
               .eq('player_slug', playerId)
@@ -246,7 +246,7 @@ export class MinutesService {
             console.log(`Attempting update for ${playerId} using names: "${searchFirstName}" "${searchLastName}"`);
 
             // Try updating by name match (for rows with NULL player_slug)
-            const { data: nameUpdateData, error: nameUpdateError } = await supabaseAdmin
+            const { data: nameUpdateData, error: nameUpdateError } = await supabase
               .from('box_scores')
               .update({
                 minutes_played: decimalMinutes,
@@ -271,7 +271,7 @@ export class MinutesService {
               try {
                 console.log(`Update failed/matched 0 rows. Attempting Insert/Create fallback for ${playerId}`);
 
-                let { data: playerInfo } = await supabaseAdmin
+                const { data: playerInfo } = await supabase
                   .from('player_info')
                   .select('first_name, last_name, player_slug')
                   .eq('player_slug', playerId)
@@ -282,7 +282,7 @@ export class MinutesService {
                   // We should CREATE them in player_info so they are known for future games
                   console.log(`Player ${playerId} not found in player_info. Creating...`);
 
-                  const { error: createPlayerError } = await supabaseAdmin
+                  const { error: createPlayerError } = await supabase
                     .from('player_info')
                     .insert({
                       player_slug: playerId,
@@ -299,13 +299,13 @@ export class MinutesService {
                   }
                 }
 
-                const { data: finalPlayerInfo } = await supabaseAdmin
+                const { data: finalPlayerInfo } = await supabase
                   .from('player_info')
                   .select('first_name, last_name')
                   .eq('player_slug', playerId)
                   .maybeSingle();
 
-                const { error: insertError } = await supabaseAdmin
+                const { error: insertError } = await supabase
                   .from('box_scores')
                   .insert({
                     game_id: realGameId,
