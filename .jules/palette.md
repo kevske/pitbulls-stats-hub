@@ -15,3 +15,7 @@
 ## 2026-01-24 - Mobile Data Entry UX
 **Learning:** `inputMode="numeric"` triggers the best keyboard for data entry on mobile, but `pattern` validation applies to the formatted *value* (e.g. "20:30"), not just the keystrokes.
 **Action:** Use `inputMode="numeric"` for digit-heavy inputs, add `onFocus={(e) => e.target.select()}` for quick editing, and ensure `pattern` regex accounts for formatting characters like separators.
+
+## 2026-03-01 - Empty States UX
+**Learning:** Returning `null` or an empty `div` for filtered lists leaves users confused about whether the app is broken or just empty.
+**Action:** Always provide an explicit "Empty State" component with an icon and helpful text that suggests how to recover (e.g., "Adjust filters").
