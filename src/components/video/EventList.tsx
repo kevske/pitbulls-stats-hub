@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Clock } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback, memo } from 'react';
 import { cn } from '@/lib/utils';
 
 interface EventListProps {
@@ -16,13 +16,73 @@ interface EventListProps {
   scrollAreaClassName?: string;
 }
 
+interface EventItemProps {
+  event: TaggedEvent;
+  showIndicator: boolean;
+  currentTime: number;
+  onSeek: (timestamp: number) => void;
+  onDelete?: (id: string) => void;
+  index: number;
+}
+
+const EventItem = memo(({ event, showIndicator, currentTime, onSeek, onDelete, index }: EventItemProps) => {
+  const template = EVENT_TEMPLATES.find(t => t.type === event.type);
+
+  return (
+    <div>
+      {/* Current Time Indicator */}
+      {showIndicator && (
+        <div
+          className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/30 my-1"
+          data-current-time-indicator
+        >
+          <Clock className="h-3 w-3 text-primary" />
+          <span className="font-mono text-xs text-primary font-semibold">
+            NOW: {formatTime(currentTime)}
+          </span>
+          <div className="flex-1 h-0.5 bg-gradient-to-r from-primary/50 to-transparent"></div>
+        </div>
+      )}
+
+      {/* Event */}
+      <div
+        className="flex items-start gap-2 p-2 rounded-lg hover:bg-accent/50 group transition-colors"
+        data-event-index={index}
+      >
+        <button
+          onClick={() => onSeek(event.timestamp)}
+          className="font-mono text-xs text-primary hover:underline cursor-pointer bg-primary/10 px-2 py-1 rounded flex-shrink-0"
+        >
+          {event.formattedTime}
+        </button>
+        <span className="text-base flex-shrink-0">{template?.icon}</span>
+        <span className="flex-1 text-sm leading-relaxed">{event.description}</span>
+        {onDelete && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-100 transition-opacity hover:bg-destructive/10 flex-shrink-0"
+            onClick={() => onDelete(event.id)}
+            title="Delete event"
+          >
+            <Trash2 className="h-3 w-3 text-destructive" />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+});
+
+EventItem.displayName = 'EventItem';
+
 export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0, className, scrollAreaClassName }: EventListProps) {
-  const sortedEvents = [...events].sort((a, b) => a.timestamp - b.timestamp);
+  const sortedEvents = useMemo(() => [...events].sort((a, b) => a.timestamp - b.timestamp), [events]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [startEarly, setStartEarly] = useState(false);
+  const lastPositionRef = useRef<number>(-1);
 
   // Find where to insert the current time indicator
-  const getCurrentTimePosition = () => {
+  const getCurrentTimePosition = useCallback(() => {
     if (sortedEvents.length === 0) return 0;
 
     for (let i = 0; i < sortedEvents.length; i++) {
@@ -31,47 +91,60 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0, cl
       }
     }
     return sortedEvents.length; // After all events
-  };
+  }, [sortedEvents, currentTime]);
 
   // Smart scrolling: keep 2 previous and 3 following events visible without centering
   useEffect(() => {
     if (scrollAreaRef.current && sortedEvents.length > 0) {
       const position = getCurrentTimePosition();
+
+      // Optimization: Only run DOM queries and scrolling if the position index has changed
+      // This prevents expensive operations on every frame of video playback
+      if (position === lastPositionRef.current) {
+        return;
+      }
+
+      lastPositionRef.current = position;
+
       const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
 
       if (viewport) {
         // Calculate the target element to scroll to (2 events before current position)
         const targetIndex = Math.max(0, position - 2);
-        const allEventElements = scrollAreaRef.current.querySelectorAll('[data-event-index]');
-        const targetElement = allEventElements[targetIndex] as HTMLElement;
 
-        if (targetElement && viewport instanceof HTMLElement) {
-          setTimeout(() => {
-            // Get the position of the target element relative to the viewport
-            const elementRect = targetElement.getBoundingClientRect();
-            const viewportRect = viewport.getBoundingClientRect();
-            const scrollTop = viewport.scrollTop;
+        // Use requestAnimationFrame for smoother UI during playback
+        requestAnimationFrame(() => {
+            const allEventElements = scrollAreaRef.current?.querySelectorAll('[data-event-index]');
+            if (!allEventElements) return;
 
-            // Calculate the desired scroll position: position the element at the top
-            const elementTopRelativeToViewport = elementRect.top - viewportRect.top + scrollTop;
+            const targetElement = allEventElements[targetIndex] as HTMLElement;
 
-            // Scroll to position the target element at the top of the viewport
-            viewport.scrollTo({
-              top: elementTopRelativeToViewport,
-              behavior: 'smooth'
-            });
-          }, 100);
-        }
+            if (targetElement && viewport instanceof HTMLElement) {
+              // Get the position of the target element relative to the viewport
+              const elementRect = targetElement.getBoundingClientRect();
+              const viewportRect = viewport.getBoundingClientRect();
+              const scrollTop = viewport.scrollTop;
+
+              // Calculate the desired scroll position: position the element at the top
+              const elementTopRelativeToViewport = elementRect.top - viewportRect.top + scrollTop;
+
+              // Scroll to position the target element at the top of the viewport
+              viewport.scrollTo({
+                top: elementTopRelativeToViewport,
+                behavior: 'smooth'
+              });
+            }
+        });
       }
     }
-  }, [currentTime]);
+  }, [getCurrentTimePosition, sortedEvents.length]); // Dependencies: updates when time changes (via getCurrentTimePosition) or list length changes
 
-  const handleSeek = (timestamp: number) => {
+  const handleSeek = useCallback((timestamp: number) => {
     if (onSeekTo) {
       const seekTime = startEarly ? Math.max(0, timestamp - 5) : timestamp;
       onSeekTo(seekTime);
     }
-  };
+  }, [onSeekTo, startEarly]);
 
   if (events.length === 0) {
     return (
@@ -81,6 +154,8 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0, cl
       </Card>
     );
   }
+
+  const currentPosition = getCurrentTimePosition();
 
   return (
     <Card className={cn("bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden", className)}>
@@ -103,56 +178,21 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0, cl
       <ScrollArea ref={scrollAreaRef} className={cn("h-[300px]", scrollAreaClassName)}>
         <div className="p-2 space-y-1">
           {sortedEvents.map((event, index) => {
-            const template = EVENT_TEMPLATES.find(t => t.type === event.type);
-            const shouldShowIndicator = index === getCurrentTimePosition();
-
             return (
-              <div key={event.id}>
-                {/* Current Time Indicator */}
-                {shouldShowIndicator && (
-                  <div
-                    className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/30 my-1"
-                    data-current-time-indicator
-                  >
-                    <Clock className="h-3 w-3 text-primary" />
-                    <span className="font-mono text-xs text-primary font-semibold">
-                      NOW: {formatTime(currentTime)}
-                    </span>
-                    <div className="flex-1 h-0.5 bg-gradient-to-r from-primary/50 to-transparent"></div>
-                  </div>
-                )}
-
-                {/* Event */}
-                <div
-                  className="flex items-start gap-2 p-2 rounded-lg hover:bg-accent/50 group transition-colors"
-                  data-event-index={index}
-                >
-                  <button
-                    onClick={() => handleSeek(event.timestamp)}
-                    className="font-mono text-xs text-primary hover:underline cursor-pointer bg-primary/10 px-2 py-1 rounded flex-shrink-0"
-                  >
-                    {event.formattedTime}
-                  </button>
-                  <span className="text-base flex-shrink-0">{template?.icon}</span>
-                  <span className="flex-1 text-sm leading-relaxed">{event.description}</span>
-                  {onDeleteEvent && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-100 transition-opacity hover:bg-destructive/10 flex-shrink-0"
-                      onClick={() => onDeleteEvent(event.id)}
-                      title="Delete event"
-                    >
-                      <Trash2 className="h-3 w-3 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-              </div>
+              <EventItem
+                key={event.id}
+                event={event}
+                showIndicator={index === currentPosition}
+                currentTime={currentTime}
+                onSeek={handleSeek}
+                onDelete={onDeleteEvent}
+                index={index}
+              />
             );
           })}
 
           {/* Current Time Indicator at the end if after all events */}
-          {sortedEvents.length > 0 && getCurrentTimePosition() === sortedEvents.length && (
+          {sortedEvents.length > 0 && currentPosition === sortedEvents.length && (
             <div
               className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/30 my-1"
               data-current-time-indicator
