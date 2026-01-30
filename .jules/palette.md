@@ -15,3 +15,7 @@
 ## 2026-01-24 - Mobile Data Entry UX
 **Learning:** `inputMode="numeric"` triggers the best keyboard for data entry on mobile, but `pattern` validation applies to the formatted *value* (e.g. "20:30"), not just the keystrokes.
 **Action:** Use `inputMode="numeric"` for digit-heavy inputs, add `onFocus={(e) => e.target.select()}` for quick editing, and ensure `pattern` regex accounts for formatting characters like separators.
+
+## 2026-01-25 - Empty States in Data Tables
+**Learning:** Users searching for non-existent items in a table often confuse "no results" with a system failure or loading state if no explicit feedback is provided.
+**Action:** Always implement a dedicated empty state row in tables that spans all columns, using a clear icon and message to confirm the system performed the search successfully but found nothing.
