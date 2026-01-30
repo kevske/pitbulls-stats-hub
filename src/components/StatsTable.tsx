@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface StatsTableProps {
@@ -162,30 +162,41 @@ const StatsTable = memo(({ players }: StatsTableProps) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedPlayers.map((player) => (
-              <TableRow key={player.id} className="hover:bg-accent/50">
-                <TableCell className="font-medium text-foreground">
-                  <div className="flex flex-col">
-                    <Link
-                      to={`/players/${player.id}`}
-                      className="text-blue-600 hover:underline hover:text-blue-800 transition-colors"
-                    >
-                      {player.firstName} {player.lastName}
-                    </Link>
-                    <span className="text-xs text-muted-foreground">{player.position || 'Position nicht angegeben'}</span>
+            {sortedPlayers.length > 0 ? (
+              sortedPlayers.map((player) => (
+                <TableRow key={player.id} className="hover:bg-accent/50">
+                  <TableCell className="font-medium text-foreground">
+                    <div className="flex flex-col">
+                      <Link
+                        to={`/players/${player.id}`}
+                        className="text-blue-600 hover:underline hover:text-blue-800 transition-colors"
+                      >
+                        {player.firstName} {player.lastName}
+                      </Link>
+                      <span className="text-xs text-muted-foreground">{player.position || 'Position nicht angegeben'}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">{player.gamesPlayed}</TableCell>
+                  <TableCell className="text-center font-semibold">{player.pointsPerGame.toFixed(1)}</TableCell>
+                  <TableCell className="text-center">{player.threePointersPerGame.toFixed(1)}</TableCell>
+                  <TableCell className="text-center">{player.foulsPerGame.toFixed(1)}</TableCell>
+                  <TableCell className="text-center">{player.minutesPerGame.toFixed(1)}</TableCell>
+                  <TableCell className="text-center">{player.freeThrowPercentage || '-'}</TableCell>
+                  <TableCell className="text-center">{player.pointsPer40?.toFixed(1) || '-'}</TableCell>
+                  <TableCell className="text-center">{player.threePointersPer40?.toFixed(1) || '-'}</TableCell>
+                  <TableCell className="text-center">{player.foulsPer40?.toFixed(1) || '-'}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={10} className="h-24 text-center">
+                  <div className="flex flex-col items-center justify-center text-muted-foreground py-6">
+                    <Search className="h-8 w-8 mb-2 opacity-50" />
+                    <p>Keine Spieler gefunden</p>
                   </div>
                 </TableCell>
-                <TableCell className="text-center">{player.gamesPlayed}</TableCell>
-                <TableCell className="text-center font-semibold">{player.pointsPerGame.toFixed(1)}</TableCell>
-                <TableCell className="text-center">{player.threePointersPerGame.toFixed(1)}</TableCell>
-                <TableCell className="text-center">{player.foulsPerGame.toFixed(1)}</TableCell>
-                <TableCell className="text-center">{player.minutesPerGame.toFixed(1)}</TableCell>
-                <TableCell className="text-center">{player.freeThrowPercentage || '-'}</TableCell>
-                <TableCell className="text-center">{player.pointsPer40?.toFixed(1) || '-'}</TableCell>
-                <TableCell className="text-center">{player.threePointersPer40?.toFixed(1) || '-'}</TableCell>
-                <TableCell className="text-center">{player.foulsPer40?.toFixed(1) || '-'}</TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
