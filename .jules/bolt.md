@@ -17,3 +17,7 @@
 ## 2025-05-23 - Data Processing Optimization
 **Learning:** `SupabaseStatsService` was performing multiple O(N*M) nested loop joins (Games<->Videos, Games<->Logs) during data fetching, which scales poorly as data grows.
 **Action:** Use Hash Maps (O(1) lookup) for all client-side data joining operations immediately after fetching.
+
+## 2025-05-24 - Utility Functions Performance
+**Learning:** Utility functions like `getTopTrendingPlayers` might contain hidden O(N*M) loops.
+**Action:** Inspect utility functions for performance bottlenecks before using them in critical paths, or refactor them to accept pre-computed maps.
