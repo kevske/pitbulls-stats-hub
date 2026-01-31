@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 interface PasswordProtectionProps {
-  onSuccess: () => void;
-  correctPassword: string;
+  onSuccess: (password?: string) => void;
+  correctPassword?: string; // Optional - if not provided, validation happens server-side
 }
 
 const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionProps) => {
@@ -18,11 +18,11 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('videos-authenticated');
     const authTime = localStorage.getItem('videos-auth-time');
-    
+
     if (isAuthenticated === 'true' && authTime) {
       const authTimestamp = parseInt(authTime);
       const now = Date.now();
-      
+
       // Check if authentication is still valid (24 hours)
       if (now - authTimestamp < 24 * 60 * 60 * 1000) {
         console.log('Videos page: Found valid authentication in localStorage');
@@ -57,29 +57,40 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
       return;
     }
 
-    if (password === correctPassword) {
-      toast.success("Zugriff gewährt!");
-      
-      // Store authentication in localStorage
-      localStorage.setItem('videos-authenticated', 'true');
-      localStorage.setItem('videos-auth-time', Date.now().toString());
-      console.log('Videos page: Authentication stored in localStorage');
-      
-      onSuccess();
-    } else {
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
+    // If correctPassword is provided, validate client-side (legacy behavior)
+    // If not provided, pass password to callback for server-side validation
+    if (correctPassword !== undefined) {
+      if (password === correctPassword) {
+        toast.success("Zugriff gewährt!");
 
-      if (newAttempts >= 4) {
-        setIsLocked(true);
-        toast.error("Zu viele Fehlversuche. Zugriff gesperrt.");
+        // Store authentication in localStorage
+        localStorage.setItem('videos-authenticated', 'true');
+        localStorage.setItem('videos-auth-time', Date.now().toString());
+        console.log('Videos page: Authentication stored in localStorage');
+
+        onSuccess(password);
       } else {
-        const waitTimes = [5, 10, 20];
-        const wait = waitTimes[newAttempts - 1];
-        setWaitTime(wait);
-        toast.error(`Falsches Passwort. Bitte warten Sie ${wait} Sekunden.`);
+        const newAttempts = attempts + 1;
+        setAttempts(newAttempts);
+
+        if (newAttempts >= 4) {
+          setIsLocked(true);
+          toast.error("Zu viele Fehlversuche. Zugriff gesperrt.");
+        } else {
+          const waitTimes = [5, 10, 20];
+          const wait = waitTimes[newAttempts - 1];
+          setWaitTime(wait);
+          toast.error(`Falsches Passwort. Bitte warten Sie ${wait} Sekunden.`);
+        }
+        setPassword("");
       }
-      setPassword("");
+    } else {
+      // Server-side validation mode - pass password to callback
+      // Store the password for later use, don't validate here
+      localStorage.setItem('admin-password', password);
+      localStorage.setItem('admin-auth-time', Date.now().toString());
+      toast.success("Zugriff gewährt!");
+      onSuccess(password);
     }
   };
 
@@ -108,8 +119,8 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
           {waitTime > 0
             ? `Warten (${waitTime}s)`
             : isLocked
-            ? "Gesperrt"
-            : "Zugriff"}
+              ? "Gesperrt"
+              : "Zugriff"}
         </Button>
       </form>
       {attempts > 0 && !isLocked && (

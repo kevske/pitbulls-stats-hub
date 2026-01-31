@@ -83,7 +83,7 @@ const Videos = () => {
         <div className="container mx-auto max-w-4xl">
           <PasswordProtection
             onSuccess={() => setHasAccess(true)}
-            correctPassword={import.meta.env.VITE_ADMIN_PASSWORD}
+          // No correctPassword prop - validation can happen server-side if needed
           />
         </div>
       </Layout>

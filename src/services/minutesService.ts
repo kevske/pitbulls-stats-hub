@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export interface PlayerMinutesData {
   playerId: string;
@@ -156,185 +156,38 @@ export class MinutesService {
   }
 
   // Update seconds for multiple players in a game
-  static async updatePlayerMinutes(gameNumber: number, playerSeconds: Array<{ playerId: string, seconds: number }>): Promise<boolean> {
+  // Now uses Edge Function for secure admin operations
+  static async updatePlayerMinutes(
+    gameNumber: number,
+    playerSeconds: Array<{ playerId: string, seconds: number }>,
+    adminPassword: string
+  ): Promise<boolean> {
     try {
-      // First, get the game info to determine which team is TSV Neuenstadt (same as in getPlayersNeedingMinutes)
-      // First, get the game info to determine which team is TSV Neuenstadt (same as in getPlayersNeedingMinutes)
-      const { data: gameData, error: gameError } = await supabaseAdmin
-        .from('games')
-        .select('game_id, game_date, home_team_name, away_team_name, home_team_id, away_team_id')
-        .or(`game_id.eq.${gameNumber},tsv_game_number.eq.${gameNumber}`)
-        .limit(1)
-        .maybeSingle();
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      if (gameError) throw gameError;
-      if (!gameData) throw new Error(`Game not found: ${gameNumber}`);
+      const response = await fetch(`${supabaseUrl}/functions/v1/admin-update-minutes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseAnonKey}`
+        },
+        body: JSON.stringify({
+          gameNumber,
+          playerSeconds,
+          adminPassword
+        })
+      });
 
-      const realGameId = gameData.game_id;
+      const result = await response.json();
 
-      // Determine which team ID represents TSV Neuenstadt
-      const isTSVNeuenstadtHome = gameData.home_team_name?.toLowerCase().includes('neuenstadt');
-      const tsvNeuenstadtTeamId = isTSVNeuenstadtHome ? gameData.home_team_id : gameData.away_team_id;
-
-      if (!tsvNeuenstadtTeamId) {
-        console.error('Could not determine TSV Neuenstadt team ID for game:', gameNumber);
-        throw new Error('Could not determine team ID for update');
+      if (!response.ok) {
+        console.error('Edge function error:', result);
+        throw new Error(result.message || result.error || 'Failed to update minutes');
       }
 
-      // Let's first check what rows actually exist for this game and team
-      const { error: checkError } = await supabaseAdmin
-        .from('box_scores')
-        .select('game_id, team_id, player_slug, player_first_name, player_last_name, minutes_played')
-        .eq('game_id', realGameId)
-        .eq('team_id', tsvNeuenstadtTeamId);
-
-      if (checkError) {
-        console.error('Error checking existing rows:', checkError);
-      }
-
-      // Update each player's minutes individually (convert seconds to decimal for database)
-      for (const { playerId, seconds } of playerSeconds) {
-        // Use precise conversion to avoid floating point issues
-        const decimalMinutes = Math.round((seconds / 60) * 100) / 100; // Round to 2 decimal places
-
-        // Check if this specific player exists
-        const { error: playerCheckError } = await supabaseAdmin
-          .from('box_scores')
-          .select('game_id, team_id, player_slug, player_first_name, player_last_name, minutes_played')
-          .eq('game_id', realGameId)
-          .eq('team_id', tsvNeuenstadtTeamId)
-          .eq('player_slug', playerId);
-
-        if (playerCheckError) {
-          console.error(`Error checking player ${playerId}:`, playerCheckError);
-        }
-
-        // Try the update with more detailed error handling
-        try {
-          const { error, data } = await supabaseAdmin
-            .from('box_scores')
-            .update({ minutes_played: decimalMinutes })
-            .eq('game_id', realGameId)
-            .eq('team_id', tsvNeuenstadtTeamId)
-            .eq('player_slug', playerId)
-            .select();
-
-          if (error) {
-            console.error('Error updating player:', playerId, error);
-            throw error;
-          }
-
-          if (!data || data.length === 0) {
-            console.warn(`No rows updated for player ${playerId} - attempting UPDATE by name or INSERT`);
-
-            // The playerId might be a generated slug (e.g. "max-mustermann") that doesn't match DB
-            // Try to find existing row by matching first/last name derived from slug
-            const nameParts = playerId.split('-');
-            const derivedFirstName = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : 'Unknown';
-            const derivedLastName = nameParts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') || 'Player';
-
-            // NEW: Fetch better names from player_info if available (handles umlauts like Mörsch)
-            const { data: existingPlayerInfo } = await supabaseAdmin
-              .from('player_info')
-              .select('first_name, last_name')
-              .eq('player_slug', playerId)
-              .maybeSingle();
-
-            const searchFirstName = existingPlayerInfo?.first_name || derivedFirstName;
-            const searchLastName = existingPlayerInfo?.last_name || derivedLastName;
-
-            console.log(`Attempting update for ${playerId} using names: "${searchFirstName}" "${searchLastName}"`);
-
-            // Try updating by name match (for rows with NULL player_slug)
-            const { data: nameUpdateData, error: nameUpdateError } = await supabaseAdmin
-              .from('box_scores')
-              .update({
-                minutes_played: decimalMinutes,
-                player_slug: playerId // Also set the slug so future updates work
-              })
-              .eq('game_id', realGameId)
-              .eq('team_id', tsvNeuenstadtTeamId)
-              .ilike('player_first_name', searchFirstName)
-              .ilike('player_last_name', searchLastName)
-              .is('player_slug', null)
-              .select();
-
-            if (nameUpdateError) {
-              console.error('Name-based update failed:', nameUpdateError);
-            }
-
-            if (nameUpdateData && nameUpdateData.length > 0) {
-              console.log(`Updated player ${playerId} by name match, also set player_slug`);
-            } else {
-              // If still no match, we need to INSERT a new row.
-              // BUT FIRST: Ensure the player exists in player_info
-              try {
-                console.log(`Update failed/matched 0 rows. Attempting Insert/Create fallback for ${playerId}`);
-
-                let { data: playerInfo } = await supabaseAdmin
-                  .from('player_info')
-                  .select('first_name, last_name, player_slug')
-                  .eq('player_slug', playerId)
-                  .maybeSingle();
-
-                if (!playerInfo) {
-                  // Player doesn't exist in player_info (e.g. "Markus Maurer" or "Nino de Bortoli" with new slug)
-                  // We should CREATE them in player_info so they are known for future games
-                  console.log(`Player ${playerId} not found in player_info. Creating...`);
-
-                  const { error: createPlayerError } = await supabaseAdmin
-                    .from('player_info')
-                    .insert({
-                      player_slug: playerId,
-                      first_name: derivedFirstName,
-                      last_name: derivedLastName,
-                      is_active: true // Default to active
-                    });
-
-                  if (createPlayerError) {
-                    console.error('Error creating new player in player_info:', createPlayerError);
-                    // Fallback: don't crash, just try inserting box_score with raw names
-                  } else {
-                    console.log(`Created new player ${derivedFirstName} ${derivedLastName} (${playerId})`);
-                  }
-                }
-
-                const { data: finalPlayerInfo } = await supabaseAdmin
-                  .from('player_info')
-                  .select('first_name, last_name')
-                  .eq('player_slug', playerId)
-                  .maybeSingle();
-
-                const { error: insertError } = await supabaseAdmin
-                  .from('box_scores')
-                  .insert({
-                    game_id: realGameId,
-                    team_id: tsvNeuenstadtTeamId,
-                    player_slug: playerId,
-                    player_first_name: finalPlayerInfo?.first_name || derivedFirstName,
-                    player_last_name: finalPlayerInfo?.last_name || derivedLastName,
-                    minutes_played: decimalMinutes,
-                    points: 0
-                  });
-
-                if (insertError) {
-                  console.error('Insert failed for player:', playerId, insertError);
-                  // Do NOT throw here, so other players can save
-                  // throw insertError; 
-                }
-              } catch (fallbackError) {
-                console.error('Fallback operation failed for player:', playerId, fallbackError);
-                // Swallow error to allow partial success
-              }
-            }
-          }
-        } catch (updateError) {
-          console.error(`Update/Insert failed for player ${playerId}:`, updateError);
-          throw updateError;
-        }
-      }
-
-      return true;
+      console.log('Update result:', result);
+      return result.success !== false;
     } catch (error) {
       console.error('=== SAVE OPERATION FAILED ===', error);
       throw error;

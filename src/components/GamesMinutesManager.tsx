@@ -15,6 +15,7 @@ interface GamesMinutesManagerProps {
 
 const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber }) => {
   const [hasAccess, setHasAccess] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
   const { gameNumber: paramGameNumber } = useParams<{ gameNumber: string }>();
   const [selectedGame, setSelectedGame] = useState<number | null>(
     gameNumber || (paramGameNumber ? parseInt(paramGameNumber) : null)
@@ -55,8 +56,11 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
       <Layout>
         <div className="container mx-auto max-w-4xl">
           <PasswordProtection
-            onSuccess={() => setHasAccess(true)}
-            correctPassword={import.meta.env.VITE_ADMIN_PASSWORD}
+            onSuccess={(password) => {
+              setAdminPassword(password || '');
+              setHasAccess(true);
+            }}
+          // No correctPassword prop - validation happens server-side
           />
         </div>
       </Layout>
@@ -105,6 +109,7 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
           <MinutesPlayedInput
             gameNumber={selectedGame}
             onSuccess={handleSuccess}
+            adminPassword={adminPassword}
           />
         </div>
       </Layout>
