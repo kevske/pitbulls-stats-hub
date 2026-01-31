@@ -17,3 +17,7 @@
 ## 2025-05-23 - Data Processing Optimization
 **Learning:** `SupabaseStatsService` was performing multiple O(N*M) nested loop joins (Games<->Videos, Games<->Logs) during data fetching, which scales poorly as data grows.
 **Action:** Use Hash Maps (O(1) lookup) for all client-side data joining operations immediately after fetching.
+
+## 2025-05-24 - Video Sync Layout Thrashing
+**Learning:** Components synced to video playback (receiving `currentTime` props) can trigger layout thrashing if they query the DOM or scroll on every frame update, even if the visual state hasn't changed.
+**Action:** Track the logical position (e.g., active index) in a ref and only trigger DOM updates/scrolling when the logical position actually changes, wrapping the DOM manipulation in `requestAnimationFrame`.
