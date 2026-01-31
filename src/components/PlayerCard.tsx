@@ -122,7 +122,7 @@ const PlayerCard = memo(({ player, gameLogs = [], playerLogs, currentGameNumber 
         { val: filteredStats.fouls, label: 'FLS' }
       ].map((stat, i) => (
         <div key={i} className={isModernMode ? 'p-2 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm' : ''}>
-          <p className={`text-xl font-bold ${isModernMode ? 'text-white' : 'text-primary'}`}>{stat.val}</p>
+          <p className={`text-xl font-bold ${isModernMode ? 'text-white' : 'text-primary'}`}>{typeof stat.val === 'number' ? stat.val.toFixed(1) : stat.val}</p>
           <p className={`text-xs ${isModernMode ? 'text-white/40 font-medium' : 'text-muted-foreground'}`}>{stat.label}</p>
         </div>
       ))}
@@ -221,7 +221,7 @@ const PlayerCard = memo(({ player, gameLogs = [], playerLogs, currentGameNumber 
             <div className="mt-6 flex items-center justify-between text-[11px] font-bold text-white/40 uppercase tracking-widest">
               <div className="flex items-center gap-2">
                 <div className="h-1 w-8 bg-primary rounded-full" />
-                <span>{filteredStats.minutesPlayed} MIN</span>
+                <span>{typeof filteredStats.minutesPlayed === 'number' ? filteredStats.minutesPlayed.toFixed(1) : filteredStats.minutesPlayed} MIN</span>
               </div>
               <span>{filteredStats.gamesPlayed} SPIELE</span>
             </div>
@@ -351,7 +351,7 @@ const PlayerCard = memo(({ player, gameLogs = [], playerLogs, currentGameNumber 
               {renderStats()}
               <div className="mt-2 text-center space-y-1">
                 <p className="text-sm text-muted-foreground">
-                  ⏱️ {filteredStats.minutesPlayed} Min/Spiel
+                  ⏱️ {typeof filteredStats.minutesPlayed === 'number' ? filteredStats.minutesPlayed.toFixed(1) : filteredStats.minutesPlayed} Min/Spiel
                   {filteredStats.gamesPlayed > 0 && ` (${filteredStats.gamesPlayed} Spiele)`}
                 </p>
                 {filteredStats.freeThrowPercentage && (
