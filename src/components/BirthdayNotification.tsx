@@ -25,14 +25,12 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
   const birthdayInfos = useMemo(() => {
     const today = new Date();
     const currentYear = today.getFullYear();
-    // Debug logging
-    console.log('BirthdayCheck: Checking players', players.length, 'Today:', today);
 
     const results = players
       .filter(player => player.birthDate && player.firstName !== 'Gesamtsumme')
       .map(player => {
         // Debug individual player
-        console.log(`Checking ${player.firstName} ${player.lastName}: ${player.birthDate}`);
+        // console.log(`Checking ${player.firstName} ${player.lastName}: ${player.birthDate}`);
 
         if (!player.birthDate) return null;
 
@@ -114,7 +112,6 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
       )
       .sort((a, b) => Math.abs(a.daysUntil) - Math.abs(b.daysUntil));
 
-    console.log('BirthdayCheck: Found birthdays:', results);
     return results;
   }, [players]);
 
@@ -135,19 +132,19 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
     );
 
     if (daysUntil === 0) {
-      return <>🎉 Heute feiert {playerLink} seinen {age}. Geburtstag! Alles Gute zum Geburtstag! 🎂</>;
+      return <>Heute feiert {playerLink} seinen {age}. Geburtstag! Alles Gute zum Geburtstag!</>;
     } else if (daysUntil > 0) {
       if (daysUntil === 1) {
-        return <>🎈 Morgen feiert {playerLink} seinen {age}. Geburtstag!</>;
+        return <>Morgen feiert {playerLink} seinen {age}. Geburtstag!</>;
       } else {
-        return <>📅 In {daysUntil} Tagen feiert {playerLink} seinen {age}. Geburtstag!</>;
+        return <>In {daysUntil} Tagen feiert {playerLink} seinen {age}. Geburtstag!</>;
       }
     } else {
       const daysAgo = Math.abs(daysUntil);
       if (daysAgo === 1) {
-        return <>🎊 Gestern hat {playerLink} seinen {age}. Geburtstag gefeiert! Nachträglich alles Gute! 🎁</>;
+        return <>Gestern hat {playerLink} seinen {age}. Geburtstag gefeiert! Nachträglich alles Gute!</>;
       } else {
-        return <>💫 Vor {daysAgo} Tagen hat {playerLink} seinen {age}. Geburtstag gefeiert!</>;
+        return <>Vor {daysAgo} Tagen hat {playerLink} seinen {age}. Geburtstag gefeiert!</>;
       }
     }
   };
@@ -182,9 +179,8 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
           <div className="flex justify-between items-start mb-3">
             <div className="flex items-center gap-2">
               {getBirthdayIcon(birthdayInfos[0].daysUntil)}
-              {getBirthdayIcon(birthdayInfos[0].daysUntil)}
               <h3 className="font-bold text-lg">
-                {birthdayInfos.some(info => info.daysUntil === 0) ? '🎉 Geburtstage heute!' : '📅 Geburtstage'}
+                {birthdayInfos.some(info => info.daysUntil === 0) ? 'Geburtstage heute!' : 'Geburtstage'}
               </h3>
             </div>
             <Button
