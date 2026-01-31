@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { differenceInCalendarDays, setYear } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { X, Cake, Gift, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,34 +25,81 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
   const birthdayInfos = useMemo(() => {
     const today = new Date();
     const currentYear = today.getFullYear();
-    const currentDayOfYear = Math.floor((today.getTime() - new Date(currentYear, 0, 0).getTime()) / 86400000);
 
-    return players
+    const results = players
       .filter(player => player.birthDate && player.firstName !== 'Gesamtsumme')
       .map(player => {
-        const birthDate = new Date(player.birthDate);
-        if (isNaN(birthDate.getTime())) return null;
+        // Debug individual player
+        // console.log(`Checking ${player.firstName} ${player.lastName}: ${player.birthDate}`);
 
-        // Create birthday for current year
-        const thisYearBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
-        const thisYearDayOfYear = Math.floor((thisYearBirthday.getTime() - new Date(currentYear, 0, 0).getTime()) / 86400000);
+        if (!player.birthDate) return null;
 
-        // Calculate days difference (wrap around for year end)
-        let daysUntil = thisYearDayOfYear - currentDayOfYear;
-        if (daysUntil < -182) {
-          // Birthday was more than half a year ago, count towards next year
-          daysUntil += 365;
-        } else if (daysUntil > 182) {
-          // Birthday is more than half a year away, count from previous year
-          daysUntil -= 365;
+        // Handle potential German date format DD.MM.YYYY
+        let birthDate: Date;
+        if (player.birthDate.includes('.')) {
+          const parts = player.birthDate.split('.');
+          // Assuming DD.MM.YYYY
+          if (parts.length === 3) {
+            birthDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+          } else {
+            birthDate = new Date(player.birthDate);
+          }
+        } else {
+          birthDate = new Date(player.birthDate);
         }
+
+        if (isNaN(birthDate.getTime())) {
+          console.log(`Invalid date for ${player.firstName}: ${player.birthDate}`);
+          return null;
+        }
+
+        // Check birthdays for previous, current, and next year to find the closest one
+        // This handles wrap-arounds (e.g. Dec 31 to Jan 1) correctly
+        const candidates = [
+          setYear(birthDate, currentYear - 1),
+          setYear(birthDate, currentYear),
+          setYear(birthDate, currentYear + 1)
+        ];
+
+        // Find the candidate with the smallest absolute difference in days
+        const closestBirthday = candidates.reduce((closest, candidate) => {
+          const diffClosest = Math.abs(differenceInCalendarDays(closest, today));
+          const diffCandidate = Math.abs(differenceInCalendarDays(candidate, today));
+          return diffCandidate < diffClosest ? candidate : closest;
+        });
+
+        const daysUntil = differenceInCalendarDays(closestBirthday, today);
 
         // Calculate age
-        let age = currentYear - birthDate.getFullYear();
-        if (today.getMonth() < birthDate.getMonth() ||
-          (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
-          age--;
-        }
+        // Since we found the closest birthday, we can calculate age based on that year
+        let age = closestBirthday.getFullYear() - birthDate.getFullYear();
+
+        // If the closest birthday is in the future (or today), they are turning that age.
+        // If it was in the past, they already turned that age. 
+        // Logic check:
+        // Born 1990. Current Year 2026.
+        // Birthday Jan 30. Today Jan 31.
+        // Closest birthday: Jan 30, 2026. (Days until: -1).
+        // Age = 2026 - 1990 = 36.
+        // Did they turn 36 yesterday? Yes.
+
+        // Born 1990. Current Year 2026.
+        // Birthday Feb 20. Today Jan 31.
+        // Closest birthday: Feb 20, 2026. (Days until: +20).
+        // Age = 2026 - 1990 = 36.
+        // Will they turn 36? Yes.
+
+        // Wait, what if closest birthday is next year (e.g. today Dec 31, birthday Jan 1)?
+        // Born 1990. Today Dec 30, 2025.
+        // Closest birthday: Jan 1, 2026.
+        // Age = 2026 - 1990 = 36.
+        // They will turn 36 in 2 days. Correct.
+
+        // What if closest birthday was last year? (unlikely with +- 10 days filter but possible logic-wise)
+        // Born 1990. Today Jan 2, 2026. Birthday Dec 30.
+        // Closest birthday: Dec 30, 2025.
+        // Age = 2025 - 1990 = 35. 
+        // They turned 35 recently. Correct.
 
         return {
           player,
@@ -63,6 +111,8 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
         info !== null && Math.abs(info.daysUntil) <= 10
       )
       .sort((a, b) => Math.abs(a.daysUntil) - Math.abs(b.daysUntil));
+
+    return results;
   }, [players]);
 
   // Show notification if there are birthdays
@@ -82,19 +132,19 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
     );
 
     if (daysUntil === 0) {
-      return <>🎉 Heute feiert {playerLink} seinen {age}. Geburtstag! Alles Gute zum Geburtstag! 🎂</>;
+      return <>Heute feiert {playerLink} seinen {age}. Geburtstag! Alles Gute zum Geburtstag!</>;
     } else if (daysUntil > 0) {
       if (daysUntil === 1) {
-        return <>🎈 Morgen feiert {playerLink} seinen {age}. Geburtstag!</>;
+        return <>Morgen feiert {playerLink} seinen {age}. Geburtstag!</>;
       } else {
-        return <>📅 In {daysUntil} Tagen feiert {playerLink} seinen {age}. Geburtstag!</>;
+        return <>In {daysUntil} Tagen feiert {playerLink} seinen {age}. Geburtstag!</>;
       }
     } else {
       const daysAgo = Math.abs(daysUntil);
       if (daysAgo === 1) {
-        return <>🎊 Gestern hat {playerLink} seinen {age}. Geburtstag gefeiert! Nachträglich alles Gute! 🎁</>;
+        return <>Gestern hat {playerLink} seinen {age}. Geburtstag gefeiert! Nachträglich alles Gute!</>;
       } else {
-        return <>💫 Vor {daysAgo} Tagen hat {playerLink} seinen {age}. Geburtstag gefeiert!</>;
+        return <>Vor {daysAgo} Tagen hat {playerLink} seinen {age}. Geburtstag gefeiert!</>;
       }
     }
   };
@@ -130,7 +180,7 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
             <div className="flex items-center gap-2">
               {getBirthdayIcon(birthdayInfos[0].daysUntil)}
               <h3 className="font-bold text-lg">
-                {birthdayInfos.some(info => info.daysUntil === 0) ? '🎉 Geburtstage heute!' : '📅 Kommende Geburtstage'}
+                {birthdayInfos.some(info => info.daysUntil === 0) ? 'Geburtstage heute!' : 'Geburtstage'}
               </h3>
             </div>
             <Button

@@ -138,7 +138,8 @@ export class SupabaseStatsService {
                 freeThrowPercentage: p.free_throw_percentage,
                 pointsPer40: Number(p.points_per_40),
                 threePointersPer40: Number(p.three_pointers_per_40),
-                foulsPer40: Number(p.fouls_per_40)
+                foulsPer40: Number(p.fouls_per_40),
+                birthDate: p.birth_date // Added birthDate mapping
             }));
 
             // 3. Fetch Game Logs

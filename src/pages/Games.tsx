@@ -7,7 +7,7 @@ import { useStats } from '@/contexts/StatsContext';
 import { PlayerGameLog, PlayerStats } from '@/types/stats';
 import { parse } from 'date-fns';
 import Layout from '@/components/Layout';
-import { Clock, Settings } from 'lucide-react';
+import { Clock, Settings, Loader2, CalendarX } from 'lucide-react';
 import GameCard from '@/components/GameCard';
 
 const Games: React.FC = () => {
@@ -111,8 +111,9 @@ const Games: React.FC = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="container mx-auto p-4">
-          <div className="text-center py-8">Lade Spielplan...</div>
+        <div className="container mx-auto p-4 min-h-[50vh] flex flex-col items-center justify-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+          <div className="text-muted-foreground">Lade Spielplan...</div>
         </div>
       </Layout>
     );
@@ -173,14 +174,24 @@ const Games: React.FC = () => {
           </div>
         </div>
         <div className="space-y-4">
-          {filteredGames.map((game) => (
-            <GameCard
-              key={game.gameNumber}
-              game={game}
-              topScorers={gamesTopScorersMap.get(game.gameNumber) || []}
-              playerMap={playerMap}
-            />
-          ))}
+          {filteredGames.length > 0 ? (
+            filteredGames.map((game) => (
+              <GameCard
+                key={game.gameNumber}
+                game={game}
+                topScorers={gamesTopScorersMap.get(game.gameNumber) || []}
+                playerMap={playerMap}
+              />
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-center bg-muted/30 rounded-lg border border-dashed border-muted-foreground/25">
+              <CalendarX className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+              <h3 className="text-lg font-medium text-foreground">Keine Spiele gefunden</h3>
+              <p className="text-sm text-muted-foreground mt-2 max-w-xs">
+                Versuche die Filter anzupassen oder "Zukünftige Spiele ausblenden" zu deaktivieren.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </Layout>

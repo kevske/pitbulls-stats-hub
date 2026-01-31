@@ -74,9 +74,9 @@ export function VideoPlayerWithLogs({ gameNumber, youtubeLink }: VideoPlayerWith
         setCurrentTime(time);
     }, []);
 
-    const handleSeekTo = (timestamp: number) => {
+    const handleSeekTo = useCallback((timestamp: number) => {
         youtubePlayerRef.current?.seekTo(timestamp);
-    };
+    }, []);
 
     const handleVideoChange = useCallback((newVideoId: string, index: number) => {
         // index is 0-based from player, we need 1-based for DB
