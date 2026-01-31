@@ -25,8 +25,10 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
   const birthdayInfos = useMemo(() => {
     const today = new Date();
     const currentYear = today.getFullYear();
+    // Debug logging
+    console.log('BirthdayCheck: Checking players', players.length, 'Today:', today);
 
-    return players
+    const results = players
       .filter(player => player.birthDate && player.firstName !== 'Gesamtsumme')
       .map(player => {
         const birthDate = new Date(player.birthDate!); // Assert non-null because of filter
@@ -90,6 +92,9 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
         info !== null && Math.abs(info.daysUntil) <= 10
       )
       .sort((a, b) => Math.abs(a.daysUntil) - Math.abs(b.daysUntil));
+
+    console.log('BirthdayCheck: Found birthdays:', results);
+    return results;
   }, [players]);
 
   // Show notification if there are birthdays
@@ -156,8 +161,9 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
           <div className="flex justify-between items-start mb-3">
             <div className="flex items-center gap-2">
               {getBirthdayIcon(birthdayInfos[0].daysUntil)}
+              {getBirthdayIcon(birthdayInfos[0].daysUntil)}
               <h3 className="font-bold text-lg">
-                {birthdayInfos.some(info => info.daysUntil === 0) ? '🎉 Geburtstage heute!' : '📅 Kommende Geburtstage'}
+                {birthdayInfos.some(info => info.daysUntil === 0) ? '🎉 Geburtstage heute!' : '📅 Geburtstage'}
               </h3>
             </div>
             <Button
