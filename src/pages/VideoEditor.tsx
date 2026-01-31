@@ -285,9 +285,9 @@ const VideoEditor = () => {
     setEvents((prev) => [...prev, completeEvent]);
   };
 
-  const handleDeleteEvent = (id: string) => {
+  const handleDeleteEvent = useCallback((id: string) => {
     setEvents((prev) => prev.filter((e) => e.id !== id));
-  };
+  }, []);
 
   // Calculate available players (bench players)
   const availablePlayers = useMemo(() => {
