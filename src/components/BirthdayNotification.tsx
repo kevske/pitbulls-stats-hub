@@ -31,8 +31,29 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
     const results = players
       .filter(player => player.birthDate && player.firstName !== 'Gesamtsumme')
       .map(player => {
-        const birthDate = new Date(player.birthDate!); // Assert non-null because of filter
-        if (isNaN(birthDate.getTime())) return null;
+        // Debug individual player
+        console.log(`Checking ${player.firstName} ${player.lastName}: ${player.birthDate}`);
+
+        if (!player.birthDate) return null;
+
+        // Handle potential German date format DD.MM.YYYY
+        let birthDate: Date;
+        if (player.birthDate.includes('.')) {
+          const parts = player.birthDate.split('.');
+          // Assuming DD.MM.YYYY
+          if (parts.length === 3) {
+            birthDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+          } else {
+            birthDate = new Date(player.birthDate);
+          }
+        } else {
+          birthDate = new Date(player.birthDate);
+        }
+
+        if (isNaN(birthDate.getTime())) {
+          console.log(`Invalid date for ${player.firstName}: ${player.birthDate}`);
+          return null;
+        }
 
         // Check birthdays for previous, current, and next year to find the closest one
         // This handles wrap-arounds (e.g. Dec 31 to Jan 1) correctly
