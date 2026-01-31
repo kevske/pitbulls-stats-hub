@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStats } from "@/contexts/StatsContext";
-import { PlayerTrendInfo, getTopTrendingPlayers } from "@/utils/statsTrends";
+import { PlayerTrendInfo, getPlayerImprovements } from "@/utils/statsTrends";
 import { Flame } from "lucide-react";
 import TeamBanner from "@/components/TeamBanner";
 import TeamGallery from "@/components/TeamGallery";
@@ -25,7 +25,7 @@ const Home = () => {
   const lastGame = useMemo(() => {
     if (!games.length) return null;
     const now = new Date();
-    return [...games]
+    const filtered = [...games]
       .filter(g => {
         // Filter out games without a valid score
         if (!g.finalScore || g.finalScore === '-' || g.finalScore === '-:-') return false;
@@ -54,15 +54,9 @@ const Home = () => {
         const awayTeam = g.awayTeam?.toLowerCase() || '';
         return homeTeam.includes('neuenstadt') || homeTeam.includes('pitbull') ||
           awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull');
-      })
-    // Since games are already sorted by date descending from the service, we can likely trust the order.
-    // But to be safe, knowing we have mixed IDs, let's rely on the service's sort order (which is by Date).
-    // So we just take the first one after filtering.
-    // But we made a copy with [...games].
-    // The service returns games sorted by date descending.
-    // So filtering preserves order.
-    // So the first element is the correct one.
-    [0];
+      });
+
+    return filtered[0];
   }, [games]);
 
   // Parse the final score into home and away scores
@@ -96,6 +90,16 @@ const Home = () => {
     if (!games.length) return 0;
     return Math.max(...games.map(g => g.gameNumber));
   }, [games]);
+
+  // Pre-compute logs by player ID for O(1) access
+  const logsByPlayer = useMemo(() => {
+    const map = new Map();
+    gameLogs.forEach(log => {
+      if (!map.has(log.playerId)) map.set(log.playerId, []);
+      map.get(log.playerId)!.push(log);
+    });
+    return map;
+  }, [gameLogs]);
 
   // Calculate Win/Loss Streak
   const streak = useMemo(() => {
@@ -160,18 +164,30 @@ const Home = () => {
   const risingStars = useMemo<PlayerTrendInfo[]>(() => {
     if (!players.length || !gameLogs.length || latestGameNumber < 2) return [];
 
-    return getTopTrendingPlayers(
-      players.map(p => ({
-        id: p.id,
-        firstName: p.firstName,
-        lastName: p.lastName || '',
-        image: p.imageUrl || `${BASE_PATH}/placeholder-player.png`
-      })),
-      latestGameNumber,
-      gameLogs,
-      3
-    );
-  }, [players, gameLogs, latestGameNumber]);
+    const playersWithImprovements = players.map(player => {
+      const specificLogs = logsByPlayer.get(player.id) || [];
+      const improvements = getPlayerImprovements(
+        player.id,
+        latestGameNumber,
+        specificLogs
+      );
+
+      return {
+        playerId: player.id,
+        firstName: player.firstName,
+        lastName: player.lastName,
+        image: player.imageUrl || `${BASE_PATH}/placeholder-player.png`,
+        improvements,
+        improvementCount: improvements.length
+      };
+    });
+
+    return playersWithImprovements
+      .filter(player => player.improvementCount > 0)
+      .sort((a, b) => b.improvementCount - a.improvementCount ||
+        b.improvements[0]?.improvement - (a.improvements[0]?.improvement || 0))
+      .slice(0, 3);
+  }, [players, logsByPlayer, latestGameNumber, gameLogs.length]);
 
   // Get top 3 performers from all games (sorted by points per game)
   const topPerformers = useMemo(() => {
@@ -182,7 +198,7 @@ const Home = () => {
       // Skip non-player entries
       if (player.firstName === 'Gesamtsumme' || !player.firstName) return null;
 
-      const playerGames = gameLogs.filter(log => log.playerId === player.id);
+      const playerGames = logsByPlayer.get(player.id) || [];
       const totalPoints = playerGames.reduce((sum, game) => sum + (game.points || 0), 0);
       const gamesPlayed = playerGames.length;
 
@@ -214,7 +230,7 @@ const Home = () => {
     return [...playerStats]
       .sort((a, b) => b.pointsPerGame - a.pointsPerGame)
       .slice(0, 3);
-  }, [players, gameLogs]);
+  }, [players, logsByPlayer, gameLogs.length]);
 
   if (loading) {
     return (
