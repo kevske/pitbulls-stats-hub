@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { verifyPassword } from "@/utils/security";
 
 interface PasswordProtectionProps {
   onSuccess: () => void;
@@ -13,6 +14,7 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
   const [attempts, setAttempts] = useState(0);
   const [waitTime, setWaitTime] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
 
   // Check for existing authentication on mount
   useEffect(() => {
@@ -44,7 +46,7 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
     }
   }, [waitTime]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (isLocked) {
@@ -57,29 +59,39 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
       return;
     }
 
-    if (password === correctPassword) {
-      toast.success("Zugriff gewährt!");
-      
-      // Store authentication in localStorage
-      localStorage.setItem('videos-authenticated', 'true');
-      localStorage.setItem('videos-auth-time', Date.now().toString());
-      console.log('Videos page: Authentication stored in localStorage');
-      
-      onSuccess();
-    } else {
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
+    setIsChecking(true);
+    try {
+      const isValid = await verifyPassword(password, correctPassword);
 
-      if (newAttempts >= 4) {
-        setIsLocked(true);
-        toast.error("Zu viele Fehlversuche. Zugriff gesperrt.");
+      if (isValid) {
+        toast.success("Zugriff gewährt!");
+
+        // Store authentication in localStorage
+        localStorage.setItem('videos-authenticated', 'true');
+        localStorage.setItem('videos-auth-time', Date.now().toString());
+        console.log('Videos page: Authentication stored in localStorage');
+
+        onSuccess();
       } else {
-        const waitTimes = [5, 10, 20];
-        const wait = waitTimes[newAttempts - 1];
-        setWaitTime(wait);
-        toast.error(`Falsches Passwort. Bitte warten Sie ${wait} Sekunden.`);
+        const newAttempts = attempts + 1;
+        setAttempts(newAttempts);
+
+        if (newAttempts >= 4) {
+          setIsLocked(true);
+          toast.error("Zu viele Fehlversuche. Zugriff gesperrt.");
+        } else {
+          const waitTimes = [5, 10, 20];
+          const wait = waitTimes[newAttempts - 1];
+          setWaitTime(wait);
+          toast.error(`Falsches Passwort. Bitte warten Sie ${wait} Sekunden.`);
+        }
+        setPassword("");
       }
-      setPassword("");
+    } catch (error) {
+      console.error("Password verification error:", error);
+      toast.error("Ein Fehler ist aufgetreten.");
+    } finally {
+      setIsChecking(false);
     }
   };
 
@@ -97,18 +109,20 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
           placeholder="Passwort eingeben"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          disabled={waitTime > 0 || isLocked}
+          disabled={waitTime > 0 || isLocked || isChecking}
           className="border-primary/30"
         />
         <Button
           type="submit"
-          disabled={waitTime > 0 || isLocked}
+          disabled={waitTime > 0 || isLocked || isChecking}
           className="w-full"
         >
           {waitTime > 0
             ? `Warten (${waitTime}s)`
             : isLocked
             ? "Gesperrt"
+            : isChecking
+            ? "Überprüfe..."
             : "Zugriff"}
         </Button>
       </form>
