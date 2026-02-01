@@ -24,3 +24,7 @@
 ## 2025-05-24 - Video Sync Layout Thrashing
 **Learning:** Components synced to video playback (receiving `currentTime` props) can trigger layout thrashing if they query the DOM or scroll on every frame update, even if the visual state hasn't changed.
 **Action:** Track the logical position (e.g., active index) in a ref and only trigger DOM updates/scrolling when the logical position actually changes, wrapping the DOM manipulation in `requestAnimationFrame`.
+
+## 2026-05-25 - Home Page Optimization
+**Learning:** `Home.tsx` was filtering the `games` array multiple times (O(N) * 3) to find the last game, streak, and validate dates. Date parsing is expensive.
+**Action:** Consolidated all filtering into a single `relevantGames` useMemo hook (O(N) * 1) and derived other stats from it. Also consolidated redundant sorting of player logs.

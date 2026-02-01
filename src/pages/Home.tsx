@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStats } from "@/contexts/StatsContext";
 import { PlayerTrendInfo, getPlayerImprovements } from "@/utils/statsTrends";
+import { PlayerGameLog } from "@/types/stats";
 import { Flame } from "lucide-react";
 import TeamBanner from "@/components/TeamBanner";
 import TeamGallery from "@/components/TeamGallery";
@@ -21,43 +22,44 @@ const Home = () => {
   const { games, players, gameLogs, loading, error } = useStats();
   const { isModernMode } = useModernTheme();
 
+  // Filter relevant games once (TSV Neuenstadt/Pitbulls games with valid results in the past)
+  const relevantGames = useMemo(() => {
+    if (!games.length) return [];
+    const now = new Date();
+
+    // Games are already sorted by date descending from service
+    return games.filter(g => {
+      // 1. Filter out games without a valid score
+      if (!g.finalScore || g.finalScore === '-' || g.finalScore === '-:-') return false;
+
+      // 2. Filter by team (TSV Neuenstadt or Pitbulls)
+      const homeTeam = g.homeTeam?.toLowerCase() || '';
+      const awayTeam = g.awayTeam?.toLowerCase() || '';
+      const isRelevantTeam = homeTeam.includes('neuenstadt') || homeTeam.includes('pitbull') ||
+        awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull');
+
+      if (!isRelevantTeam) return false;
+
+      // 3. Filter out future games
+      try {
+        const [datePart, timePart] = g.date.split(', ');
+        if (!datePart) return true; // keep if can't parse
+
+        const [day, month, year] = datePart.split('.').map(Number);
+        const [hour, minute] = (timePart || '00:00').split(':').map(Number);
+
+        const gameDate = new Date(year, month - 1, day, hour, minute);
+        return gameDate <= now;
+      } catch (e) {
+        return true; // keep if can't parse
+      }
+    });
+  }, [games]);
+
   // Get the last game (TSV Neuenstadt game with highest tsv_game_number that has a result)
   const lastGame = useMemo(() => {
-    if (!games.length) return null;
-    const now = new Date();
-    const filtered = [...games]
-      .filter(g => {
-        // Filter out games without a valid score
-        if (!g.finalScore || g.finalScore === '-' || g.finalScore === '-:-') return false;
-
-        // Parse date to check if it's in the future
-        try {
-          // Format is typically "dd.MM.yyyy, HH:mm" or similar from de-DE locale
-          // Simple parser for German date format
-          const [datePart, timePart] = g.date.split(', ');
-          if (!datePart) return true; // keep if can't parse
-
-          const [day, month, year] = datePart.split('.').map(Number);
-          const [hour, minute] = (timePart || '00:00').split(':').map(Number);
-
-          const gameDate = new Date(year, month - 1, day, hour, minute);
-
-          // Only show games that have happened (with a small buffer for ongoing games if needed, but 'finalScore' check should cover it)
-          return gameDate <= now;
-        } catch (e) {
-          return true; // keep if can't parse
-        }
-      })
-      .filter(g => {
-        // Only TSV Neuenstadt games - check if either team is TSV Neuenstadt or Pitbulls
-        const homeTeam = g.homeTeam?.toLowerCase() || '';
-        const awayTeam = g.awayTeam?.toLowerCase() || '';
-        return homeTeam.includes('neuenstadt') || homeTeam.includes('pitbull') ||
-          awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull');
-      });
-
-    return filtered[0];
-  }, [games]);
+    return relevantGames[0] || null;
+  }, [relevantGames]);
 
   // Parse the final score into home and away scores
   const { homeScore, awayScore, homeTeam, awayTeam } = useMemo(() => {
@@ -98,45 +100,24 @@ const Home = () => {
       if (!map.has(log.playerId)) map.set(log.playerId, []);
       map.get(log.playerId)!.push(log);
     });
+
+    // Sort logs for each player by game number descending once
+    // This optimization prevents re-sorting in child components or trends calculation
+    map.forEach((logs: PlayerGameLog[]) => {
+      logs.sort((a, b) => b.gameNumber - a.gameNumber);
+    });
+
     return map;
   }, [gameLogs]);
 
   // Calculate Win/Loss Streak
   const streak = useMemo(() => {
-    if (!games.length) return null;
-
-    const now = new Date();
-    // Sort games by tsv_game_number descending (latest first) and only include TSV Neuenstadt games with results
-    const sortedGames = [...games]
-      .filter(g => {
-        // Filter out games without a valid score
-        if (!g.finalScore || g.finalScore === '-' || g.finalScore === '-:-') return false;
-
-        // Parse date to check if it's in the future
-        try {
-          const [datePart, timePart] = g.date.split(', ');
-          if (!datePart) return true;
-          const [day, month, year] = datePart.split('.').map(Number);
-          const [hour, minute] = (timePart || '00:00').split(':').map(Number);
-          const gameDate = new Date(year, month - 1, day, hour, minute);
-          return gameDate <= now;
-        } catch (e) { return true; }
-      })
-      .filter(g => {
-        // Only TSV Neuenstadt games - check if either team is TSV Neuenstadt or Pitbulls
-        const homeTeam = g.homeTeam?.toLowerCase() || '';
-        const awayTeam = g.awayTeam?.toLowerCase() || '';
-        return homeTeam.includes('neuenstadt') || homeTeam.includes('pitbull') ||
-          awayTeam.includes('neuenstadt') || awayTeam.includes('pitbull');
-      });
-    // Already sorted by date descending from service, so no need to sort by ID which is flawed
-
-    if (sortedGames.length === 0) return null;
+    if (relevantGames.length === 0) return null;
 
     let currentStreak = 0;
     let type: 'win' | 'loss' | null = null;
 
-    for (const game of sortedGames) {
+    for (const game of relevantGames) {
       if (!game.finalScore) continue;
 
       const [homeScore, awayScore] = game.finalScore.split(/[-:]/).map(s => parseInt(s.trim()));
@@ -158,7 +139,7 @@ const Home = () => {
     }
 
     return { type, count: currentStreak };
-  }, [games]);
+  }, [relevantGames]);
 
   // Get top trending players (most improvements)
   const risingStars = useMemo<PlayerTrendInfo[]>(() => {
