@@ -149,7 +149,8 @@ export const useVideoProjectPersistence = ({
 
             console.log('Saving data to Supabase:', saveData);
 
-            const savedId = await VideoProjectService.saveProject(saveData);
+            const adminPassword = localStorage.getItem('admin-password') || undefined;
+            const savedId = await VideoProjectService.saveProject(saveData, adminPassword);
 
             if (savedId) {
                 toast.success(`Saved to Supabase`);
@@ -253,7 +254,8 @@ export const useVideoProjectPersistence = ({
                     version: '1.0.0'
                 };
 
-                const savedId = await VideoProjectService.saveProject(saveData);
+                const adminPassword = localStorage.getItem('admin-password') || undefined;
+                const savedId = await VideoProjectService.saveProject(saveData, adminPassword);
                 if (savedId) {
                     setLastSavedData(saveData);
                     // toast.success('Auto-saved'); // Optional: don't spam toasts
