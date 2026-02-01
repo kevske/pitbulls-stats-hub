@@ -43,3 +43,25 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+
+## Deployment & Security
+
+This project uses Supabase Edge Functions for secure operations.
+
+### Deploying the Admin Function
+To enable secure video management, you must deploy the `admin-manage-videos` function and set the admin password:
+
+```bash
+# Deploy the function
+npx supabase functions deploy admin-manage-videos
+
+# Set the secure password (must match the one you use in the UI)
+npx supabase secrets set ADMIN_PASSWORD=your_secure_password
+```
+
+### Applying Security Migrations
+Ensure your database RLS policies are up to date:
+
+```bash
+npx supabase db push
+```
