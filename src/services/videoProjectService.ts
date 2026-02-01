@@ -29,8 +29,37 @@ export class VideoProjectService {
     /**
      * Save a video project to Supabase
      */
-    static async saveProject(data: SaveData): Promise<string | null> {
+    static async saveProject(data: SaveData, adminPassword?: string): Promise<string | null> {
         try {
+            // Use Edge Function if password is provided (secure way)
+            if (adminPassword) {
+                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+                const response = await fetch(`${supabaseUrl}/functions/v1/admin-manage-videos`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${supabaseAnonKey}`
+                    },
+                    body: JSON.stringify({
+                        action: 'save_project',
+                        payload: data,
+                        adminPassword
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    console.error('Edge function error:', result);
+                    throw new Error(result.message || result.error || 'Failed to save video project');
+                }
+
+                return result.id;
+            }
+
+            // Fallback for public access (will fail if RLS is locked down and public write is disabled)
             const {
                 gameNumber,
                 videoIndex,
@@ -177,7 +206,7 @@ export class VideoProjectService {
     /**
      * Add a simple video entry (no events/players data initially) to link a video to a game
      */
-    static async addVideoToGame(gameNumber: number, videoId: string, playlistId?: string): Promise<string | null> {
+    static async addVideoToGame(gameNumber: number, videoId: string, playlistId?: string, adminPassword?: string): Promise<string | null> {
         // First, get existing videos for this game to determine the next index
         const existingProjects = await this.getProjectsForGame(gameNumber);
         const nextIndex = existingProjects.length; // Use the length as the next index
@@ -197,6 +226,6 @@ export class VideoProjectService {
                 addedAt: new Date().toISOString(),
                 note: 'Using TSV_game_number for consistent numbering'
             }
-        });
+        }, adminPassword);
     }
 }
