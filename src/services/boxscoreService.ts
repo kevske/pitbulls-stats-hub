@@ -89,6 +89,39 @@ export class BoxscoreService {
     return data || [];
   }
 
+  // Get box scores by game with team mapping info
+  static async getBoxScoresByGameWithTeamInfo(gameId: string): Promise<{
+    boxScores: BoxScore[];
+    homeTeamId: string | null;
+    awayTeamId: string | null;
+  }> {
+    // Fetch box scores
+    const { data: boxScoresData, error: boxScoresError } = await supabase
+      .from('box_scores')
+      .select('*')
+      .eq('game_id', gameId)
+      .order('points', { ascending: false });
+
+    if (boxScoresError) throw boxScoresError;
+
+    // Fetch game to get home/away team IDs
+    const { data: gameData, error: gameError } = await supabase
+      .from('games')
+      .select('home_team_id, away_team_id')
+      .eq('game_id', gameId)
+      .single();
+
+    if (gameError && gameError.code !== 'PGRST116') {
+      console.warn('Could not fetch game team IDs:', gameError);
+    }
+
+    return {
+      boxScores: boxScoresData || [],
+      homeTeamId: gameData?.home_team_id || null,
+      awayTeamId: gameData?.away_team_id || null
+    };
+  }
+
   // Get box scores by team
   static async getBoxScoresByTeam(teamId: string): Promise<BoxScore[]> {
     const { data, error } = await supabase
