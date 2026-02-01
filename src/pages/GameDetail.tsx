@@ -16,6 +16,11 @@ const GameDetail: React.FC = () => {
   const [boxScores, setBoxScores] = useState<BoxScore[]>([]);
   const [boxScoresLoading, setBoxScoresLoading] = useState(false);
   const [boxScoresError, setBoxScoresError] = useState<string | null>(null);
+  // Store the actual team IDs from the games table
+  const [gameTeamIds, setGameTeamIds] = useState<{ homeTeamId: string | null; awayTeamId: string | null }>({
+    homeTeamId: null,
+    awayTeamId: null
+  });
 
   if (!id) {
     navigate('/games');
@@ -28,7 +33,58 @@ const GameDetail: React.FC = () => {
   );
   const gamePlayersLogs = game ? gameLogs.filter(log => log.gameNumber === game.gameNumber) : [];
 
-  // Load box scores for the game
+  // Determine which team ID belongs to Neuenstadt/Pitbulls (our team) vs opponent
+  // Using the actual home_team_id and away_team_id from the games table
+  const getTeamMapping = () => {
+    const homeIsNeuenstadt = game?.homeTeam?.toLowerCase().includes('neuenstadt') ||
+      game?.homeTeam?.toLowerCase().includes('pitbulls');
+
+    // Use actual team IDs from the game data
+    if (gameTeamIds.homeTeamId && gameTeamIds.awayTeamId) {
+      return {
+        ourTeamId: homeIsNeuenstadt ? gameTeamIds.homeTeamId : gameTeamIds.awayTeamId,
+        opponentTeamId: homeIsNeuenstadt ? gameTeamIds.awayTeamId : gameTeamIds.homeTeamId,
+        ourTeamName: homeIsNeuenstadt ? (game?.homeTeam || 'Unser Team') : (game?.awayTeam || 'Unser Team'),
+        opponentName: homeIsNeuenstadt ? (game?.awayTeam || 'Gegner') : (game?.homeTeam || 'Gegner')
+      };
+    }
+
+    // Fallback: try to identify from box scores using player_slug matching
+    if (boxScores.length > 0) {
+      const teams = Array.from(new Set(boxScores.map(bs => bs.team_id)));
+      if (teams.length > 0) {
+        const team1Players = boxScores.filter(bs => bs.team_id === teams[0]);
+        const isTeam1Ours = team1Players.some(p =>
+          p.player_slug && (
+            players.some(pl => pl.id === p.player_slug) ||
+            gamePlayersLogs.some(log => log.playerId === p.player_slug)
+          )
+        );
+
+        const ourTeamId = isTeam1Ours ? teams[0] : (teams.length > 1 ? teams[1] : teams[0]);
+        const opponentTeamId = isTeam1Ours ? (teams.length > 1 ? teams[1] : '') : teams[0];
+
+        return {
+          ourTeamId,
+          opponentTeamId,
+          ourTeamName: homeIsNeuenstadt ? (game?.homeTeam || 'Unser Team') : (game?.awayTeam || 'Unser Team'),
+          opponentName: homeIsNeuenstadt ? (game?.awayTeam || 'Gegner') : (game?.homeTeam || 'Gegner')
+        };
+      }
+    }
+
+    // Ultimate fallback
+    return {
+      ourTeamId: '',
+      opponentTeamId: '',
+      ourTeamName: homeIsNeuenstadt ? (game?.homeTeam || 'Unser Team') : (game?.awayTeam || 'Unser Team'),
+      opponentName: homeIsNeuenstadt ? (game?.awayTeam || 'Gegner') : (game?.homeTeam || 'Gegner')
+    };
+  };
+
+  const { ourTeamId, opponentTeamId, ourTeamName, opponentName } = getTeamMapping();
+
+  // Load box scores for the game with team ID info
   useEffect(() => {
     const loadBoxScores = async () => {
       if (!game) return;
@@ -40,8 +96,12 @@ const GameDetail: React.FC = () => {
         // Use the real game ID from Supabase if available (e.g., "2786721")
         // Fallback to constructed ID for older records or video-only games
         const gameId = game.gameId || `game-${game.gameNumber}-${game.date.replace(/[^\d]/g, '')}`;
-        const scores = await BoxscoreService.getBoxScoresByGame(gameId);
-        setBoxScores(scores);
+        const result = await BoxscoreService.getBoxScoresByGameWithTeamInfo(gameId);
+        setBoxScores(result.boxScores);
+        setGameTeamIds({
+          homeTeamId: result.homeTeamId,
+          awayTeamId: result.awayTeamId
+        });
       } catch (error) {
         console.error('Failed to load box scores:', error);
         setBoxScoresError('Box scores konnten nicht geladen werden');
@@ -242,10 +302,10 @@ const GameDetail: React.FC = () => {
             <div className="flex justify-center mb-6">
               <TabsList className="grid w-full max-w-md grid-cols-2">
                 <TabsTrigger value="our-team">
-                  {game.homeTeam.includes('Neuenstadt') || game.homeTeam.includes('Pitbulls') ? game.homeTeam : game.awayTeam} (Stats)
+                  {ourTeamName} (Stats)
                 </TabsTrigger>
                 <TabsTrigger value="opponent">
-                  {!game.homeTeam.includes('Neuenstadt') && !game.homeTeam.includes('Pitbulls') ? game.homeTeam : game.awayTeam} (Stats)
+                  {opponentName} (Stats)
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -253,7 +313,7 @@ const GameDetail: React.FC = () => {
             <TabsContent value="our-team">
               <Card>
                 <CardHeader>
-                  <CardTitle>Spielerstatistiken ({game.homeTeam.includes('Neuenstadt') || game.homeTeam.includes('Pitbulls') ? game.homeTeam : game.awayTeam})</CardTitle>
+                  <CardTitle>Spielerstatistiken ({ourTeamName})</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto">
@@ -271,38 +331,8 @@ const GameDetail: React.FC = () => {
                       </thead>
                       <tbody>
                         {boxScores.length > 0 ? (
-                          // If we have box scores, try to identify our team
+                          // Use pre-computed ourTeamId for filtering
                           (() => {
-                            // Identify our team ID by finding a player that exists in gamePlayersLogs or by name matching
-                            // Simple heuristic: If we have gamePlayersLogs, use that for 'Match' detection
-                            // Or simpler: Group box scores by team_id
-                            const teams = Array.from(new Set(boxScores.map(bs => bs.team_id)));
-                            let ourTeamId = '';
-
-                            // If we have 2 teams, try to find which is ours
-                            if (teams.length > 0) {
-                              // Check if any player in the first team is in our gameLogs
-                              const team1Players = boxScores.filter(bs => bs.team_id === teams[0]);
-                              const isTeam1Ours = team1Players.some(p =>
-                                gamePlayersLogs.some(log =>
-                                  // Fuzzy name match or just assume if one matches it's our team
-                                  // We don't have name in logs easily matching first/last perfectly without lookup
-                                  // But we have playerId usually being slug.
-                                  // BoxScore has player_slug if linked.
-                                  (p.player_slug && p.player_slug === log.playerId)
-                                )
-                              );
-
-                              ourTeamId = isTeam1Ours ? teams[0] : (teams.length > 1 ? teams[1] : teams[0]);
-
-                              // Fallback: if we didn't match anyone (e.g. no logs), assume the one with most linked players is ours
-                              if (!ourTeamId && teams.length > 1) {
-                                const team1Linked = team1Players.filter(p => p.player_slug).length;
-                                const team2Linked = boxScores.filter(bs => bs.team_id === teams[1]).filter(p => p.player_slug).length;
-                                ourTeamId = team1Linked >= team2Linked ? teams[0] : teams[1];
-                              }
-                            }
-
                             const ourStats = boxScores.filter(bs => bs.team_id === ourTeamId);
 
                             // Merge with minutes from gameLogs if available
@@ -335,13 +365,22 @@ const GameDetail: React.FC = () => {
                               <tr key={stat.id} className="hover:bg-muted/50">
                                 <td className="py-2 px-4 border">
                                   <div className="font-medium">
-                                    {stat.player_slug ? (
-                                      <Link to={`/players/${stat.player_slug}`} className="text-blue-600 hover:underline">
-                                        {stat.player_first_name} {stat.player_last_name}
-                                      </Link>
-                                    ) : (
-                                      `${stat.player_first_name} ${stat.player_last_name}`
-                                    )}
+                                    {(() => {
+                                      // Try to find player by slug first, then by name matching
+                                      const playerSlug = stat.player_slug || players.find(p =>
+                                        p.firstName.toLowerCase() === stat.player_first_name?.toLowerCase() &&
+                                        p.lastName.toLowerCase() === stat.player_last_name?.toLowerCase()
+                                      )?.id;
+
+                                      if (playerSlug) {
+                                        return (
+                                          <Link to={`/players/${playerSlug}`} className="text-blue-600 hover:underline">
+                                            {stat.player_first_name} {stat.player_last_name}
+                                          </Link>
+                                        );
+                                      }
+                                      return `${stat.player_first_name} ${stat.player_last_name}`;
+                                    })()}
                                   </div>
                                 </td>
                                 <td className="py-2 px-4 border text-center">{stat.minutes}</td>
@@ -382,7 +421,7 @@ const GameDetail: React.FC = () => {
             <TabsContent value="opponent">
               <Card>
                 <CardHeader>
-                  <CardTitle>Spielerstatistiken ({!game.homeTeam.includes('Neuenstadt') && !game.homeTeam.includes('Pitbulls') ? game.homeTeam : game.awayTeam})</CardTitle>
+                  <CardTitle>Spielerstatistiken ({opponentName})</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto">
@@ -399,31 +438,8 @@ const GameDetail: React.FC = () => {
                       </thead>
                       <tbody>
                         {(() => {
-                          // Identify opponent team ID 
-                          // It's the one that is NOT 'ourTeamId' calculated above
-                          // To avoid code duplication, we re-derive or should have stored it. 
-                          // Since this is inside a render block, we re-derive quickly.
-
-                          const teams = Array.from(new Set(boxScores.map(bs => bs.team_id)));
-                          if (teams.length === 0) return <tr><td colSpan={6} className="text-center py-4">Keine Daten verfügbar</td></tr>;
-
-                          let ourTeamId = '';
-                          const team1Players = boxScores.filter(bs => bs.team_id === teams[0]);
-                          // Try to match specific player ID known to be ours (e.g. from logs)
-                          // This duplicate logic is acceptable for inline simplicity but could be refactored
-                          const isTeam1Ours = team1Players.some(p =>
-                            (p.player_slug && gamePlayersLogs.some(log => log.playerId === p.player_slug))
-                          );
-
-                          // If we have 2 teams
-                          if (teams.length > 1) {
-                            ourTeamId = isTeam1Ours ? teams[0] : teams[1];
-                          } else {
-                            // Only 1 team found. If it matched ours, assume it's ours. If not, assume it's opponent (rare).
-                            ourTeamId = isTeam1Ours ? teams[0] : '';
-                          }
-
-                          const opponentStats = boxScores.filter(bs => bs.team_id !== ourTeamId);
+                          // Use pre-computed opponentTeamId for filtering
+                          const opponentStats = boxScores.filter(bs => bs.team_id === opponentTeamId);
 
                           if (opponentStats.length === 0) {
                             return <tr><td colSpan={6} className="text-center py-4">Keine Daten verfügbar</td></tr>;
