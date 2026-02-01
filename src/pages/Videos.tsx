@@ -70,6 +70,7 @@ const extractVideoId = (url: string): { videoId: string | null, playlistId: stri
 
 const Videos = () => {
   const [hasAccess, setHasAccess] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
   const { games, loading, refresh } = useStats();
 
   // State for adding video
@@ -82,8 +83,11 @@ const Videos = () => {
       <Layout>
         <div className="container mx-auto max-w-4xl">
           <PasswordProtection
-            onSuccess={() => setHasAccess(true)}
-          // No correctPassword prop - validation can happen server-side if needed
+            onSuccess={(password) => {
+              setAdminPassword(password || '');
+              setHasAccess(true);
+            }}
+          // No correctPassword prop - validation happens via Edge Function
           />
         </div>
       </Layout>
@@ -117,7 +121,8 @@ const Videos = () => {
       await VideoProjectService.addVideoToGame(
         parseInt(selectedGame),
         videoId || '',
-        playlistId || undefined
+        playlistId || undefined,
+        adminPassword
       );
 
       toast.success("Video erfolgreich hinzugefügt!");
