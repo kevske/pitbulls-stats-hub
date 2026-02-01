@@ -22,15 +22,20 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {images.length > 0 ? (
                         images.map((image, index) => (
-                            <div key={index} className="aspect-square">
+                            <button
+                                key={index}
+                                type="button"
+                                className="aspect-square w-full p-0 overflow-hidden rounded-lg border border-border hover:opacity-90 transition-opacity focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none"
+                                onClick={() => onImageClick(index)}
+                                aria-label={`Bild ${index + 1} von ${images.length} anzeigen`}
+                            >
                                 <img
                                     src={image.src}
-                                    alt={image.alt}
-                                    className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
-                                    onClick={() => onImageClick(index)}
+                                    alt={image.alt || `Galeriebild ${index + 1}`}
+                                    className="w-full h-full object-cover"
                                     onError={() => onImageError(image.src)}
                                 />
-                            </div>
+                            </button>
                         ))
                     ) : (
                         <div className="col-span-full text-center py-8 bg-muted/50 rounded-lg">

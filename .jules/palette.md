@@ -22,3 +22,7 @@
 ## 2026-03-01 - Empty States UX
 **Learning:** Returning `null` or an empty `div` for filtered lists leaves users confused about whether the app is broken or just empty.
 **Action:** Always provide an explicit "Empty State" component with an icon and helpful text that suggests how to recover (e.g., "Adjust filters").
+
+## 2026-05-20 - Modal Keyboard Accessibility
+**Learning:** Modals that only offer click-to-close or click-to-navigate exclude keyboard users.
+**Action:** Always implement `useEffect` listeners for `Escape` (close) and Arrow keys (navigation) in custom modals, and ensure the close button is reachable via Tab.
