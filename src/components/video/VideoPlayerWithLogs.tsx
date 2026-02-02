@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, memo } from 'react';
 import { TaggedEvent } from '@/types/basketball';
 import { YouTubePlayer, YouTubePlayerRef } from '@/components/video/YouTubePlayer';
 import { EventList } from '@/components/video/EventList';
@@ -10,7 +10,7 @@ interface VideoPlayerWithLogsProps {
     youtubeLink: string;
 }
 
-export function VideoPlayerWithLogs({ gameNumber, youtubeLink }: VideoPlayerWithLogsProps) {
+export const VideoPlayerWithLogs = memo(({ gameNumber, youtubeLink }: VideoPlayerWithLogsProps) => {
     const [videoId, setVideoId] = useState<string | undefined>();
     const [playlistId, setPlaylistId] = useState<string | undefined>();
     const [events, setEvents] = useState<TaggedEvent[]>([]);
@@ -106,4 +106,6 @@ export function VideoPlayerWithLogs({ gameNumber, youtubeLink }: VideoPlayerWith
             </div>
         </div>
     );
-}
+});
+
+VideoPlayerWithLogs.displayName = 'VideoPlayerWithLogs';
