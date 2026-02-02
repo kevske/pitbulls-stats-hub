@@ -26,3 +26,7 @@
 ## 2026-05-20 - Modal Keyboard Accessibility
 **Learning:** Modals that only offer click-to-close or click-to-navigate exclude keyboard users.
 **Action:** Always implement `useEffect` listeners for `Escape` (close) and Arrow keys (navigation) in custom modals, and ensure the close button is reachable via Tab.
+
+## 2026-05-21 - Conditional Global Listeners
+**Learning:** Attaching global event listeners (like `keydown`) inside `useEffect` without checking state conditions first can lead to unnecessary listeners being active when the component is mounted but the feature (e.g. modal) is not in use.
+**Action:** Always check the condition (e.g. `if (!isOpen) return;`) inside the `useEffect` *before* defining and adding the event listener to ensure efficient resource usage.
