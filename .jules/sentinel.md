@@ -13,3 +13,8 @@
 1. Revoke public write access in RLS policies.
 2. Implement an Edge Function that accepts the shared secret (password), validates it server-side, and uses the Service Role key to bypass RLS for the write operation.
 3. Update client services to route restricted operations through this Edge Function.
+
+## 2026-05-25 - Timing Attack in Edge Function Authentication
+**Vulnerability:** Admin password validation used insecure string comparison (`!==`), allowing timing attacks to guess the password.
+**Learning:** Even in server-side Edge Functions, standard string comparison terminates early on mismatch, leaking information about the valid password prefix.
+**Prevention:** Use constant-time string comparison (e.g., manually implementing a loop that checks all characters or using `crypto.timingSafeEqual`) for all secret validations.
