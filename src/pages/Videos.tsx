@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import PasswordProtection from "@/components/PasswordProtection";
@@ -78,6 +78,16 @@ const Videos = () => {
   const [videoLink, setVideoLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Filter games that have YouTube links and sort by game number (descending)
+  const gamesWithVideos = useMemo(() => games
+    .filter(game => (game.youtubeLink && game.youtubeLink.trim() !== '') || (game.youtubeLinks && game.youtubeLinks.length > 0))
+    .sort((a, b) => b.gameNumber - a.gameNumber), [games]);
+
+  // Filter games that DON'T have video and sort descending
+  const gamesWithoutVideos = useMemo(() => games
+    .filter(game => (!game.youtubeLink || game.youtubeLink.trim() === '') && (!game.youtubeLinks || game.youtubeLinks.length === 0))
+    .sort((a, b) => b.gameNumber - a.gameNumber), [games]);
+
   if (!hasAccess) {
     return (
       <Layout>
@@ -93,16 +103,6 @@ const Videos = () => {
       </Layout>
     );
   }
-
-  // Filter games that have YouTube links and sort by game number (descending)
-  const gamesWithVideos = games
-    .filter(game => (game.youtubeLink && game.youtubeLink.trim() !== '') || (game.youtubeLinks && game.youtubeLinks.length > 0))
-    .sort((a, b) => b.gameNumber - a.gameNumber);
-
-  // Filter games that DON'T have video and sort descending
-  const gamesWithoutVideos = games
-    .filter(game => (!game.youtubeLink || game.youtubeLink.trim() === '') && (!game.youtubeLinks || game.youtubeLinks.length === 0))
-    .sort((a, b) => b.gameNumber - a.gameNumber);
 
   const handleAddVideo = async (e: React.FormEvent) => {
     e.preventDefault();
