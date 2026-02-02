@@ -20,8 +20,8 @@ serve(async (req: Request) => {
         const { action, payload, adminPassword } = await req.json()
 
         // Validate admin password server-side
-        const expectedPassword = Deno.env.get('ADMIN_PASSWORD')
-        if (!expectedPassword || adminPassword !== expectedPassword) {
+        const expectedPassword = Deno.env.get('ADMIN_PASSWORD') || ''
+        if (!secureCompare(adminPassword || '', expectedPassword)) {
             console.log('Auth failed: password mismatch')
             return new Response(
                 JSON.stringify({ error: 'Unauthorized', message: 'Invalid admin password' }),
@@ -117,3 +117,23 @@ serve(async (req: Request) => {
         )
     }
 })
+
+/**
+ * Constant-time string comparison to prevent timing attacks.
+ */
+function secureCompare(a: string, b: string): boolean {
+    const encoder = new TextEncoder()
+    const aBuf = encoder.encode(a)
+    const bBuf = encoder.encode(b)
+
+    if (aBuf.byteLength !== bBuf.byteLength) {
+        return false
+    }
+
+    let result = 0
+    for (let i = 0; i < aBuf.byteLength; i++) {
+        result |= aBuf[i] ^ bBuf[i]
+    }
+
+    return result === 0
+}
