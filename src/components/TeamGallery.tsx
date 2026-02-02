@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { BASE_PATH } from '@/config';
 
@@ -30,14 +30,14 @@ const TeamGallery: React.FC = () => {
   }, []);
 
   // Gallery navigation functions
-  const openImageAtIndex = (index: number) => {
+  const openImageAtIndex = useCallback((index: number) => {
     if (loadedImages.length === 0) return;
     const safeIndex = Math.min(index, loadedImages.length - 1);
     setCurrentGalleryIndex(safeIndex);
     setSelectedImage(loadedImages[safeIndex].src);
-  };
+  }, [loadedImages]);
 
-  const navigateImage = (direction: 'prev' | 'next') => {
+  const navigateImage = useCallback((direction: 'prev' | 'next') => {
     if (loadedImages.length === 0) return;
 
     let newIndex;
@@ -49,7 +49,7 @@ const TeamGallery: React.FC = () => {
 
     setCurrentGalleryIndex(newIndex);
     setSelectedImage(loadedImages[newIndex].src);
-  };
+  }, [currentGalleryIndex, loadedImages]);
 
   const handleImageError = (failedImageSrc: string) => {
     setLoadedImages(prev => prev.filter(img => img.src !== failedImageSrc));
@@ -58,6 +58,24 @@ const TeamGallery: React.FC = () => {
       navigateImage('next');
     }
   };
+
+  // Keyboard navigation for modal
+  useEffect(() => {
+    if (!selectedImage) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        navigateImage('prev');
+      } else if (e.key === 'ArrowRight') {
+        navigateImage('next');
+      } else if (e.key === 'Escape') {
+        setSelectedImage(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImage, navigateImage]);
 
   return (
     <div className="space-y-6">
@@ -68,13 +86,26 @@ const TeamGallery: React.FC = () => {
         {loadedImages.length > 0 ? (
           loadedImages.map((image, index) => (
             <div key={index} className="aspect-square">
-              <img
-                src={image.src}
-                alt={image.alt}
-                className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
+              <div
+                role="button"
+                tabIndex={0}
+                className="w-full h-full rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 onClick={() => openImageAtIndex(index)}
-                onError={() => handleImageError(image.src)}
-              />
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openImageAtIndex(index);
+                  }
+                }}
+                aria-label={`View ${image.alt}`}
+              >
+                <img
+                  src={image.src}
+                  alt={image.alt}
+                  className="w-full h-full object-cover"
+                  onError={() => handleImageError(image.src)}
+                />
+              </div>
             </div>
           ))
         ) : (
@@ -101,7 +132,7 @@ const TeamGallery: React.FC = () => {
                 e.preventDefault();
                 navigateImage('prev');
               }}
-              className="absolute left-4 text-white bg-black/50 rounded-full p-3 hover:bg-black/70 transition-colors z-10"
+              className="absolute left-4 text-white bg-black/50 rounded-full p-3 hover:bg-black/70 transition-colors z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               aria-label="Previous image"
             >
               <ChevronLeft size={24} />
@@ -116,7 +147,7 @@ const TeamGallery: React.FC = () => {
                 e.preventDefault();
                 navigateImage('next');
               }}
-              className="absolute right-4 text-white bg-black/50 rounded-full p-3 hover:bg-black/70 transition-colors z-10"
+              className="absolute right-4 text-white bg-black/50 rounded-full p-3 hover:bg-black/70 transition-colors z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               aria-label="Next image"
             >
               <ChevronRight size={24} />
@@ -132,7 +163,7 @@ const TeamGallery: React.FC = () => {
                 e.stopPropagation();
                 setSelectedImage(null);
               }}
-              className="self-end text-white text-2xl mb-2 hover:text-primary transition-colors"
+              className="self-end text-white text-2xl mb-2 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
               aria-label="Close"
             >
               &times;
