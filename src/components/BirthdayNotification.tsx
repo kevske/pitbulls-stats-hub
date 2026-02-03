@@ -150,9 +150,9 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
   };
 
   const getBirthdayIcon = (daysUntil: number) => {
-    if (daysUntil === 0) return <Cake className="w-5 h-5 text-pink-500" />;
-    if (daysUntil > 0) return <Calendar className="w-5 h-5 text-blue-500" />;
-    return <Gift className="w-5 h-5 text-green-500" />;
+    if (daysUntil === 0) return <Cake className="w-5 h-5 text-pink-500" aria-hidden="true" />;
+    if (daysUntil > 0) return <Calendar className="w-5 h-5 text-blue-500" aria-hidden="true" />;
+    return <Gift className="w-5 h-5 text-green-500" aria-hidden="true" />;
   };
 
   const getCardClass = (daysUntil: number) => {
@@ -173,7 +173,11 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
   }
 
   return (
-    <div className="fixed top-4 right-4 z-50 max-w-md animate-fade-in">
+    <div
+      className="fixed top-4 right-4 z-50 max-w-md animate-fade-in"
+      role="status"
+      aria-live="polite"
+    >
       <Card className={`${getCardClass(birthdayInfos[0].daysUntil)} shadow-lg border-2`}>
         <CardContent className="p-4">
           <div className="flex justify-between items-start mb-3">
@@ -188,8 +192,9 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
               size="sm"
               onClick={() => setIsVisible(false)}
               className="h-8 w-8 p-0 hover:bg-transparent"
+              aria-label="Benachrichtigung schließen"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden="true" />
             </Button>
           </div>
 
