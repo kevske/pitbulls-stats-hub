@@ -178,7 +178,7 @@ const Videos = () => {
                   <div className="mt-4">
                     <Link
                       to={`/video-editor?game=${game.gameNumber}&video=${getEmbedUrl(videoData.link)}`}
-                      state={{ adminPassword }}
+                      state={{ adminPassword }} // Pass password in history state (secure memory-only) instead of localStorage
                     >
                       <Button className="gap-2">
                         <Tag className="w-4 h-4" />
