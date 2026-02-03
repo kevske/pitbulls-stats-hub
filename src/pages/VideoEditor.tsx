@@ -18,7 +18,7 @@ import { Upload, FileText, List, Save } from 'lucide-react';
 import { generateSaveData, SaveData, loadSaveFile } from '@/services/saveLoad';
 import { toast } from 'sonner';
 import Layout from '@/components/Layout';
-import { useSearchParams, useLocation } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useVideoProjectPersistence } from '@/hooks/useVideoProjectPersistence';
 import { usePlaylistManager } from '@/hooks/usePlaylistManager';
 import { useVideoPlayer } from '@/hooks/useVideoPlayer';
@@ -26,8 +26,6 @@ import { PlayerInfoService } from '@/services/playerInfoService';
 
 const VideoEditor = () => {
   const [searchParams] = useSearchParams();
-  const location = useLocation();
-  const adminPassword = location.state?.adminPassword;
   const gameNumber = searchParams.get('game');
   const videoUrl = searchParams.get('video');
 
@@ -116,8 +114,7 @@ const VideoEditor = () => {
       setPlayers(merged);
     }, [mergePlayers]),
     setVideoId,
-    setPlaylistId,
-    adminPassword
+    setPlaylistId
   });
 
   // Fetch active players from DB on mount
