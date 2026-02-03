@@ -18,3 +18,11 @@
 **Vulnerability:** Admin password validation used insecure string comparison (`!==`), allowing timing attacks to guess the password.
 **Learning:** Even in server-side Edge Functions, standard string comparison terminates early on mismatch, leaking information about the valid password prefix.
 **Prevention:** Use constant-time string comparison (e.g., manually implementing a loop that checks all characters or using `crypto.timingSafeEqual`) for all secret validations.
+
+## 2026-06-15 - Plaintext Password Persistence in LocalStorage
+**Vulnerability:** The admin password was stored in `localStorage` to allow implicit authentication for nested components (VideoEditor) and page refreshes.
+**Learning:** `localStorage` is accessible to any script on the same origin, making the plaintext password vulnerable to XSS attacks. Convenience features like "remember me" or implicit session continuity should not rely on storing raw secrets in persistent client storage.
+**Prevention:**
+1. Store sensitive secrets only in memory (React State, Context).
+2. Pass secrets explicitly between components using React Router state (`location.state`) or secure Context providers.
+3. Accept that page refreshes will clear the secret (session end) as a security feature, not a bug, unless using proper session-based auth (e.g. Supabase Auth) with secure HTTP-only cookies.
