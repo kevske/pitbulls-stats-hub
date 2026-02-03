@@ -12,26 +12,41 @@ export function getPlayerImprovements(
   currentGameNumber: number,
   allGameLogs: PlayerGameLog[]
 ): StatImprovement[] {
-  // Helper function to check if a player had playing time
-  const hasPlayedMinutes = (game: PlayerGameLog): boolean => {
-    return (game.minutesPlayed || 0) > 0;
-  };
+  // Find the two most recent games for this player with playing time
+  // Optimization: Single O(N) pass instead of filter().sort() (O(N) + O(M log M))
+  // This avoids allocating a new array and sorting overhead
 
-  // Filter logs for this player, only include games with playing time, and sort by game number (newest first)
-  const playerLogs = allGameLogs
-    .filter(log => 
-      log.playerId === playerId && 
-      log.gameNumber <= currentGameNumber &&
-      hasPlayedMinutes(log)
-    )
-    .sort((a, b) => b.gameNumber - a.gameNumber);
+  let currentGame: PlayerGameLog | null = null;
+  let previousGame: PlayerGameLog | null = null;
+
+  for (const log of allGameLogs) {
+    // 1. Filter checks
+    if (log.playerId !== playerId) continue;
+    if (log.gameNumber > currentGameNumber) continue;
+    if ((log.minutesPlayed || 0) <= 0) continue;
+
+    // 2. Track top 2 games by gameNumber
+    if (!currentGame) {
+      currentGame = log;
+    } else if (log.gameNumber > currentGame.gameNumber) {
+      previousGame = currentGame;
+      currentGame = log;
+    } else if (log.gameNumber === currentGame.gameNumber) {
+       // Duplicate game number found. Prefer the one we just found if we want to be consistent
+       // with stable sort or specific logic, but assuming unique game numbers per player/game:
+       // If strictly equal, we ignore or replace. Let's ignore to match "first found" if sorted desc,
+       // or if unsorted, it's ambiguous. But gameNumber should be unique per player.
+       // No action needed.
+    } else {
+      // log is older than current
+      if (!previousGame || log.gameNumber > previousGame.gameNumber) {
+        previousGame = log;
+      }
+    }
+  }
 
   // We need at least 2 games with playing time to calculate improvement
-  if (playerLogs.length < 2) return [];
-
-  // Always compare the two most recent games where player had playing time
-  const currentGame = playerLogs[0];
-  const previousGame = playerLogs[1];
+  if (!currentGame || !previousGame) return [];
 
   // Use minutes directly as they are already in numeric format
   const currentMinutes = currentGame.minutesPlayed || 0;
