@@ -28,6 +28,7 @@ const AdminPlayerInfo = lazyLoad(() => import("./pages/AdminPlayerInfo"));
 const Login = lazyLoad(() => import("./pages/Login"));
 const AdminAuditLogs = lazyLoad(() => import("./pages/AdminAuditLogs"));
 const GamesMinutesManager = lazyLoad(() => import("./components/GamesMinutesManager"));
+const News = lazyLoad(() => import("./pages/News"));
 const Impressum = lazyLoad(() => import("./pages/Impressum"));
 const Playbook = lazyLoad(() => import("./pages/Playbook"));
 
@@ -131,6 +132,7 @@ const App = () => {
                     <Route path="/games" element={<Games />} />
                     <Route path="/games/:id" element={<GameDetail />} />
                     <Route path="/videos" element={<Videos />} />
+                    <Route path="/news" element={<News />} />
                     <Route path="/video-editor" element={<VideoEditor />} />
                     <Route path="/spielplan" element={<Spielplan />} />
                     <Route path="/playbook" element={<Playbook />} />
