@@ -14,29 +14,6 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
   const [waitTime, setWaitTime] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
 
-  // Check for existing authentication on mount
-  useEffect(() => {
-    const isAuthenticated = localStorage.getItem('videos-authenticated');
-    const authTime = localStorage.getItem('videos-auth-time');
-
-    if (isAuthenticated === 'true' && authTime) {
-      const authTimestamp = parseInt(authTime);
-      const now = Date.now();
-
-      // Check if authentication is still valid (24 hours)
-      if (now - authTimestamp < 24 * 60 * 60 * 1000) {
-        console.log('Videos page: Found valid authentication in localStorage');
-        onSuccess();
-        return;
-      } else {
-        // Clear expired authentication
-        localStorage.removeItem('videos-authenticated');
-        localStorage.removeItem('videos-auth-time');
-        console.log('Videos page: Authentication expired, cleared from localStorage');
-      }
-    }
-  }, [onSuccess]);
-
   useEffect(() => {
     if (waitTime > 0) {
       const timer = setTimeout(() => setWaitTime(waitTime - 1), 1000);
@@ -62,12 +39,6 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
     if (correctPassword !== undefined) {
       if (password === correctPassword) {
         toast.success("Zugriff gewährt!");
-
-        // Store authentication in localStorage
-        localStorage.setItem('videos-authenticated', 'true');
-        localStorage.setItem('videos-auth-time', Date.now().toString());
-        console.log('Videos page: Authentication stored in localStorage');
-
         onSuccess(password);
       } else {
         const newAttempts = attempts + 1;
@@ -87,8 +58,6 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
     } else {
       // Server-side validation mode - pass password to callback
       // Store the password for later use, don't validate here
-      localStorage.setItem('admin-password', password);
-      localStorage.setItem('admin-auth-time', Date.now().toString());
       toast.success("Zugriff gewährt!");
       onSuccess(password);
     }
