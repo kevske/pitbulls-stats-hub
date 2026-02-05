@@ -176,7 +176,10 @@ const Videos = () => {
 
                   {/* Video Tagger Button */}
                   <div className="mt-4">
-                    <Link to={`/video-editor?game=${game.gameNumber}&video=${getEmbedUrl(videoData.link)}`}>
+                    <Link
+                      to={`/video-editor?game=${game.gameNumber}&video=${getEmbedUrl(videoData.link)}`}
+                      state={{ adminPassword }}
+                    >
                       <Button className="gap-2">
                         <Tag className="w-4 h-4" />
                         Im Video Tagger öffnen

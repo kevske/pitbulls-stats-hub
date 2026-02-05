@@ -16,6 +16,7 @@ interface UseVideoProjectPersistenceProps {
     setPlayers: (players: Player[]) => void;
     setVideoId: (id: string) => void;
     setPlaylistId: (id: string | undefined) => void;
+    adminPassword?: string;
 }
 
 export const useVideoProjectPersistence = ({
@@ -29,6 +30,7 @@ export const useVideoProjectPersistence = ({
     setPlayers,
     setVideoId,
     setPlaylistId,
+    adminPassword,
 }: UseVideoProjectPersistenceProps) => {
     const [lastSavedData, setLastSavedData] = useState<SaveData | null>(null);
     const [timestampConflict, setTimestampConflict] = useState<{
@@ -149,7 +151,6 @@ export const useVideoProjectPersistence = ({
 
             console.log('Saving data to Supabase:', saveData);
 
-            const adminPassword = localStorage.getItem('admin-password') || undefined;
             const savedId = await VideoProjectService.saveProject(saveData, adminPassword);
 
             if (savedId) {
@@ -163,7 +164,7 @@ export const useVideoProjectPersistence = ({
             console.error('Error saving:', error);
             toast.error(`Failed to save data: ${(error as Error).message}`);
         }
-    }, [gameNumber, currentPlaylistIndex, events, players, videoId, playlistId]);
+    }, [gameNumber, currentPlaylistIndex, events, players, videoId, playlistId, adminPassword]);
 
     // Autosave and Realtime
     useEffect(() => {
@@ -254,7 +255,6 @@ export const useVideoProjectPersistence = ({
                     version: '1.0.0'
                 };
 
-                const adminPassword = localStorage.getItem('admin-password') || undefined;
                 const savedId = await VideoProjectService.saveProject(saveData, adminPassword);
                 if (savedId) {
                     setLastSavedData(saveData);
@@ -264,7 +264,7 @@ export const useVideoProjectPersistence = ({
         }, 2000); // 2 second debounce
 
         return () => clearTimeout(timeoutId);
-    }, [events, players, gameNumber, currentPlaylistIndex, videoId, playlistId, lastSavedData]);
+    }, [events, players, gameNumber, currentPlaylistIndex, videoId, playlistId, lastSavedData, adminPassword]);
 
     // Exit protection
     useEffect(() => {
