@@ -21,7 +21,7 @@ serve(async (req: Request) => {
 
         // Validate admin password server-side
         const expectedPassword = Deno.env.get('ADMIN_PASSWORD') || ''
-        if (!secureCompare(adminPassword || '', expectedPassword)) {
+        if (!await secureCompare(adminPassword || '', expectedPassword)) {
             console.log('Auth failed: password mismatch')
             return new Response(
                 JSON.stringify({ error: 'Unauthorized', message: 'Invalid admin password' }),
@@ -119,20 +119,24 @@ serve(async (req: Request) => {
 })
 
 /**
- * Constant-time string comparison to prevent timing attacks.
+ * Constant-time string comparison using SHA-256 hashing to prevent timing attacks.
  */
-function secureCompare(a: string, b: string): boolean {
+async function secureCompare(a: string, b: string): Promise<boolean> {
     const encoder = new TextEncoder()
     const aBuf = encoder.encode(a)
     const bBuf = encoder.encode(b)
 
-    if (aBuf.byteLength !== bBuf.byteLength) {
-        return false
-    }
+    // Use SHA-256 to hash the inputs
+    const aHash = await crypto.subtle.digest('SHA-256', aBuf)
+    const bHash = await crypto.subtle.digest('SHA-256', bBuf)
 
+    const aHashArr = new Uint8Array(aHash)
+    const bHashArr = new Uint8Array(bHash)
+
+    // Compare hashes in constant time
     let result = 0
-    for (let i = 0; i < aBuf.byteLength; i++) {
-        result |= aBuf[i] ^ bBuf[i]
+    for (let i = 0; i < aHashArr.length; i++) {
+        result |= aHashArr[i] ^ bHashArr[i]
     }
 
     return result === 0
