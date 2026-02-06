@@ -5,10 +5,12 @@ import { forwardRef, useImperativeHandle } from 'react';
 interface YouTubePlayerProps {
   videoId?: string;
   playlistId?: string;
+  autoplay?: boolean;
   onTimeUpdate?: (time: number) => void;
   onStateChange?: (state: number) => void;
   onPlaylistReady?: (videoIds: string[], currentIndex: number) => void;
   onVideoChange?: (videoId: string, index: number) => void;
+  onReady?: (player: any) => void;
   className?: string;
 }
 
@@ -24,19 +26,23 @@ export interface YouTubePlayerRef {
 export const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
   videoId,
   playlistId,
+  autoplay,
   onTimeUpdate,
   onStateChange,
   onPlaylistReady,
   onVideoChange,
+  onReady,
   className
 }, ref) => {
   const { containerRef, isReady, playVideo, pauseVideo, seekTo, playVideoAt, nextVideo, previousVideo } = useYouTubePlayer({
     videoId,
     playlistId,
+    autoplay,
     onTimeUpdate,
     onStateChange,
     onPlaylistReady,
     onVideoChange,
+    onReady,
   });
 
   // Expose functions to parent component

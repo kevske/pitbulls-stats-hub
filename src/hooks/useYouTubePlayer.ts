@@ -57,10 +57,12 @@ declare global {
 interface UseYouTubePlayerOptions {
   videoId?: string;
   playlistId?: string;
+  autoplay?: boolean;
   onTimeUpdate?: (time: number) => void;
   onStateChange?: (state: number) => void;
   onPlaylistReady?: (videoIds: string[], currentIndex: number) => void;
   onVideoChange?: (videoId: string, index: number) => void;
+  onReady?: (player: any) => void;
 }
 
 // Singleton promise to ensure we only load the API once and handle multiple requests correctly
@@ -117,10 +119,12 @@ const loadYouTubeAPISingleton = (): Promise<void> => {
 export function useYouTubePlayer({
   videoId,
   playlistId,
+  autoplay = false,
   onTimeUpdate,
   onStateChange,
   onPlaylistReady,
   onVideoChange,
+  onReady,
 }: UseYouTubePlayerOptions) {
   const playerRef = useRef<YTPlayer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -201,7 +205,7 @@ export function useYouTubePlayer({
     if (!containerRef.current) return;
 
     const playerVars: any = {
-      autoplay: 0,
+      autoplay: autoplay ? 1 : 0,
       controls: 1,
       modestbranding: 1,
       rel: 0,
@@ -230,6 +234,9 @@ export function useYouTubePlayer({
           onReady: (event) => {
             console.log('YouTube player ready:', event.target);
             setIsReady(true);
+            if (onReady) {
+              onReady(event.target);
+            }
 
             // If playlist, get the video list after a short delay
             if (playlistId) {
