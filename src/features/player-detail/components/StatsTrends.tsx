@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { PlayerGameLog } from '@/types/stats';
 
@@ -8,14 +8,17 @@ interface StatsTrendsProps {
     getOpponentName: (gameNumber: number) => string;
 }
 
-export const StatsTrends: React.FC<StatsTrendsProps> = ({
+export const StatsTrends: React.FC<StatsTrendsProps> = memo(({
     gameLogs,
     hasBoxScoreData,
     getOpponentName
 }) => {
-    const data = [...gameLogs]
-        .filter(log => hasBoxScoreData(log.gameNumber))
-        .sort((a, b) => a.gameNumber - b.gameNumber);
+    // Bolt: Optimized data preparation
+    // 1. Used useMemo to prevent re-calculation on every render
+    // 2. Removed redundant .sort() as gameLogs are already sorted by gameNumber in parent hooks
+    const data = useMemo(() => {
+        return gameLogs.filter(log => hasBoxScoreData(log.gameNumber));
+    }, [gameLogs, hasBoxScoreData]);
 
     if (gameLogs.length <= 1) return null;
 
@@ -55,7 +58,7 @@ export const StatsTrends: React.FC<StatsTrendsProps> = ({
                                     padding: '8px 12px'
                                 }}
                                 formatter={(value: number) => [value, 'Punkte']}
-                                labelFormatter={(label: any) => getOpponentName(Number(label))}
+                                labelFormatter={(label: number | string) => getOpponentName(Number(label))}
                             />
                             <Line
                                 type="monotone"
@@ -102,7 +105,7 @@ export const StatsTrends: React.FC<StatsTrendsProps> = ({
                                     border: '1px solid #e5e7eb',
                                     padding: '8px 12px'
                                 }}
-                                labelFormatter={(label: any) => getOpponentName(Number(label))}
+                                labelFormatter={(label: number | string) => getOpponentName(Number(label))}
                             />
                             <Legend
                                 wrapperStyle={{ paddingTop: '20px' }}
@@ -141,4 +144,6 @@ export const StatsTrends: React.FC<StatsTrendsProps> = ({
             </div>
         </div>
     );
-};
+});
+
+StatsTrends.displayName = 'StatsTrends';
