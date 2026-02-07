@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 
 interface PasswordProtectionProps {
   onSuccess: (password?: string) => void;
@@ -13,6 +14,7 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
   const [attempts, setAttempts] = useState(0);
   const [waitTime, setWaitTime] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Check for existing authentication on mount
   useEffect(() => {
@@ -101,14 +103,29 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
         Tipp: Spitzname unseres Abteilungsleiters
       </p>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          type="password"
-          placeholder="Passwort eingeben"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={waitTime > 0 || isLocked}
-          className="border-primary/30"
-        />
+        <div className="relative">
+          <Input
+            type={showPassword ? "text" : "password"}
+            placeholder="Passwort eingeben"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={waitTime > 0 || isLocked}
+            className="border-primary/30 pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={showPassword ? "Passwort verbergen" : "Passwort anzeigen"}
+            disabled={waitTime > 0 || isLocked}
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </button>
+        </div>
         <Button
           type="submit"
           disabled={waitTime > 0 || isLocked}
