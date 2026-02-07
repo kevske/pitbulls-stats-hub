@@ -3,7 +3,7 @@ import { TaggedEvent } from '@/types/basketball';
 import { YouTubePlayer, YouTubePlayerRef } from '@/components/video/YouTubePlayer';
 import { EventList } from '@/components/video/EventList';
 import { VideoProjectService } from '@/services/videoProjectService';
-import { Card } from '@/components/ui/card';
+import { PlayCircle } from 'lucide-react';
 
 interface VideoPlayerWithLogsProps {
     gameNumber: number;
@@ -15,11 +15,14 @@ export const VideoPlayerWithLogs = memo(({ gameNumber, youtubeLink }: VideoPlaye
     const [playlistId, setPlaylistId] = useState<string | undefined>();
     const [events, setEvents] = useState<TaggedEvent[]>([]);
     const [currentTime, setCurrentTime] = useState(0);
+    const [shouldLoadPlayer, setShouldLoadPlayer] = useState(false);
     const youtubePlayerRef = useRef<YouTubePlayerRef>(null);
     const lastLoadedIndex = useRef<number>(1);
+    const pendingSeekTime = useRef<number | null>(null);
 
     // Extract video/playlist IDs from URL
     useEffect(() => {
+        setShouldLoadPlayer(false);
         if (!youtubeLink) return;
 
         // Check for playlist first
@@ -74,9 +77,21 @@ export const VideoPlayerWithLogs = memo(({ gameNumber, youtubeLink }: VideoPlaye
         setCurrentTime(time);
     }, []);
 
-    const handleSeekTo = useCallback((timestamp: number) => {
-        youtubePlayerRef.current?.seekTo(timestamp);
+    const handlePlayerReady = useCallback((player: any) => {
+        if (pendingSeekTime.current !== null) {
+            player.seekTo(pendingSeekTime.current, true);
+            pendingSeekTime.current = null;
+        }
     }, []);
+
+    const handleSeekTo = useCallback((timestamp: number) => {
+        if (!shouldLoadPlayer) {
+            setShouldLoadPlayer(true);
+            pendingSeekTime.current = timestamp;
+        } else {
+            youtubePlayerRef.current?.seekTo(timestamp);
+        }
+    }, [shouldLoadPlayer]);
 
     const handleVideoChange = useCallback((newVideoId: string, index: number) => {
         // index is 0-based from player, we need 1-based for DB
@@ -86,14 +101,48 @@ export const VideoPlayerWithLogs = memo(({ gameNumber, youtubeLink }: VideoPlaye
     return (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[85vh]">
             <div className="lg:col-span-3">
-                <YouTubePlayer
-                    ref={youtubePlayerRef}
-                    videoId={videoId}
-                    playlistId={playlistId}
-                    onTimeUpdate={handleTimeUpdate}
-                    onVideoChange={handleVideoChange}
-                    className="h-full"
-                />
+                {shouldLoadPlayer ? (
+                    <YouTubePlayer
+                        ref={youtubePlayerRef}
+                        videoId={videoId}
+                        playlistId={playlistId}
+                        autoplay={true}
+                        onTimeUpdate={handleTimeUpdate}
+                        onVideoChange={handleVideoChange}
+                        onReady={handlePlayerReady}
+                        className="h-full"
+                    />
+                ) : (
+                    <div
+                        className="relative w-full h-full rounded-xl overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50 cursor-pointer group"
+                        onClick={() => setShouldLoadPlayer(true)}
+                    >
+                        {videoId ? (
+                            <img
+                                src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                                alt="Video thumbnail"
+                                className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity"
+                                onError={(e) => {
+                                    // Fallback to hqdefault if maxresdefault doesn't exist
+                                    const target = e.target as HTMLImageElement;
+                                    if (target.src.includes('maxresdefault')) {
+                                        target.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                                    }
+                                }}
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-800" />
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-primary/90 text-primary-foreground rounded-full p-6 shadow-lg transform group-hover:scale-110 transition-transform">
+                                <PlayCircle className="w-16 h-16" />
+                            </div>
+                        </div>
+                        <div className="absolute bottom-6 left-0 right-0 text-center">
+                            <span className="text-white font-bold text-lg drop-shadow-md">Video abspielen</span>
+                        </div>
+                    </div>
+                )}
             </div>
             <div className="h-full overflow-hidden">
                 <EventList
