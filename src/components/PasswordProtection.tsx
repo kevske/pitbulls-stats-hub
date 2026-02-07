@@ -86,9 +86,7 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
       }
     } else {
       // Server-side validation mode - pass password to callback
-      // Store the password for later use, don't validate here
-      localStorage.setItem('admin-password', password);
-      localStorage.setItem('admin-auth-time', Date.now().toString());
+      // Do NOT store the password in localStorage to prevent security risks
       toast.success("Zugriff gewährt!");
       onSuccess(password);
     }
