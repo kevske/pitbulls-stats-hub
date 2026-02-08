@@ -173,6 +173,8 @@ const PlayerCard = memo(({ player, gameLogs = [], playerLogs, currentGameNumber 
               layoutId={`player-img-${player.id}`}
               src={imageSrc}
               alt={`${player.firstName} ${player.lastName}`}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover object-top scale-110 group-hover:scale-125 transition-transform duration-700"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
@@ -246,6 +248,8 @@ const PlayerCard = memo(({ player, gameLogs = [], playerLogs, currentGameNumber 
             <img
               src={imageSrc}
               alt={`${player.firstName} ${player.lastName}`}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover object-top"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
