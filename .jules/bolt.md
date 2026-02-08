@@ -28,3 +28,7 @@
 ## 2026-05-25 - Home Page Optimization
 **Learning:** `Home.tsx` was filtering the `games` array multiple times (O(N) * 3) to find the last game, streak, and validate dates. Date parsing is expensive.
 **Action:** Consolidated all filtering into a single `relevantGames` useMemo hook (O(N) * 1) and derived other stats from it. Also consolidated redundant sorting of player logs.
+
+## 2026-05-26 - StatsTrends Chart Optimization
+**Learning:** `StatsTrends` was re-sorting `gameLogs` (O(N log N)) on every render, even though the data was already sorted by the parent hook. It also lacked memoization, causing chart re-renders on unrelated parent state changes.
+**Action:** Removed redundant sort, wrapped component in `React.memo`, and memoized data preparation with `useMemo`.

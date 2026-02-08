@@ -102,6 +102,8 @@ const TeamGallery: React.FC = () => {
                 <img
                   src={image.src}
                   alt={image.alt}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                   onError={() => handleImageError(image.src)}
                 />
