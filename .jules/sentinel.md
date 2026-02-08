@@ -18,3 +18,8 @@
 **Vulnerability:** Admin password validation used insecure string comparison (`!==`), allowing timing attacks to guess the password.
 **Learning:** Even in server-side Edge Functions, standard string comparison terminates early on mismatch, leaking information about the valid password prefix.
 **Prevention:** Use constant-time string comparison (e.g., manually implementing a loop that checks all characters or using `crypto.timingSafeEqual`) for all secret validations.
+
+## 2025-02-12 - [Weak Input Validation on YouTube IDs]
+**Vulnerability:** YouTube ID extraction logic relied on loose negative checks (`!url.includes('http')`), allowing malicious strings like `javascript:alert(1)` to be processed as valid Video IDs.
+**Learning:** Negative validation (checking what input *isn't*) is often insufficient. Fallback logic that assumes "anything else must be an ID" is dangerous.
+**Prevention:** Use strict allow-list regex patterns (e.g. `^[a-zA-Z0-9_-]{11}$`) to validate IDs. Always validate format before accepting user input as an identifier.
