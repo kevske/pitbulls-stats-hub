@@ -49,19 +49,31 @@ const extractVideoId = (url: string): { videoId: string | null, playlistId: stri
   let videoId = null;
   let playlistId = null;
 
+  if (!url) return { videoId, playlistId };
+
   // Check playlist first
-  const playlistMatch = url.match(/[?&]list=([^&]+)/);
-  if (playlistMatch || url.startsWith('PL')) {
-    playlistId = playlistMatch ? playlistMatch[1] : (url.startsWith('PL') ? url : null);
+  // Validate playlist ID format: alphanumeric, dashes, underscores
+  const playlistMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+  if (playlistMatch) {
+    playlistId = playlistMatch[1];
     return { videoId, playlistId };
   }
 
-  // Check unique video ID
-  const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([^&?/]+)/);
+  // Direct playlist ID input
+  if (url.startsWith('PL') && /^[a-zA-Z0-9_-]+$/.test(url)) {
+    playlistId = url;
+    return { videoId, playlistId };
+  }
+
+  // Check unique video ID from URL
+  const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([a-zA-Z0-9_-]{11})/);
   if (videoIdMatch) {
     videoId = videoIdMatch[1];
-  } else if (!url.includes('http') && !url.includes('/')) {
-    // assume input is ID if not URL
+    return { videoId, playlistId };
+  }
+
+  // Fallback: Check if input IS a valid video ID (exactly 11 chars, safe charset)
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) {
     videoId = url;
   }
 
@@ -176,7 +188,10 @@ const Videos = () => {
 
                   {/* Video Tagger Button */}
                   <div className="mt-4">
-                    <Link to={`/video-editor?game=${game.gameNumber}&video=${getEmbedUrl(videoData.link)}`}>
+                    <Link
+                      to={`/video-editor?game=${game.gameNumber}&video=${getEmbedUrl(videoData.link)}`}
+                      state={{ adminPassword }}
+                    >
                       <Button className="gap-2">
                         <Tag className="w-4 h-4" />
                         Im Video Tagger öffnen

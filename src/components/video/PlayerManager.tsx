@@ -40,6 +40,7 @@ export function PlayerManager({ players, onAddPlayer, onRemovePlayer }: PlayerMa
           <Input
             type="text"
             placeholder="Player name..."
+            aria-label="Player name"
             value={newPlayerName}
             onChange={(e) => setNewPlayerName(e.target.value)}
             className="flex-1 h-8 text-sm bg-background/50"
@@ -47,14 +48,15 @@ export function PlayerManager({ players, onAddPlayer, onRemovePlayer }: PlayerMa
           <Input
             type="number"
             placeholder="#"
+            aria-label="Jersey number"
             value={newPlayerJerseyNumber}
             onChange={(e) => setNewPlayerJerseyNumber(e.target.value)}
             className="w-16 h-8 text-sm bg-background/50"
             min="1"
             max="99"
           />
-          <Select value={newPlayerPosition} onValueChange={(value: Position) => setNewPlayerPosition(value)}>
-            <SelectTrigger className="w-24 h-8 text-sm bg-background/50">
+          <Select value={newPlayerPosition} onValueChange={(value: PositionType) => setNewPlayerPosition(value)}>
+            <SelectTrigger className="w-24 h-8 text-sm bg-background/50" aria-label="Position">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -63,7 +65,7 @@ export function PlayerManager({ players, onAddPlayer, onRemovePlayer }: PlayerMa
               <SelectItem value="Center">Center</SelectItem>
             </SelectContent>
           </Select>
-          <Button type="submit" size="sm" className="h-8 px-2">
+          <Button type="submit" size="sm" className="h-8 px-2" aria-label="Add player">
             <UserPlus className="h-4 w-4" />
           </Button>
         </div>
@@ -79,6 +81,7 @@ export function PlayerManager({ players, onAddPlayer, onRemovePlayer }: PlayerMa
             <button
               onClick={() => onRemovePlayer(player.id)}
               className="hover:bg-destructive/20 rounded-full p-1 transition-colors"
+              aria-label={`Remove ${player.name}`}
             >
               <X className="h-3 w-3" />
             </button>
