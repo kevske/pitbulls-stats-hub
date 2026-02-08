@@ -163,8 +163,7 @@ const getDangerousPlayers = async (teamName: string, teamId: string, gameId: str
             .select('*, games(*)')
             .eq('team_id', teamId)
             .gte('scraped_at', twoWeeksAgo.toISOString())
-            .order('scraped_at', { ascending: false })
-            .limit(2);
+            .order('scraped_at', { ascending: false });
 
         if (recentStatsError) throw recentStatsError;
 

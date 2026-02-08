@@ -1,5 +1,6 @@
 import React from 'react';
 import { DangerousPlayer } from '@/types/supabase';
+import { Flame, Snowflake, Minus } from 'lucide-react';
 
 interface DangerousPlayersTableProps {
     players: DangerousPlayer[];
@@ -26,25 +27,48 @@ const DangerousPlayersTable: React.FC<DangerousPlayersTableProps> = ({ players, 
                         </tr>
                     </thead>
                     <tbody>
-                        {players.map((player) => (
-                            <tr key={`${player.player.first_name}_${player.player.last_name}`}>
-                                <td className="border border-border px-4 py-2 font-medium">
-                                    {player.player.full_name}
-                                </td>
-                                <td className={`border border-border px-4 py-2 text-center ${player.seasonStats.avgPoints === bestPoints ? 'bg-yellow-100 text-yellow-900 dark:bg-yellow-500/20 dark:text-yellow-300 font-bold' : ''}`}>
-                                    {player.seasonStats.avgPoints.toFixed(1)}
-                                </td>
-                                <td className={`border border-border px-4 py-2 text-center ${player.seasonStats.avgThreePointers === best3Pointers ? 'bg-yellow-100 text-yellow-900 dark:bg-yellow-500/20 dark:text-yellow-300 font-bold' : ''}`}>
-                                    {player.seasonStats.avgThreePointers.toFixed(1)}
-                                </td>
-                                <td className={`border border-border px-4 py-2 text-center ${player.seasonStats.avgFreeThrows === bestFreeThrows ? 'bg-yellow-100 text-yellow-900 dark:bg-yellow-500/20 dark:text-yellow-300 font-bold' : ''}`}>
-                                    {player.seasonStats.avgFreeThrows.toFixed(1)}/{player.seasonStats.avgFreeThrowAttempts.toFixed(1)}
-                                </td>
-                                <td className="border border-border px-4 py-2 text-center">
-                                    {player.seasonStats.avgFouls.toFixed(1)}
-                                </td>
-                            </tr>
-                        ))}
+                        {players.map((player) => {
+                            const getTrend = (recent: number, season: number) => {
+                                if (recent > season) return <Flame className="w-4 h-4 text-orange-500 inline ml-1" />;
+                                if (recent < season) return <Snowflake className="w-4 h-4 text-blue-400 inline ml-1" />;
+                                return <Minus className="w-4 h-4 text-muted-foreground inline ml-1" />;
+                            };
+
+                            return (
+                                <tr key={`${player.player.first_name}_${player.player.last_name}`}>
+                                    <td className="border border-border px-4 py-2 font-medium">
+                                        {player.player.full_name}
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                            Form (2 Spiele)
+                                        </div>
+                                    </td>
+                                    <td className={`border border-border px-4 py-2 text-center ${player.seasonStats.avgPoints === bestPoints ? 'bg-yellow-100 text-yellow-900 dark:bg-yellow-500/20 dark:text-yellow-300 font-bold' : ''}`}>
+                                        <div>{player.seasonStats.avgPoints.toFixed(1)}</div>
+                                        <div className="text-xs text-muted-foreground mt-1 flex items-center justify-center">
+                                            {player.recentStats.avgPointsLastTwo.toFixed(1)}
+                                            {getTrend(player.recentStats.avgPointsLastTwo, player.seasonStats.avgPoints)}
+                                        </div>
+                                    </td>
+                                    <td className={`border border-border px-4 py-2 text-center ${player.seasonStats.avgThreePointers === best3Pointers ? 'bg-yellow-100 text-yellow-900 dark:bg-yellow-500/20 dark:text-yellow-300 font-bold' : ''}`}>
+                                        <div>{player.seasonStats.avgThreePointers.toFixed(1)}</div>
+                                        <div className="text-xs text-muted-foreground mt-1 flex items-center justify-center">
+                                            {player.recentStats.avgThreePointersLastTwo.toFixed(1)}
+                                            {getTrend(player.recentStats.avgThreePointersLastTwo, player.seasonStats.avgThreePointers)}
+                                        </div>
+                                    </td>
+                                    <td className={`border border-border px-4 py-2 text-center ${player.seasonStats.avgFreeThrows === bestFreeThrows ? 'bg-yellow-100 text-yellow-900 dark:bg-yellow-500/20 dark:text-yellow-300 font-bold' : ''}`}>
+                                        <div>{player.seasonStats.avgFreeThrows.toFixed(1)}/{player.seasonStats.avgFreeThrowAttempts.toFixed(1)}</div>
+                                        <div className="text-xs text-muted-foreground mt-1 flex items-center justify-center">
+                                            {player.recentStats.avgFreeThrowsLastTwo.toFixed(1)}
+                                            {getTrend(player.recentStats.avgFreeThrowsLastTwo, player.seasonStats.avgFreeThrows)}
+                                        </div>
+                                    </td>
+                                    <td className="border border-border px-4 py-2 text-center">
+                                        {player.seasonStats.avgFouls.toFixed(1)}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
