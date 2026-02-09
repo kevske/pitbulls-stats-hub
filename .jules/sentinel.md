@@ -23,3 +23,8 @@
 **Vulnerability:** YouTube ID extraction logic relied on loose negative checks (`!url.includes('http')`), allowing malicious strings like `javascript:alert(1)` to be processed as valid Video IDs.
 **Learning:** Negative validation (checking what input *isn't*) is often insufficient. Fallback logic that assumes "anything else must be an ID" is dangerous.
 **Prevention:** Use strict allow-list regex patterns (e.g. `^[a-zA-Z0-9_-]{11}$`) to validate IDs. Always validate format before accepting user input as an identifier.
+
+## 2026-05-30 - Fail Open on Missing Admin Password Config
+**Vulnerability:** The Edge Functions (`admin-update-minutes` and `admin-manage-videos`) used `Deno.env.get('ADMIN_PASSWORD') || ''` as a fallback. If the environment variable was missing, the expected password became an empty string. Since unauthorized requests often send empty or no password, this allowed unauthorized access.
+**Learning:** Defaulting configuration values to "empty" or "permissive" states creates "Fail Open" vulnerabilities. Security controls must always "Fail Closed" — if the configuration is invalid, the system should deny all access rather than allowing potentially unrestricted access.
+**Prevention:** Explicitly check for the existence and non-emptiness of security-critical environment variables. If they are missing, return a 500 error and refuse to process the request.
