@@ -20,8 +20,16 @@ serve(async (req: Request) => {
         const { action, payload, adminPassword } = await req.json()
 
         // Validate admin password server-side
-        const expectedPassword = Deno.env.get('ADMIN_PASSWORD') || ''
-        if (!await secureCompare(adminPassword || '', expectedPassword)) {
+        const expectedPassword = Deno.env.get('ADMIN_PASSWORD')
+        if (!expectedPassword) {
+            console.error('Configuration error: ADMIN_PASSWORD environment variable is missing or empty')
+            return new Response(
+                JSON.stringify({ error: 'Configuration error', message: 'Server is not properly configured' }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        if (!adminPassword || !await secureCompare(adminPassword, expectedPassword)) {
             console.log('Auth failed: password mismatch')
             return new Response(
                 JSON.stringify({ error: 'Unauthorized', message: 'Invalid admin password' }),
