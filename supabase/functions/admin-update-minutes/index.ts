@@ -19,6 +19,30 @@ serve(async (req: Request) => {
     try {
         const { gameNumber, playerSeconds, adminPassword } = await req.json()
 
+        // Input validation
+        if (!gameNumber || (typeof gameNumber !== 'string' && typeof gameNumber !== 'number')) {
+            return new Response(
+                JSON.stringify({ error: 'Bad Request', message: 'Invalid gameNumber format' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // Prevent injection in .or() filter
+        const gameNumberStr = String(gameNumber)
+        if (!/^[a-zA-Z0-9_-]+$/.test(gameNumberStr)) {
+            return new Response(
+                JSON.stringify({ error: 'Bad Request', message: 'Invalid gameNumber format' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        if (!Array.isArray(playerSeconds)) {
+             return new Response(
+                JSON.stringify({ error: 'Bad Request', message: 'Invalid playerSeconds format' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
         // Validate admin password server-side
         const expectedPassword = Deno.env.get('ADMIN_PASSWORD')
         if (!expectedPassword) {
@@ -213,7 +237,7 @@ serve(async (req: Request) => {
     } catch (error) {
         console.error('Edge function error:', error)
         return new Response(
-            JSON.stringify({ error: 'Server error', message: error.message }),
+            JSON.stringify({ error: 'Server error', message: 'An internal error occurred' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
