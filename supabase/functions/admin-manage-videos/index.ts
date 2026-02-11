@@ -19,6 +19,21 @@ serve(async (req: Request) => {
     try {
         const { action, payload, adminPassword } = await req.json()
 
+        // Input validation
+        if (!payload || typeof payload !== 'object') {
+            return new Response(
+                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid payload' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        if (!action || typeof action !== 'string') {
+            return new Response(
+                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid action' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
         // Validate admin password server-side
         const expectedPassword = Deno.env.get('ADMIN_PASSWORD')
         if (!expectedPassword) {
@@ -120,7 +135,7 @@ serve(async (req: Request) => {
     } catch (error) {
         console.error('Edge function error:', error)
         return new Response(
-            JSON.stringify({ error: 'Server error', message: error.message }),
+            JSON.stringify({ error: 'Server error', message: 'An internal error occurred' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
