@@ -34,6 +34,21 @@ serve(async (req: Request) => {
             )
         }
 
+        // Input validation
+        if (!payload || typeof payload !== 'object') {
+            return new Response(
+                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid payload' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        if (!action || typeof action !== 'string') {
+            return new Response(
+                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid action' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
         // Validate admin password server-side
         const expectedPassword = Deno.env.get('ADMIN_PASSWORD')
         if (!expectedPassword) {
