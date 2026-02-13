@@ -7,6 +7,7 @@ Fetches data from basketball-bund.net REST API and stores it in Supabase
 import os
 import requests
 import asyncio
+import aiohttp
 
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -160,41 +161,79 @@ class BasketballBundCrawler:
     def fetch_box_scores(self, games):
         """Fetch box scores for finished games"""
         try:
-            logger.info(f"Fetching box scores for games synchronously...")
-            box_scores = []
+            # Use asyncio.run to run the async version
+            box_scores, quarter_score_updates = asyncio.run(self.fetch_box_scores_async(games))
             
-            # Filter games
-            games_to_fetch = []
-            for game in games:
-                if game.get('result') and ':' in game.get('result', ''):
-                    game_id = str(game.get('matchId', ''))
-                    if game_id:
-                        games_to_fetch.append((game_id, game))
-            
-            logger.info(f"Found {len(games_to_fetch)} games to fetch box scores for")
-            
-            for index, (game_id, game) in enumerate(games_to_fetch):
+            # Update quarter scores synchronously
+            for game_id, scores in quarter_score_updates:
                 try:
-                    logger.info(f"Fetching box score for game {game_id} ({index+1}/{len(games_to_fetch)})")
-                    entries = self.fetch_game_box_score(game_id, game)
-                    if entries:
-                        box_scores.extend(entries)
-                    
-                    # Be nice to the server
-                    time.sleep(0.5)
-                        
+                    self.update_game_with_quarter_scores(game_id, scores)
                 except Exception as e:
-                    logger.error(f"Error processing game {game_id}: {e}")
-                    continue
+                    logger.error(f"Error updating quarter scores for game {game_id}: {e}")
 
-            logger.info(f"Fetched box scores for {len(box_scores)} player entries")
             return box_scores
         except Exception as e:
             logger.error(f"Error in fetch_box_scores: {e}")
             return []
 
-    # Async methods removed as we switched to synchronous for better stability
-    # fetch_box_scores_async and fetch_single_game_box_score_async deleted
+    async def fetch_box_scores_async(self, games):
+        """Fetch box scores for finished games asynchronously"""
+        logger.info(f"Fetching box scores for games asynchronously...")
+        box_scores = []
+        quarter_score_updates = []
+
+        # Filter games
+        games_to_fetch = []
+        for game in games:
+            if game.get('result') and ':' in game.get('result', ''):
+                game_id = str(game.get('matchId', ''))
+                if game_id:
+                    games_to_fetch.append((game_id, game))
+
+        logger.info(f"Found {len(games_to_fetch)} games to fetch box scores for")
+
+        sem = asyncio.Semaphore(5)  # Limit concurrency to 5 to be nice to the server
+
+        async with aiohttp.ClientSession(headers={
+            'User-Agent': 'BasketballBund-Crawler/1.0',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        }) as session:
+
+            tasks = []
+            for index, (game_id, game) in enumerate(games_to_fetch):
+                task = self.fetch_single_game_box_score_async(session, sem, game_id, game)
+                tasks.append(task)
+
+            results = await asyncio.gather(*tasks)
+
+            for result in results:
+                if result:
+                    entries, qs_update = result
+                    if entries:
+                        box_scores.extend(entries)
+                    if qs_update:
+                        quarter_score_updates.append(qs_update)
+
+        logger.info(f"Fetched box scores for {len(box_scores)} player entries")
+        return box_scores, quarter_score_updates
+
+    async def fetch_single_game_box_score_async(self, session, sem, game_id, game_data):
+        """Fetch box score for a single game asynchronously with semaphore"""
+        async with sem:
+            try:
+                logger.info(f"Fetching box score for game {game_id}")
+                url = f"{self.box_score_base_url}?type=1&spielplan_id={game_id}&liga_id={self.league_id}&defaultview=1"
+
+                async with session.get(url) as response:
+                    response.raise_for_status()
+                    content = await response.read()
+
+                    # Parse in a separate thread to avoid blocking the event loop
+                    return await asyncio.to_thread(self.parse_box_score_data, content, game_id, game_data)
+
+            except Exception as e:
+                logger.error(f"Error fetching box score for game {game_id}: {e}")
+                return None
 
 
 
