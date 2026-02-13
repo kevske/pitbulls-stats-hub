@@ -109,127 +109,170 @@ serve(async (req: Request) => {
             )
         }
 
-        // Update each player's minutes
-        const results = []
+        // Bulk optimization: Fetch existing data first
+        const { data: existingBoxScores, error: boxScoreError } = await supabaseAdmin
+            .from('box_scores')
+            .select('player_slug, player_first_name, player_last_name')
+            .eq('game_id', realGameId)
+            .eq('team_id', tsvNeuenstadtTeamId)
+
+        if (boxScoreError) {
+             console.error('Error fetching box scores:', boxScoreError)
+             return new Response(
+                JSON.stringify({ error: 'Database error', message: boxScoreError.message }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        const playerSlugs = playerSeconds.map((p: any) => p.playerId)
+        const { data: existingPlayers, error: playerInfoError } = await supabaseAdmin
+            .from('player_info')
+            .select('player_slug, first_name, last_name')
+            .in('player_slug', playerSlugs)
+
+        if (playerInfoError) {
+             console.error('Error fetching player info:', playerInfoError)
+             // Non-fatal, we can continue without info
+        }
+
+        // Create lookups
+        const existingBoxScoreMap = new Set(existingBoxScores?.filter((r: any) => r.player_slug).map((r: any) => r.player_slug))
+        const existingNullSlugMap = new Map()
+        existingBoxScores?.filter((r: any) => !r.player_slug).forEach((r: any) => {
+            const key = `${r.player_first_name} ${r.player_last_name}`.toLowerCase()
+            existingNullSlugMap.set(key, r)
+        })
+
+        const existingPlayerInfoMap = new Map()
+        existingPlayers?.forEach((p: any) => existingPlayerInfoMap.set(p.player_slug, p))
+
+        const updatesToUpsert: any[] = []
+        const updatesToLink: any[] = []
+        const newPlayersToInsert: any[] = []
+        const processedSlugs = new Set() // Track to prevent duplicates in batch
+
+        // Process inputs
         for (const { playerId, seconds } of playerSeconds) {
             const decimalMinutes = Math.round((seconds / 60) * 100) / 100
 
-            // Try updating by player_slug first
-            const { data: updateData, error: updateError } = await supabaseAdmin
-                .from('box_scores')
-                .update({ minutes_played: decimalMinutes })
-                .eq('game_id', realGameId)
-                .eq('team_id', tsvNeuenstadtTeamId)
-                .eq('player_slug', playerId)
-                .select()
-
-            if (updateError) {
-                console.error(`Error updating player ${playerId}:`, updateError)
-                results.push({ playerId, success: false, error: updateError.message })
+            // Direct match by slug
+            if (existingBoxScoreMap.has(playerId)) {
+                updatesToUpsert.push({
+                    game_id: realGameId,
+                    team_id: tsvNeuenstadtTeamId,
+                    player_slug: playerId,
+                    minutes_played: decimalMinutes
+                })
                 continue
             }
 
-            if (!updateData || updateData.length === 0) {
-                // Try update by name match
-                const nameParts = playerId.split('-')
-                const derivedFirstName = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : 'Unknown'
-                const derivedLastName = nameParts.slice(1).map((p: string) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') || 'Player'
+            // Derive name
+            let derivedFirstName = 'Unknown'
+            let derivedLastName = 'Player'
 
-                // Get better names from player_info if available
-                const { data: existingPlayerInfo } = await supabaseAdmin
-                    .from('player_info')
-                    .select('first_name, last_name')
-                    .eq('player_slug', playerId)
-                    .maybeSingle()
-
-                const searchFirstName = existingPlayerInfo?.first_name || derivedFirstName
-                const searchLastName = existingPlayerInfo?.last_name || derivedLastName
-
-                // Try updating by name match
-                const { data: nameUpdateData, error: nameUpdateError } = await supabaseAdmin
-                    .from('box_scores')
-                    .update({
-                        minutes_played: decimalMinutes,
-                        player_slug: playerId
-                    })
-                    .eq('game_id', realGameId)
-                    .eq('team_id', tsvNeuenstadtTeamId)
-                    .ilike('player_first_name', searchFirstName)
-                    .ilike('player_last_name', searchLastName)
-                    .is('player_slug', null)
-                    .select()
-
-                if (nameUpdateError) {
-                    console.error(`Name-based update failed for ${playerId}:`, nameUpdateError)
-                }
-
-                if (nameUpdateData && nameUpdateData.length > 0) {
-                    results.push({ playerId, success: true, method: 'name-match' })
-                } else {
-                    // Try inserting new row
-                    // First ensure player exists in player_info
-                    const { data: playerInfo } = await supabaseAdmin
-                        .from('player_info')
-                        .select('first_name, last_name, player_slug')
-                        .eq('player_slug', playerId)
-                        .maybeSingle()
-
-                    if (!playerInfo) {
-                        // Create player in player_info
-                        const { error: createPlayerError } = await supabaseAdmin
-                            .from('player_info')
-                            .insert({
-                                player_slug: playerId,
-                                first_name: derivedFirstName,
-                                last_name: derivedLastName,
-                                is_active: true
-                            })
-
-                        if (createPlayerError) {
-                            console.error('Error creating player:', createPlayerError)
-                        }
-                    }
-
-                    const { data: finalPlayerInfo } = await supabaseAdmin
-                        .from('player_info')
-                        .select('first_name, last_name')
-                        .eq('player_slug', playerId)
-                        .maybeSingle()
-
-                    const { error: insertError } = await supabaseAdmin
-                        .from('box_scores')
-                        .insert({
-                            game_id: realGameId,
-                            team_id: tsvNeuenstadtTeamId,
-                            player_slug: playerId,
-                            player_first_name: finalPlayerInfo?.first_name || derivedFirstName,
-                            player_last_name: finalPlayerInfo?.last_name || derivedLastName,
-                            minutes_played: decimalMinutes,
-                            points: 0
-                        })
-
-                    if (insertError) {
-                        console.error(`Insert failed for ${playerId}:`, insertError)
-                        results.push({ playerId, success: false, error: insertError.message })
-                    } else {
-                        results.push({ playerId, success: true, method: 'insert' })
-                    }
-                }
+            if (existingPlayerInfoMap.has(playerId)) {
+                 const info = existingPlayerInfoMap.get(playerId)
+                 derivedFirstName = info.first_name || 'Unknown'
+                 derivedLastName = info.last_name || 'Player'
             } else {
-                results.push({ playerId, success: true, method: 'slug-match' })
+                 const nameParts = playerId.split('-')
+                 derivedFirstName = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : 'Unknown'
+                 derivedLastName = nameParts.slice(1).map((p: string) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') || 'Player'
+            }
+
+            const nameKey = `${derivedFirstName} ${derivedLastName}`.toLowerCase()
+
+            if (existingNullSlugMap.has(nameKey)) {
+                 // Link update: Must update specific row
+                 updatesToLink.push({
+                     query: {
+                         game_id: realGameId,
+                         team_id: tsvNeuenstadtTeamId,
+                         player_first_name: existingNullSlugMap.get(nameKey).player_first_name,
+                         player_last_name: existingNullSlugMap.get(nameKey).player_last_name
+                     },
+                     update: {
+                         minutes_played: decimalMinutes,
+                         player_slug: playerId
+                     }
+                 })
+            } else {
+                 // Insert
+                 if (!existingPlayerInfoMap.has(playerId) && !processedSlugs.has(playerId)) {
+                     newPlayersToInsert.push({
+                         player_slug: playerId,
+                         first_name: derivedFirstName,
+                         last_name: derivedLastName,
+                         is_active: true
+                     })
+                     processedSlugs.add(playerId)
+                 }
+
+                 updatesToUpsert.push({
+                     game_id: realGameId,
+                     team_id: tsvNeuenstadtTeamId,
+                     player_slug: playerId,
+                     player_first_name: derivedFirstName,
+                     player_last_name: derivedLastName,
+                     minutes_played: decimalMinutes,
+                     points: 0
+                 })
             }
         }
 
-        const failedCount = results.filter(r => !r.success).length
-        if (failedCount > 0) {
-            console.log(`${failedCount} of ${results.length} updates failed`)
+        // Execute Batches
+        let success = true
+        let errors: string[] = []
+
+        if (newPlayersToInsert.length > 0) {
+            const { error } = await supabaseAdmin.from('player_info').upsert(newPlayersToInsert)
+            if (error) {
+                console.error('Error inserting new players:', error)
+                errors.push(`New players insert error: ${error.message}`)
+            }
+        }
+
+        if (updatesToLink.length > 0) {
+            await Promise.all(updatesToLink.map(async (item: any) => {
+                const { error } = await supabaseAdmin.from('box_scores')
+                    .update(item.update)
+                    .eq('game_id', item.query.game_id)
+                    .eq('team_id', item.query.team_id)
+                    .eq('player_first_name', item.query.player_first_name)
+                    .eq('player_last_name', item.query.player_last_name)
+                    .is('player_slug', null)
+
+                if (error) {
+                    console.error(`Error linking player ${item.update.player_slug}:`, error)
+                    success = false
+                    errors.push(`Link error for ${item.update.player_slug}: ${error.message}`)
+                }
+            }))
+        }
+
+        if (updatesToUpsert.length > 0) {
+            const { error } = await supabaseAdmin.from('box_scores').upsert(updatesToUpsert)
+            if (error) {
+                console.error('Error upserting box scores:', error)
+                success = false
+                errors.push(`Upsert error: ${error.message}`)
+            }
+        }
+
+        if (errors.length > 0) {
+             return new Response(
+                JSON.stringify({
+                    success: false,
+                    message: `Encountered errors: ${errors.join(', ')}`,
+                }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
         }
 
         return new Response(
             JSON.stringify({
-                success: failedCount === 0,
-                message: `Updated ${results.length - failedCount} of ${results.length} players`,
-                results
+                success: true,
+                message: `Processed ${playerSeconds.length} players`,
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
