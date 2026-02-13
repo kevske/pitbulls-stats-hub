@@ -145,30 +145,15 @@ const getLeagueComparisonInfo = (
     }
 };
 
-const getDangerousPlayers = async (teamName: string, teamId: string, gameId: string): Promise<DangerousPlayer[]> => {
+const calculateDangerousPlayers = (teamName: string, teamId: string, teamBoxScores: BoxScore[]): DangerousPlayer[] => {
     try {
-        // Get all box scores for players from the opponent team (season stats)
-        const { data: seasonBoxScores, error: seasonStatsError } = await supabase
-            .from('box_scores')
-            .select('*')
-            .eq('team_id', teamId);
-
-        if (seasonStatsError) throw seasonStatsError;
-
-        // Get recent stats (last 2 weeks is what was used, but logic says last 2 games typically)
-        // Original code used 2 weeks lookback
-        const twoWeeksAgo = addDays(new Date(), -14);
-        const { data: recentBoxScores, error: recentStatsError } = await supabase
-            .from('box_scores')
-            .select('*, games(*)')
-            .eq('team_id', teamId)
-            .gte('scraped_at', twoWeeksAgo.toISOString())
-            .order('scraped_at', { ascending: false });
-
-        if (recentStatsError) throw recentStatsError;
+        // Sort box scores by scraped_at descending to handle recent stats
+        const sortedBoxScores = [...teamBoxScores].sort((a, b) =>
+            new Date(b.scraped_at).getTime() - new Date(a.scraped_at).getTime()
+        );
 
         // Group box scores by player
-        const playerGroups = seasonBoxScores.reduce((acc, boxScore) => {
+        const playerGroups = sortedBoxScores.reduce((acc, boxScore) => {
             const playerKey = `${boxScore.player_first_name}_${boxScore.player_last_name}`;
             if (!acc[playerKey]) {
                 acc[playerKey] = [];
@@ -177,14 +162,16 @@ const getDangerousPlayers = async (teamName: string, teamId: string, gameId: str
             return acc;
         }, {} as Record<string, BoxScore[]>);
 
-        // Calculate stats for each player
-        const playerStats = Object.entries(playerGroups).map(([playerKey, playerBoxScores]) => {
-            const [firstName, lastName] = playerKey.split('_');
-            const playerRecentStats = recentBoxScores.filter(
-                stat => stat.player_first_name === firstName && stat.player_last_name === lastName
-            );
+        const twoWeeksAgo = addDays(new Date(), -14);
 
-            const scores = playerBoxScores as BoxScore[];
+        // Calculate stats for each player
+        const playerStats = Object.entries(playerGroups).map(([playerKey, scores]) => {
+            const [firstName, lastName] = playerKey.split('_');
+
+            // Recent stats (last 2 weeks) from the already fetched and sorted data
+            const playerRecentStats = scores.filter(stat =>
+                new Date(stat.scraped_at) >= twoWeeksAgo
+            );
 
             const seasonTotals = scores.reduce(
                 (acc, boxScore) => ({
@@ -256,7 +243,7 @@ const getDangerousPlayers = async (teamName: string, teamId: string, gameId: str
 
         return playerStats;
     } catch (err) {
-        console.error('Error getting dangerous players:', err);
+        console.error('Error calculating dangerous players:', err);
         return [];
     }
 };
@@ -295,26 +282,47 @@ export const useSpielplanData = () => {
                 // Calculate league stats from game data
                 const leagueStats = !historyError && allGames ? calculateLeagueStats(allGames) : null;
 
-                const gamesWithDangerousPlayers: GameWithDangerousPlayers[] = await Promise.all(
-                    gamesData.map(async (game: Game) => {
-                        const opponentTeamName = game.home_team_name === 'TSV Neuenstadt' ? game.away_team_name : game.home_team_name;
-                        const opponentTeamId = game.home_team_name === 'TSV Neuenstadt' ? game.away_team_id : game.home_team_id;
-                        const allPlayerStats = await getDangerousPlayers(opponentTeamName, opponentTeamId, game.id);
+                // Collect all opponent team IDs
+                const opponentTeamIds = new Set<string>();
+                gamesData.forEach((game: Game) => {
+                    const opponentTeamId = game.home_team_name === 'TSV Neuenstadt' ? game.away_team_id : game.home_team_id;
+                    if (opponentTeamId) {
+                        opponentTeamIds.add(opponentTeamId);
+                    }
+                });
 
-                        const leagueComparison = getLeagueComparisonInfo(opponentTeamId, opponentTeamName, leagueStats);
-                        if (leagueComparison) {
-                            setLeagueComparisons(prev => new Map(prev.set(game.id, leagueComparison)));
-                        }
+                // Fetch all box scores for these teams in one batch
+                let allBoxScores: BoxScore[] = [];
+                if (opponentTeamIds.size > 0) {
+                    const { data: boxScoresData, error: boxScoresError } = await supabase
+                        .from('box_scores')
+                        .select('*, games(*)')
+                        .in('team_id', Array.from(opponentTeamIds));
 
-                        const top3Players = selectTop3DangerousPlayers(allPlayerStats);
+                    if (boxScoresError) throw boxScoresError;
+                    allBoxScores = boxScoresData || [];
+                }
 
-                        return {
-                            ...game,
-                            dangerous_players: top3Players,
-                            dangerous_players_extended: allPlayerStats
-                        };
-                    })
-                );
+                const gamesWithDangerousPlayers: GameWithDangerousPlayers[] = gamesData.map((game: Game) => {
+                    const opponentTeamName = game.home_team_name === 'TSV Neuenstadt' ? game.away_team_name : game.home_team_name;
+                    const opponentTeamId = game.home_team_name === 'TSV Neuenstadt' ? game.away_team_id : game.home_team_id;
+
+                    const teamBoxScores = allBoxScores.filter(bs => bs.team_id === opponentTeamId);
+                    const allPlayerStats = calculateDangerousPlayers(opponentTeamName, opponentTeamId, teamBoxScores);
+
+                    const leagueComparison = getLeagueComparisonInfo(opponentTeamId, opponentTeamName, leagueStats);
+                    if (leagueComparison) {
+                        setLeagueComparisons(prev => new Map(prev.set(game.id, leagueComparison)));
+                    }
+
+                    const top3Players = selectTop3DangerousPlayers(allPlayerStats);
+
+                    return {
+                        ...game,
+                        dangerous_players: top3Players,
+                        dangerous_players_extended: allPlayerStats
+                    };
+                });
 
                 setGames(gamesWithDangerousPlayers);
             } catch (err) {
