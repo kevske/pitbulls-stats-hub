@@ -34,21 +34,6 @@ serve(async (req: Request) => {
             )
         }
 
-        // Input validation
-        if (!payload || typeof payload !== 'object') {
-            return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid payload' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        }
-
-        if (!action || typeof action !== 'string') {
-            return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid action' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        }
-
         // Validate admin password server-side
         const expectedPassword = Deno.env.get('ADMIN_PASSWORD')
         if (!expectedPassword) {
@@ -81,41 +66,40 @@ serve(async (req: Request) => {
 
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
-        if (action === 'add_video') {
+        if (action === 'add_video' || action === 'save_project') {
             // payload: { gameNumber, videoIndex, videoId, playlistId, events, players, metadata, timestamp, lastModified, version }
             const { gameNumber, videoIndex, videoId, playlistId, events, players, metadata, timestamp, lastModified } = payload
 
-            const dbPayload = {
-                game_number: gameNumber.toString(),
-                tsv_game_number: gameNumber,
-                video_index: videoIndex,
-                video_id: videoId,
-                playlist_id: playlistId || null,
-                data: { events, players, metadata },
-                updated_at: lastModified || new Date().toISOString()
+            // INPUT VALIDATION
+            if (gameNumber === undefined || gameNumber === null || !/^[a-zA-Z0-9_-]+$/.test(String(gameNumber))) {
+                return new Response(
+                    JSON.stringify({ error: 'Bad Request', message: 'Invalid or missing gameNumber' }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
             }
 
-            const { data: savedProject, error } = await supabaseAdmin
-                .from('video_projects')
-                .upsert(dbPayload, {
-                    onConflict: 'tsv_game_number,video_index',
-                    ignoreDuplicates: false
-                })
-                .select()
-                .single()
+            if (typeof videoIndex !== 'number' || !Number.isInteger(videoIndex) || videoIndex < 0) {
+                return new Response(
+                    JSON.stringify({ error: 'Bad Request', message: 'Invalid or missing videoIndex' }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
 
-            if (error) throw error
+            if (!videoId || typeof videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+                return new Response(
+                    JSON.stringify({ error: 'Bad Request', message: 'Invalid or missing videoId' }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
 
-            return new Response(
-                JSON.stringify({ success: true, id: savedProject.id }),
-                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        } else if (action === 'save_project') {
-            // Same as add_video essentially, but conceptually different if we want to restrict fields
-            // For now, reuse the payload logic
-            const { gameNumber, videoIndex, videoId, playlistId, events, players, metadata, timestamp, lastModified } = payload
+            if (playlistId && (typeof playlistId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(playlistId))) {
+                return new Response(
+                    JSON.stringify({ error: 'Bad Request', message: 'Invalid playlistId format' }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
 
-             const dbPayload = {
+            const dbPayload = {
                 game_number: gameNumber.toString(),
                 tsv_game_number: gameNumber,
                 video_index: videoIndex,
