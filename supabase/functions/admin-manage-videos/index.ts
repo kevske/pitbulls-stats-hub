@@ -34,19 +34,15 @@ serve(async (req: Request) => {
             )
         }
 
-        // Input validation
-        if (!payload || typeof payload !== 'object') {
-            return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid payload' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        }
-
-        if (!action || typeof action !== 'string') {
-            return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid action' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
+        // Validate payload content for known actions
+        if (action === 'add_video' || action === 'save_project') {
+            const validation = validateVideoPayload(payload)
+            if (!validation.valid) {
+                return new Response(
+                    JSON.stringify({ error: 'Bad Request', message: validation.error }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
         }
 
         // Validate admin password server-side
@@ -179,4 +175,45 @@ async function secureCompare(a: string, b: string): Promise<boolean> {
     }
 
     return result === 0
+}
+
+function validateVideoPayload(payload: unknown): { valid: boolean; error?: string } {
+    if (typeof payload !== 'object' || payload === null) {
+        return { valid: false, error: 'Payload must be an object' };
+    }
+    const { gameNumber, videoIndex, videoId, playlistId } = payload as Record<string, unknown>;
+
+    // 1. gameNumber validation
+    if (gameNumber === undefined || gameNumber === null) {
+        return { valid: false, error: 'gameNumber is required' };
+    }
+    const gameNumberStr = String(gameNumber);
+    if (!/^[a-zA-Z0-9_-]+$/.test(gameNumberStr)) {
+        return { valid: false, error: 'Invalid gameNumber format' };
+    }
+
+    // 2. videoIndex validation
+    if (typeof videoIndex !== 'number' || !Number.isInteger(videoIndex) || videoIndex < 0) {
+        return { valid: false, error: 'Invalid videoIndex' };
+    }
+
+    // 3. videoId validation
+    if (typeof videoId !== 'string') {
+        return { valid: false, error: 'videoId must be a string' };
+    }
+    if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+        return { valid: false, error: 'Invalid videoId format' };
+    }
+
+    // 4. playlistId validation (optional)
+    if (playlistId) {
+        if (typeof playlistId !== 'string') {
+            return { valid: false, error: 'playlistId must be a string' };
+        }
+        if (!/^[a-zA-Z0-9_-]+$/.test(playlistId)) {
+             return { valid: false, error: 'Invalid playlistId format' };
+        }
+    }
+
+    return { valid: true };
 }
