@@ -28,3 +28,8 @@
 **Vulnerability:** The Edge Functions (`admin-update-minutes` and `admin-manage-videos`) used `Deno.env.get('ADMIN_PASSWORD') || ''` as a fallback. If the environment variable was missing, the expected password became an empty string. Since unauthorized requests often send empty or no password, this allowed unauthorized access.
 **Learning:** Defaulting configuration values to "empty" or "permissive" states creates "Fail Open" vulnerabilities. Security controls must always "Fail Closed" — if the configuration is invalid, the system should deny all access rather than allowing potentially unrestricted access.
 **Prevention:** Explicitly check for the existence and non-emptiness of security-critical environment variables. If they are missing, return a 500 error and refuse to process the request.
+
+## 2026-06-15 - Missing Input Validation in Admin Edge Function
+**Vulnerability:** The `admin-manage-videos` Supabase Edge Function directly processed user input (`gameNumber`, `videoIndex`, `videoId`, `playlistId`) from the request body without strict validation. This could potentially allow injection attacks or invalid data to be persisted, especially if the client-side validation was bypassed.
+**Learning:** Edge Functions act as a trusted backend layer and often have privileged access (Service Role). Trusting client input implicitly in these functions bypasses the security model. Redundant checks (e.g., checking `typeof payload` multiple times) can obscure the lack of *meaningful* validation.
+**Prevention:** Implement strict input validation (allow-lists, type checks, regex patterns) for all parameters in Edge Functions before using them in database operations or logic.

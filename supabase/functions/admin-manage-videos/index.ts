@@ -34,19 +34,49 @@ serve(async (req: Request) => {
             )
         }
 
-        // Input validation
-        if (!payload || typeof payload !== 'object') {
+        // Input validation - Strict payload validation
+        const { gameNumber, videoIndex, videoId, playlistId } = payload
+
+        // Validate gameNumber
+        if (gameNumber === undefined || gameNumber === null) {
             return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid payload' }),
+                JSON.stringify({ error: 'Bad Request', message: 'gameNumber is required' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+        if (!/^[a-zA-Z0-9_-]+$/.test(String(gameNumber))) {
+             return new Response(
+                JSON.stringify({ error: 'Bad Request', message: 'Invalid gameNumber format' }),
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
 
-        if (!action || typeof action !== 'string') {
+        // Validate videoIndex
+        if (typeof videoIndex !== 'number' || !Number.isInteger(videoIndex)) {
             return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid action' }),
+                JSON.stringify({ error: 'Bad Request', message: 'videoIndex must be an integer' }),
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
+        }
+
+        // Validate videoId (if present)
+        if (videoId) {
+            if (typeof videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+                return new Response(
+                    JSON.stringify({ error: 'Bad Request', message: 'Invalid videoId format' }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
+        }
+
+        // Validate playlistId (if present)
+        if (playlistId) {
+            if (typeof playlistId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(playlistId)) {
+                return new Response(
+                    JSON.stringify({ error: 'Bad Request', message: 'Invalid playlistId format' }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
         }
 
         // Validate admin password server-side
