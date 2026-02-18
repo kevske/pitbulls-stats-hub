@@ -34,21 +34,6 @@ serve(async (req: Request) => {
             )
         }
 
-        // Input validation
-        if (!payload || typeof payload !== 'object') {
-            return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid payload' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        }
-
-        if (!action || typeof action !== 'string') {
-            return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid action' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        }
-
         // Validate admin password server-side
         const expectedPassword = Deno.env.get('ADMIN_PASSWORD')
         if (!expectedPassword) {
@@ -83,6 +68,14 @@ serve(async (req: Request) => {
 
         if (action === 'add_video') {
             // payload: { gameNumber, videoIndex, videoId, playlistId, events, players, metadata, timestamp, lastModified, version }
+            const validationError = validateVideoInput(payload)
+            if (validationError) {
+                return new Response(
+                    JSON.stringify({ error: 'Bad Request', message: validationError }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
+
             const { gameNumber, videoIndex, videoId, playlistId, events, players, metadata, timestamp, lastModified } = payload
 
             const dbPayload = {
@@ -113,6 +106,14 @@ serve(async (req: Request) => {
         } else if (action === 'save_project') {
             // Same as add_video essentially, but conceptually different if we want to restrict fields
             // For now, reuse the payload logic
+            const validationError = validateVideoInput(payload)
+            if (validationError) {
+                return new Response(
+                    JSON.stringify({ error: 'Bad Request', message: validationError }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
+
             const { gameNumber, videoIndex, videoId, playlistId, events, players, metadata, timestamp, lastModified } = payload
 
              const dbPayload = {
@@ -160,6 +161,28 @@ serve(async (req: Request) => {
 /**
  * Constant-time string comparison using SHA-256 hashing to prevent timing attacks.
  */
+function validateVideoInput(payload: Record<string, any>): string | null {
+    const { gameNumber, videoIndex, videoId, playlistId } = payload
+
+    if (!gameNumber || !/^[a-zA-Z0-9_-]+$/.test(String(gameNumber))) {
+        return 'Invalid gameNumber format'
+    }
+
+    if (typeof videoIndex !== 'number') {
+        return 'Invalid videoIndex format'
+    }
+
+    if (!videoId || typeof videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+        return 'Invalid videoId format'
+    }
+
+    if (playlistId && (typeof playlistId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(playlistId))) {
+        return 'Invalid playlistId format'
+    }
+
+    return null
+}
+
 async function secureCompare(a: string, b: string): Promise<boolean> {
     const encoder = new TextEncoder()
     const aBuf = encoder.encode(a)
