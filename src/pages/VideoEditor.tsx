@@ -23,6 +23,7 @@ import { useVideoProjectPersistence } from '@/hooks/useVideoProjectPersistence';
 import { usePlaylistManager } from '@/hooks/usePlaylistManager';
 import { useVideoPlayer } from '@/hooks/useVideoPlayer';
 import { PlayerInfoService } from '@/services/playerInfoService';
+import { useSkipDeadTime } from '@/hooks/useSkipDeadTime';
 
 const VideoEditor = () => {
   const [searchParams] = useSearchParams();
@@ -41,6 +42,7 @@ const VideoEditor = () => {
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [currentPlayersOnCourt, setCurrentPlayersOnCourt] = useState<Player[]>([]);
   const [shouldResetPlayers, setShouldResetPlayers] = useState(false);
+  const [isSkippingEnabled, setIsSkippingEnabled] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasLoadedProjectRef = useRef(false);
@@ -78,6 +80,14 @@ const VideoEditor = () => {
     handleRestart,
     handleSeekTo
   } = useVideoPlayer();
+
+  // Handle skipping dead time
+  useSkipDeadTime({
+    currentTime,
+    events,
+    seekTo: handleSeekTo,
+    isEnabled: isSkippingEnabled
+  });
 
   const {
     playlistVideos,
@@ -417,6 +427,8 @@ const VideoEditor = () => {
                 onSeekForward={handleSeekForward}
                 onRestart={handleRestart}
                 onQuickAction={handleQuickAction}
+                isSkipping={isSkippingEnabled}
+                onToggleSkip={() => setIsSkippingEnabled(!isSkippingEnabled)}
               />
 
               {/* Video Player and Game Tags */}

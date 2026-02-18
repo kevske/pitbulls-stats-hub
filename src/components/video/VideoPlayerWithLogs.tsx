@@ -3,7 +3,9 @@ import { TaggedEvent } from '@/types/basketball';
 import { YouTubePlayer, YouTubePlayerRef } from '@/components/video/YouTubePlayer';
 import { EventList } from '@/components/video/EventList';
 import { VideoProjectService } from '@/services/videoProjectService';
-import { PlayCircle } from 'lucide-react';
+import { PlayCircle, FastForward } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useSkipDeadTime } from '@/hooks/useSkipDeadTime';
 
 interface VideoPlayerWithLogsProps {
     gameNumber: number;
@@ -18,7 +20,9 @@ export const VideoPlayerWithLogs = memo(({ gameNumber, youtubeLink }: VideoPlaye
     const [shouldLoadPlayer, setShouldLoadPlayer] = useState(false);
     const youtubePlayerRef = useRef<YouTubePlayerRef>(null);
     const lastLoadedIndex = useRef<number>(1);
+
     const pendingSeekTime = useRef<number | null>(null);
+    const [isSkippingEnabled, setIsSkippingEnabled] = useState(false);
 
     // Extract video/playlist IDs from URL
     useEffect(() => {
@@ -57,7 +61,7 @@ export const VideoPlayerWithLogs = memo(({ gameNumber, youtubeLink }: VideoPlaye
         try {
             console.log(`VideoPlayerWithLogs triggering load events for Game: ${gameNumber}, Index: ${index}`);
             // 1-based index for database
-            const projectData = await VideoProjectService.loadProject(gameNumber.toString(), index);
+            const projectData = await VideoProjectService.loadProject(gameNumber, index);
             console.log(`VideoPlayerWithLogs loaded data for Game: ${gameNumber}, Index: ${index}`, projectData);
 
             if (projectData && projectData.events) {
@@ -92,6 +96,13 @@ export const VideoPlayerWithLogs = memo(({ gameNumber, youtubeLink }: VideoPlaye
             youtubePlayerRef.current?.seekTo(timestamp);
         }
     }, [shouldLoadPlayer]);
+
+    useSkipDeadTime({
+        currentTime,
+        events,
+        seekTo: handleSeekTo,
+        isEnabled: isSkippingEnabled
+    });
 
     const handleVideoChange = useCallback((newVideoId: string, index: number) => {
         // index is 0-based from player, we need 1-based for DB
@@ -143,6 +154,18 @@ export const VideoPlayerWithLogs = memo(({ gameNumber, youtubeLink }: VideoPlaye
                         </div>
                     </div>
                 )}
+                <div className="flex justify-end mt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <Button
+                        variant={isSkippingEnabled ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setIsSkippingEnabled(!isSkippingEnabled)}
+                        className={`h-8 gap-2 text-xs transition-all ${isSkippingEnabled ? "bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-900/20" : "hover:bg-accent"}`}
+                        title="Pausen überspringen"
+                    >
+                        <FastForward className={`h-4 w-4 ${isSkippingEnabled ? "animate-pulse" : ""}`} />
+                        <span>Skip Pauses</span>
+                    </Button>
+                </div>
             </div>
             <div className="h-full overflow-hidden">
                 <EventList
