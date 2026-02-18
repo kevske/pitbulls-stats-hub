@@ -32,7 +32,7 @@ export interface TaggedEvent {
   description: string;
 }
 
-export type EventType = 
+export type EventType =
   | 'start_of_quarter'
   | 'timeout'
   | 'substitution'
@@ -44,7 +44,9 @@ export type EventType =
   | 'block'
   | 'turnover'
   | 'highlight'
-  | 'learning';
+  | 'learning'
+  | 'action_start'
+  | 'action_end';
 
 export interface EventTemplate {
   type: EventType;
@@ -60,6 +62,8 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
   { type: 'timeout', label: 'Time Out', icon: '⏸️', requiresPlayer: false },
   { type: 'highlight', label: 'Highlight', icon: '⭐', requiresPlayer: false },
   { type: 'learning', label: 'Learning', icon: '💩', requiresPlayer: false },
+  { type: 'action_start', label: 'Action Start', icon: '🎬', requiresPlayer: false },
+  { type: 'action_end', label: 'Action Ende', icon: '🛑', requiresPlayer: false },
   { type: 'substitution', label: 'Substitution', icon: '🔄', requiresPlayer: true },
   { type: 'shot', label: 'Shot', icon: '🏀', requiresPlayer: true, requiresPoints: true, requiresMissed: true },
   { type: 'rebound', label: 'Rebound', icon: '📥', requiresPlayer: true },
@@ -97,7 +101,7 @@ export function formatTime(seconds: number): string {
 
 export function generateEventDescription(event: Omit<TaggedEvent, 'id' | 'description'>): string {
   const parts: string[] = [];
-  
+
   switch (event.type) {
     case 'start_of_quarter':
       parts.push('Start of Quarter');
@@ -143,7 +147,13 @@ export function generateEventDescription(event: Omit<TaggedEvent, 'id' | 'descri
     case 'turnover':
       parts.push(`Turnover ${event.player}`);
       break;
+    case 'action_start':
+      parts.push('Action Start');
+      break;
+    case 'action_end':
+      parts.push('Action Ende');
+      break;
   }
-  
+
   return parts.join('. ');
 }

@@ -1,13 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { 
-  SkipBack, 
-  SkipForward, 
-  Play, 
-  Pause, 
+import {
+  SkipBack,
+  SkipForward,
+  Play,
+  Pause,
   RotateCcw,
   Volume2,
-  VolumeX
+  VolumeX,
+  FastForward
 } from 'lucide-react';
 import { EVENT_TEMPLATES } from '@/types/basketball';
 
@@ -21,6 +22,8 @@ interface VideoControlsProps {
   onToggleMute?: () => void;
   isMuted?: boolean;
   onQuickAction?: (type: string, label: string, icon: string) => void;
+  isSkipping?: boolean;
+  onToggleSkip?: () => void;
 }
 
 export function VideoControls({
@@ -32,7 +35,9 @@ export function VideoControls({
   onRestart,
   onToggleMute,
   isMuted = false,
-  onQuickAction
+  onQuickAction,
+  isSkipping = false,
+  onToggleSkip
 }: VideoControlsProps) {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -102,6 +107,19 @@ export function VideoControls({
                 title={isMuted ? "Unmute" : "Mute"}
               >
                 {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </Button>
+            )}
+
+            {onToggleSkip && (
+              <Button
+                variant={isSkipping ? "default" : "outline"}
+                size="sm"
+                onClick={onToggleSkip}
+                className={`h-8 gap-2 text-xs transition-colors ${isSkipping ? "bg-amber-600 hover:bg-amber-700 text-white" : ""}`}
+                title="Pausen überspringen"
+              >
+                <FastForward className="h-4 w-4" />
+                <span className="hidden sm:inline">Skip Pauses</span>
               </Button>
             )}
           </div>
