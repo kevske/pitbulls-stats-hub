@@ -176,8 +176,65 @@ const Videos = () => {
 
               return (
                 <div key={game.gameNumber}>
-                  <h2 className="text-2xl font-semibold mb-4">
-                    Spieltag {game.gameNumber}: {game.homeTeam} vs {game.awayTeam}
+                  <h2 className="text-2xl font-semibold mb-4 flex items-center gap-3">
+                    <span>Spieltag {game.gameNumber}: {game.homeTeam} vs {game.awayTeam}</span>
+                    {/* Tagging Status Badge */}
+                    {/* Tagging Status Badge - Aggregated from all videos */}
+                    {(() => {
+                      // Aggregate stats from all videos in this game
+                      const allVideoData = game.videoData || [];
+                      let totalTaggedPoints = 0;
+
+                      // Check if any video has events (meaning tagging started)
+                      const hasTagging = allVideoData.some(v => v.events && v.events.length > 0);
+
+                      if (!hasTagging) return null;
+
+                      // Calculate tagged points directly from events
+                      // This ensures accuracy even if metadata is outdated or missing
+                      allVideoData.forEach(v => {
+                        if (v.events) {
+                          v.events.forEach((e: any) => {
+                            if (e.type === 'shot' && !e.missed && e.points) {
+                              totalTaggedPoints += e.points;
+                            }
+                          });
+                        }
+                      });
+
+                      // Recalculate based on game final score (most accurate)
+                      // Reuse logic from taggingStatus.ts but inline here for display
+                      // We need the Pitbulls score
+                      const scoreParts = game.finalScore.split(/[-:]/);
+                      let pitbullsScore = 0;
+                      const isAway = game.awayTeam.includes('Pitbulls') || game.awayTeam.includes('Neuenstadt');
+
+                      if (scoreParts.length >= 2) {
+                        pitbullsScore = parseInt(scoreParts[isAway ? 1 : 0]) || 0;
+                      } else {
+                        pitbullsScore = parseInt(scoreParts[0]) || 0;
+                      }
+
+                      const percentage = pitbullsScore > 0 ? Math.round((totalTaggedPoints / pitbullsScore) * 100) : 0;
+
+                      let status: 'excellent' | 'good' | 'poor' | 'unknown' = 'unknown';
+                      if (percentage >= 90) status = 'excellent';
+                      else if (percentage >= 75) status = 'good';
+                      else status = 'poor';
+
+                      return (
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${status === 'excellent'
+                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                            : status === 'good'
+                              ? 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800'
+                              : status === 'poor'
+                                ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800'
+                                : 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'
+                          }`}>
+                          {percentage}% Tagged
+                        </span>
+                      );
+                    })()}
                   </h2>
 
                   {/* Video player with event tags */}

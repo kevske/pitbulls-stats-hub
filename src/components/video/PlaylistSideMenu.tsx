@@ -5,13 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Plus, 
-  X, 
-  PlayCircle, 
-  CheckCircle, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  X,
+  PlayCircle,
+  CheckCircle,
   Circle,
   Menu,
   ExternalLink
@@ -48,7 +48,7 @@ export function PlaylistSideMenu({
 
   const extractVideoId = (url: string): string | null => {
     const trimmedUrl = url.trim();
-    
+
     // Check for video URL patterns
     const videoPatterns = [
       /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
@@ -68,7 +68,7 @@ export function PlaylistSideMenu({
   const handleAddVideo = (e: React.FormEvent) => {
     e.preventDefault();
     const videoId = extractVideoId(newVideoUrl);
-    
+
     if (videoId) {
       onAddToQueue(videoId);
       setNewVideoUrl('');
@@ -82,9 +82,8 @@ export function PlaylistSideMenu({
     <>
 
       {/* Side Menu */}
-      <div className={`fixed top-0 right-0 h-full bg-background/95 backdrop-blur-sm border-l border-border/50 transition-transform duration-300 z-40 ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+      <div className={`fixed top-0 right-0 h-full bg-background/95 backdrop-blur-sm border-l border-border/50 transition-transform duration-300 z-[60] ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}>
         <div className="w-80 h-full flex flex-col">
           {/* Header */}
           <div className="p-4 border-b border-border/50">
@@ -99,7 +98,7 @@ export function PlaylistSideMenu({
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            
+
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>{completedCount}/{videos.length} completed</span>
               {videos.length > 0 && (
@@ -164,11 +163,10 @@ export function PlaylistSideMenu({
                   return (
                     <Card
                       key={`${video.videoId}-${index}`}
-                      className={`cursor-pointer transition-all ${
-                        isCurrent 
-                          ? 'bg-primary/10 border-primary/30' 
+                      className={`cursor-pointer transition-all ${isCurrent
+                          ? 'bg-primary/10 border-primary/30'
                           : 'hover:bg-accent/50'
-                      }`}
+                        }`}
                     >
                       <CardContent className="p-3">
                         <div className="flex items-start gap-3">
@@ -184,16 +182,15 @@ export function PlaylistSideMenu({
                               <Circle className="h-4 w-4 text-muted-foreground" />
                             )}
                           </div>
-                          
+
                           <div className="flex-1 min-w-0">
                             <div
-                              className={`text-sm font-mono truncate mb-1 ${
-                                isCurrent ? 'text-primary font-medium' : ''
-                              }`}
+                              className={`text-sm font-mono truncate mb-1 ${isCurrent ? 'text-primary font-medium' : ''
+                                }`}
                             >
                               {video.title || video.videoId}
                             </div>
-                            
+
                             <div className="flex items-center gap-2">
                               {isCurrent && (
                                 <Badge variant="default" className="text-xs">
@@ -212,7 +209,7 @@ export function PlaylistSideMenu({
                               >
                                 {isCurrent ? 'Current' : 'Play'}
                               </Button>
-                              
+
                               {!isCurrent && (
                                 <Button
                                   variant="ghost"

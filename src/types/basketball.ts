@@ -58,8 +58,7 @@ export interface EventTemplate {
 }
 
 export const EVENT_TEMPLATES: EventTemplate[] = [
-  { type: 'start_of_quarter', label: 'Start of Quarter', icon: '🟢', requiresPlayer: false },
-  { type: 'timeout', label: 'Time Out', icon: '⏸️', requiresPlayer: false },
+
   { type: 'highlight', label: 'Highlight', icon: '⭐', requiresPlayer: false },
   { type: 'learning', label: 'Learning', icon: '💩', requiresPlayer: false },
   { type: 'action_start', label: 'Action Start', icon: '🎬', requiresPlayer: false },

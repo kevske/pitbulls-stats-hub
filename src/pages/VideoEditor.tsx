@@ -11,23 +11,29 @@ import { ExportPanel } from '@/components/video/ExportPanel';
 import { VideoStatsIntegration } from '@/components/video/VideoStatsIntegration';
 import { PlaylistSideMenu } from '@/components/video/PlaylistSideMenu';
 import { CurrentPlayersOnField } from '@/components/video/CurrentPlayersOnField';
+import { LearningDialog } from '@/components/video/LearningDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, FileText, List, Save } from 'lucide-react';
+import { Upload, FileText, List, Save, X } from 'lucide-react';
 import { generateSaveData, SaveData, loadSaveFile } from '@/services/saveLoad';
 import { toast } from 'sonner';
 import Layout from '@/components/Layout';
-import { useSearchParams, useLocation } from 'react-router-dom';
+import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { useVideoProjectPersistence } from '@/hooks/useVideoProjectPersistence';
 import { usePlaylistManager } from '@/hooks/usePlaylistManager';
 import { useVideoPlayer } from '@/hooks/useVideoPlayer';
 import { PlayerInfoService } from '@/services/playerInfoService';
 import { useSkipDeadTime } from '@/hooks/useSkipDeadTime';
+import { calculateTaggingStatus } from '@/utils/taggingStatus';
+import { useStats } from '@/contexts/StatsContext';
+import { extractStatsFromVideoData } from '@/services/statsExtraction';
 
 const VideoEditor = () => {
   const [searchParams] = useSearchParams();
+
   const location = useLocation();
+  const navigate = useNavigate();
   const adminPassword = location.state?.adminPassword;
   const gameNumber = searchParams.get('game');
   const videoUrl = searchParams.get('video');
@@ -43,6 +49,10 @@ const VideoEditor = () => {
   const [currentPlayersOnCourt, setCurrentPlayersOnCourt] = useState<Player[]>([]);
   const [shouldResetPlayers, setShouldResetPlayers] = useState(false);
   const [isSkippingEnabled, setIsSkippingEnabled] = useState(false);
+
+  // Learning Dialog State
+  const [isLearningDialogOpen, setIsLearningDialogOpen] = useState(false);
+  const [pendingLearningEvent, setPendingLearningEvent] = useState<Omit<TaggedEvent, 'id' | 'description'> | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasLoadedProjectRef = useRef(false);
@@ -81,6 +91,8 @@ const VideoEditor = () => {
     handleSeekTo
   } = useVideoPlayer();
 
+  const { games } = useStats();
+
   // Handle skipping dead time
   useSkipDeadTime({
     currentTime,
@@ -110,7 +122,7 @@ const VideoEditor = () => {
     timestampConflict,
     setLastSavedData,
     loadWithTimestampCheck,
-    handleSaveToStorage
+    handleSaveToStorage: baseHandleSaveToStorage
   } = useVideoProjectPersistence({
     gameNumber,
     currentPlaylistIndex,
@@ -232,6 +244,76 @@ const VideoEditor = () => {
     }
   };
 
+  const handleSaveToStorage = async () => {
+    // 1. Calculate tagging status before saving
+    let taggingStatus = undefined;
+
+    if (gameNumber) {
+      const gameFromContext = games.find(g => g.gameNumber === parseInt(gameNumber));
+
+      if (gameFromContext) {
+        // We need total points. If only one video, we can calculate from current events.
+        // If playlist, it's harder without fetching all projects.
+        // For LEAN solution: just calculate based on CURRENT events for now, 
+        // OR better: use extractStatsFromVideoData on current events.
+        // NOTE: This assumes we are saving the WHOLE game or this video contributes to it.
+        // If it's a playlist, this might be partial data, but let's store what we know.
+
+        // TODO: For strict correctness in playlists, we'd need to fetch other videos.
+        // But for "lean", let's just calculate based on what we have in memory + what we might know.
+        // Actually, let's just use current events for this video.
+        // If the user wants "Game" status, they should use the Integration component which does the full check.
+        // But the requirement is "on video page", so we do want the aggregate if possible.
+        // Let's stick to current events for safety/speed, or if possible, fetch others?
+        // Fetching others in save might be slow.
+        // Let's just calculate for *this* video/project and store it. 
+        // The Overview page might need to aggregate if there are multiple videos, OR we just show status for the main one.
+
+        const extracted = extractStatsFromVideoData({
+          events,
+          players,
+          gameNumber: parseInt(gameNumber),
+          videoIndex: currentPlaylistIndex,
+          videoId,
+          playlistId,
+          timestamp: new Date().toISOString(),
+          lastModified: new Date().toISOString(),
+          version: '1.0.0'
+        });
+
+        taggingStatus = calculateTaggingStatus(
+          extracted.teamStats.totalPoints,
+          gameFromContext.finalScore,
+          { home: gameFromContext.homeTeam, away: gameFromContext.awayTeam }
+        );
+      }
+    }
+
+    // 2. Pass metadata override to the hook's save function
+    // We need to modify useVideoProjectPersistence to accept metadata overrides or 
+    // manually call the service here. 
+    // Actually, useVideoProjectPersistence handles the saving logic.
+    // Let's modify the hook to accept metadata or just modify the save data in place?
+    // The hook uses `events`, `players` from state.
+    // It calls `VideoProjectService.saveProject`.
+    // We can't easily inject metadata into `handleSaveToStorage` from the hook without modifying the hook.
+    // Let's modify `useVideoProjectPersistence` to allow passing extra metadata specific to the save action?
+    // OR: we can update the hook to *always* include this status if game info is available?
+
+    // DECISION: Modify useVideoProjectPersistence to accept optional metadata merger.
+    // But since I can't modify the hook right now in this step (checking file first would be better),
+    // let's see if baseHandleSaveToStorage accepts args.
+    // It probably doesn't.
+
+    // Workaround: We will reimplement the save call here for the specific metadata requirement
+    // OR better, update the hook in a separate step? 
+    // Let's assume I can update the hook or `handleSaveToStorage` is flexible.
+    // Checking `useVideoProjectPersistence`... I haven't read it yet.
+    // Let's read the hook first to be safe.
+
+    await baseHandleSaveToStorage(taggingStatus ? { taggingStatus } : undefined);
+  };
+
   // Sort players by last substitution out (most recent first)
   const sortedPlayers = useMemo(() => {
     const lastSubOut: Record<string, number> = {};
@@ -284,7 +366,30 @@ const VideoEditor = () => {
       type: type as any,
     };
 
+    if (type === 'learning') {
+      setPendingLearningEvent(eventData);
+      setIsLearningDialogOpen(true);
+      return;
+    }
+
     handleAddEvent(eventData);
+  };
+
+  const handleSaveLearning = (note: string) => {
+    if (pendingLearningEvent) {
+      // Create description with user input
+      // We manually construct the event with the custom description
+      const eventWithDescription: TaggedEvent = {
+        ...pendingLearningEvent,
+        id: crypto.randomUUID(),
+        description: `Learning: ${note}`,
+        type: 'learning' // Explicitly set type
+      };
+
+      setEvents((prev) => [...prev, eventWithDescription]);
+      setPendingLearningEvent(null);
+      setIsLearningDialogOpen(false);
+    }
   };
 
   const handleAddEvent = (event: Omit<TaggedEvent, 'id' | 'description'>) => {
@@ -321,8 +426,8 @@ const VideoEditor = () => {
                 <span className="text-2xl">🏀</span>
                 <h1 className="text-xl font-bold">Basketball Event Tagger</h1>
               </div>
-              {isPlaylistMode && (
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                {isPlaylistMode && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -332,8 +437,18 @@ const VideoEditor = () => {
                     <List className="h-4 w-4" />
                     Show Queue
                   </Button>
-                </div>
-              )}
+                )}
+                {/* Close Editor Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/videos')}
+                  className="h-8 px-3 gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                  Editor schließen
+                </Button>
+              </div>
             </div>
           </div>
         </header>
@@ -566,6 +681,19 @@ const VideoEditor = () => {
             onToggle={() => setIsSideMenuOpen(!isSideMenuOpen)}
           />
         )}
+
+        <LearningDialog
+          isOpen={isLearningDialogOpen}
+          onOpenChange={(open) => {
+            setIsLearningDialogOpen(open);
+            if (!open) setPendingLearningEvent(null);
+          }}
+          onSave={handleSaveLearning}
+          onCancel={() => {
+            setIsLearningDialogOpen(false);
+            setPendingLearningEvent(null);
+          }}
+        />
       </div>
     </Layout>
   );

@@ -129,7 +129,7 @@ export const useVideoProjectPersistence = ({
     }, [setEvents, setPlayers, setVideoId, setPlaylistId]); // Dependencies are now stable functions
 
     // Manual save function
-    const handleSaveToStorage = useCallback(async () => {
+    const handleSaveToStorage = useCallback(async (customMetadata?: any) => {
         if (!gameNumber) {
             toast.error('No game number specified');
             return;
@@ -143,10 +143,12 @@ export const useVideoProjectPersistence = ({
                 events,
                 players,
                 videoId,
+
                 playlistId,
                 timestamp: now,
                 lastModified: now,
-                version: '1.0.0'
+                version: '1.0.0',
+                metadata: customMetadata // Merge custom metadata
             };
 
             console.log('Saving data to Supabase:', saveData);
