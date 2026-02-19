@@ -34,17 +34,15 @@ serve(async (req: Request) => {
             )
         }
 
-        // Input validation
-        if (!payload || typeof payload !== 'object') {
+        // Validate payload content structure
+        const validationErrors = validateVideoInput(payload as Record<string, unknown>)
+        if (validationErrors.length > 0) {
             return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid payload' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        }
-
-        if (!action || typeof action !== 'string') {
-            return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid action' }),
+                JSON.stringify({
+                    error: 'Bad Request',
+                    message: 'Input validation failed',
+                    details: validationErrors
+                }),
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
@@ -179,4 +177,47 @@ async function secureCompare(a: string, b: string): Promise<boolean> {
     }
 
     return result === 0
+}
+
+/**
+ * Validates the video input payload for security and correctness.
+ */
+function validateVideoInput(payload: Record<string, unknown>): string[] {
+    const errors: string[] = []
+    const { gameNumber, videoIndex, videoId, playlistId } = payload
+
+    // gameNumber
+    if (gameNumber === undefined || gameNumber === null) {
+        errors.push('gameNumber is required')
+    } else {
+        const gameNumberStr = String(gameNumber)
+        if (!/^[a-zA-Z0-9_-]+$/.test(gameNumberStr)) {
+            errors.push('Invalid gameNumber format: must be alphanumeric (dashes/underscores allowed)')
+        }
+    }
+
+    // videoId
+    if (videoId === undefined || videoId === null) {
+        errors.push('videoId is required')
+    } else {
+        if (typeof videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+            errors.push('Invalid videoId format: must be an 11-character YouTube ID')
+        }
+    }
+
+    // playlistId (optional)
+    if (playlistId !== undefined && playlistId !== null) {
+        if (typeof playlistId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(playlistId)) {
+            errors.push('Invalid playlistId format: must be alphanumeric (dashes/underscores allowed)')
+        }
+    }
+
+    // videoIndex (optional but good to check if present)
+    if (videoIndex !== undefined && videoIndex !== null) {
+        if (typeof videoIndex !== 'number' || !Number.isInteger(videoIndex) || videoIndex < 0) {
+            errors.push('Invalid videoIndex: must be a non-negative integer')
+        }
+    }
+
+    return errors
 }
