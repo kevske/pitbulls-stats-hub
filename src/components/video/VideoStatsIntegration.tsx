@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { VideoProjectService } from '@/services/videoProjectService';
 import { extractStatsFromVideoData } from '@/services/statsExtraction';
+import { calculateTaggingStatus } from '@/utils/taggingStatus';
 
 interface VideoStatsIntegrationProps {
   saveData: SaveData;
@@ -26,6 +27,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
   const [isLoadingGameInfo, setIsLoadingGameInfo] = useState(false);
   const [validityCheck, setValidityCheck] = useState<{
     actualScore: string;
+    targetScore: number;
     taggedPoints: number;
     percentage: number;
     status: 'excellent' | 'good' | 'poor' | 'unknown';
@@ -113,6 +115,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
         // Show test validity check even without game score
         setValidityCheck({
           actualScore: 'Score unknown',
+          targetScore: 0,
           taggedPoints: totalTaggedPoints,
           percentage: 0,
           status: 'unknown'
@@ -120,26 +123,19 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
         return;
       }
 
-      // Extract Pitbulls' score from final score
-      // Assuming format like "89-76" where first number is Pitbulls
-      const scoreParts = gameFromContext.finalScore.split('-');
-      const pitbullsScore = parseInt(scoreParts[0]) || 0;
+      const taggingStatus = calculateTaggingStatus(
+        totalTaggedPoints,
+        gameFromContext.finalScore,
+        { home: gameFromContext.homeTeam, away: gameFromContext.awayTeam }
+      );
 
-      // Calculate percentage accuracy
-      const percentage = pitbullsScore > 0 ? Math.round((totalTaggedPoints / pitbullsScore) * 100) : 0;
-
-      // Determine status
-      let status: 'excellent' | 'good' | 'poor' | 'unknown' = 'unknown';
-      if (percentage >= 90) status = 'excellent';
-      else if (percentage >= 75) status = 'good';
-      else status = 'poor';
-
-      console.log('Setting validity check:', { actualScore: gameFromContext.finalScore, taggedPoints: totalTaggedPoints, percentage, status });
+      console.log('Setting validity check:', taggingStatus);
       setValidityCheck({
         actualScore: gameFromContext.finalScore,
-        taggedPoints: totalTaggedPoints,
-        percentage,
-        status
+        targetScore: taggingStatus.targetScore,
+        taggedPoints: taggingStatus.taggedPoints,
+        percentage: taggingStatus.percentage,
+        status: taggingStatus.status
       });
     } catch (error) {
       console.error('Failed to perform validity check:', error);
@@ -214,13 +210,10 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
               {validityCheck.status === 'good' && <AlertTriangle className="h-3 w-3 mr-1" />}
               {validityCheck.status === 'poor' && <XCircle className="h-3 w-3 mr-1" />}
               {validityCheck.status === 'unknown' && <AlertTriangle className="h-3 w-3 mr-1" />}
-              {validityCheck && `${validityCheck.taggedPoints} of ${validityCheck.actualScore.split('-')[0]} points tagged (${validityCheck.percentage}%)`}
+              {validityCheck && `${validityCheck.taggedPoints} of ${validityCheck.targetScore} points tagged (${validityCheck.percentage}%)`}
             </Badge>
           )}
-          {/* Debug info */}
-          <Badge variant="outline" className="text-xs">
-            Debug: {validityCheck ? `${validityCheck.taggedPoints} of ${validityCheck.actualScore} (${validityCheck.percentage}%)` : 'VC null'} | GN: {gameNumber || 'none'}
-          </Badge>
+
         </div>
 
         {/* Game Number Input */}

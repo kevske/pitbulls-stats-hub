@@ -102,7 +102,8 @@ export class SupabaseStatsService {
                                 : `https://www.youtube.com/watch?v=${vp.video_id}`,
                             events: vp.data?.events || [],
                             players: vp.data?.players || [],
-                            videoIndex: vp.video_index
+                            videoIndex: vp.video_index,
+                            metadata: vp.data?.metadata // Map metadata
                         }));
                     }
                 });
