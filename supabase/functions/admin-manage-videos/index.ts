@@ -20,31 +20,17 @@ serve(async (req: Request) => {
         const body = await req.json()
         const { action, payload, adminPassword } = body
 
-        if (!action || typeof action !== 'string') {
-            return new Response(
-                JSON.stringify({ error: 'Invalid Request', message: 'Action is required and must be a string' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        }
-
-        if (!payload || typeof payload !== 'object') {
-            return new Response(
-                JSON.stringify({ error: 'Invalid Request', message: 'Payload is required and must be an object' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        }
-
-        // Input validation
-        if (!payload || typeof payload !== 'object') {
-            return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid payload' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        }
-
+        // Input validation for top-level fields
         if (!action || typeof action !== 'string') {
             return new Response(
                 JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid action' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        if (!payload || typeof payload !== 'object') {
+            return new Response(
+                JSON.stringify({ error: 'Bad Request', message: 'Missing or invalid payload' }),
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
@@ -81,41 +67,19 @@ serve(async (req: Request) => {
 
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
-        if (action === 'add_video') {
-            // payload: { gameNumber, videoIndex, videoId, playlistId, events, players, metadata, timestamp, lastModified, version }
-            const { gameNumber, videoIndex, videoId, playlistId, events, players, metadata, timestamp, lastModified } = payload
-
-            const dbPayload = {
-                game_number: gameNumber.toString(),
-                tsv_game_number: gameNumber,
-                video_index: videoIndex,
-                video_id: videoId,
-                playlist_id: playlistId || null,
-                data: { events, players, metadata },
-                updated_at: lastModified || new Date().toISOString()
+        if (action === 'add_video' || action === 'save_project') {
+            const validationError = validateVideoInput(payload)
+            if (validationError) {
+                return new Response(
+                    JSON.stringify({ error: 'Bad Request', message: validationError }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
             }
 
-            const { data: savedProject, error } = await supabaseAdmin
-                .from('video_projects')
-                .upsert(dbPayload, {
-                    onConflict: 'tsv_game_number,video_index',
-                    ignoreDuplicates: false
-                })
-                .select()
-                .single()
+            // payload: { gameNumber, videoIndex, videoId, playlistId, events, players, metadata, timestamp, lastModified, version }
+            const { gameNumber, videoIndex, videoId, playlistId, events, players, metadata, lastModified } = payload
 
-            if (error) throw error
-
-            return new Response(
-                JSON.stringify({ success: true, id: savedProject.id }),
-                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        } else if (action === 'save_project') {
-            // Same as add_video essentially, but conceptually different if we want to restrict fields
-            // For now, reuse the payload logic
-            const { gameNumber, videoIndex, videoId, playlistId, events, players, metadata, timestamp, lastModified } = payload
-
-             const dbPayload = {
+            const dbPayload = {
                 game_number: gameNumber.toString(),
                 tsv_game_number: gameNumber,
                 video_index: videoIndex,
@@ -156,6 +120,48 @@ serve(async (req: Request) => {
         )
     }
 })
+
+/**
+ * Validates the input payload for video operations.
+ * Returns an error message string if invalid, or null if valid.
+ */
+function validateVideoInput(payload: any): string | null {
+    const { gameNumber, videoIndex, videoId, playlistId } = payload;
+
+    // Validate gameNumber
+    if (gameNumber === undefined || gameNumber === null) {
+        return "gameNumber is required";
+    }
+    const gameNumberStr = String(gameNumber);
+    if (!/^[a-zA-Z0-9_-]+$/.test(gameNumberStr)) {
+        return "Invalid gameNumber format";
+    }
+
+    // Validate videoIndex
+    if (typeof videoIndex !== 'number') {
+        return "videoIndex must be a number";
+    }
+
+    // Validate videoId
+    if (typeof videoId !== 'string') {
+        return "videoId must be a string";
+    }
+    if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+        return "Invalid videoId format (must be 11 chars alphanumeric)";
+    }
+
+    // Validate playlistId (optional)
+    if (playlistId !== undefined && playlistId !== null) {
+        if (typeof playlistId !== 'string') {
+             return "playlistId must be a string";
+        }
+        if (!/^[a-zA-Z0-9_-]+$/.test(playlistId)) {
+             return "Invalid playlistId format";
+        }
+    }
+
+    return null;
+}
 
 /**
  * Constant-time string comparison using SHA-256 hashing to prevent timing attacks.
