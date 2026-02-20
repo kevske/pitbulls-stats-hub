@@ -89,11 +89,28 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
     if (!gameNum) return;
 
     try {
-      // Get game info from games context (Supabase data)
-      const gameFromContext = games.find(g => g.gameNumber === gameNum);
-      console.log('Game from context:', gameFromContext);
 
-      // Get all videos for this game from Supabase
+      // Get game info using the existing helper function (which checks DB projects, then games context)
+      // We don't want to trigger generic loading state here, but we can reuse the logic
+      let gameInfo: any = null;
+
+      // 1. Try metadata from local SaveData first (most recent user input)
+      if (saveData.metadata && saveData.metadata.finalScore) {
+        gameInfo = {
+          homeTeam: (saveData.metadata as any).homeTeam || 'Pitbulls',
+          awayTeam: (saveData.metadata as any).awayTeam || 'Opponent',
+          finalScore: (saveData.metadata as any).finalScore,
+          gameType: (saveData.metadata as any).gameType || 'Heim'
+        };
+      }
+
+      // 2. Fallback to getGameInfo (DB projects or games context)
+      if (!gameInfo) {
+        gameInfo = await getGameInfo(gameNum);
+      }
+
+      console.log('Resolved Game Info for Validity Check:', gameInfo);
+
       // Get all videos for this game from Supabase
       const dbProjects = await VideoProjectService.getProjectsForGame(gameNum);
 
@@ -181,7 +198,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
 
       console.log('Total tagged points from all videos:', totalTaggedPoints);
 
-      if (!gameFromContext?.finalScore) {
+      if (!gameInfo?.finalScore) {
         // Show test validity check even without game score
         setValidityCheck({
           actualScore: 'Score unknown',
@@ -195,13 +212,13 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
 
       const taggingStatus = calculateTaggingStatus(
         totalTaggedPoints,
-        gameFromContext.finalScore,
-        { home: gameFromContext.homeTeam, away: gameFromContext.awayTeam }
+        gameInfo.finalScore,
+        { home: gameInfo.homeTeam, away: gameInfo.awayTeam }
       );
 
       console.log('Setting validity check:', taggingStatus);
       setValidityCheck({
-        actualScore: gameFromContext.finalScore,
+        actualScore: gameInfo.finalScore,
         targetScore: taggingStatus.targetScore,
         taggedPoints: taggingStatus.taggedPoints,
         percentage: taggingStatus.percentage,
