@@ -8,7 +8,7 @@ import {
 
 } from '@/services/videoToStatsHubBridge';
 import { extractStatsFromVideoData } from '@/services/statsExtraction';
-import { PlayerGameLog, GameStats, PlayerStats } from '@/types/stats';
+import { PlayerGameLog, GameStats, PlayerStats, VideoGameStats } from '@/types/stats';
 
 export function useVideoStatsIntegration() {
   const [isIntegrating, setIsIntegrating] = useState(false);
@@ -106,6 +106,10 @@ export function useVideoStatsIntegration() {
             twoPointersAttempted: stat.fieldGoalsAttempted - stat.threePointersAttempted,
             threePointersMade: stat.threePointersMade,
             threePointersAttempted: stat.threePointersAttempted,
+            freeThrowsMade: stat.freeThrowsMade,
+            freeThrowsAttempted: stat.freeThrowsAttempted,
+            fouls: stat.fouls,
+            totalPoints: stat.totalPoints,
             steals: stat.steals,
             blocks: stat.blocks,
             assists: stat.assists,
@@ -115,6 +119,23 @@ export function useVideoStatsIntegration() {
         });
 
         await SupabaseStatsService.saveVideoStats(videoStats);
+
+        // Save team-level game stats
+        const teamStats = extractedStats.teamStats;
+        const videoGameStats: VideoGameStats = {
+          gameNumber: gameNumber,
+          totalPoints: teamStats.totalPoints,
+          totalAssists: teamStats.totalAssists,
+          totalRebounds: teamStats.totalRebounds,
+          totalSteals: teamStats.totalSteals,
+          totalBlocks: teamStats.totalBlocks,
+          totalTurnovers: teamStats.totalTurnovers,
+          totalFouls: teamStats.totalFouls,
+          teamFgPercentage: teamStats.teamFieldGoalPercentage,
+          teamThreePtPercentage: teamStats.teamThreePointPercentage,
+          teamFtPercentage: teamStats.teamFreeThrowPercentage
+        };
+        await SupabaseStatsService.saveVideoGameStats(videoGameStats);
       }
 
       return {

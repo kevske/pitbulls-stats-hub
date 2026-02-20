@@ -68,11 +68,30 @@ export interface VideoStats {
   twoPointersAttempted: number;
   threePointersMade: number;
   threePointersAttempted: number;
+  freeThrowsMade: number;
+  freeThrowsAttempted: number;
+  fouls: number;
+  totalPoints: number;
   steals: number;
   blocks: number;
   assists: number;
   rebounds: number;
   turnovers: number;
+}
+
+export interface VideoGameStats {
+  id?: string;
+  gameNumber: number;
+  totalPoints: number;
+  totalAssists: number;
+  totalRebounds: number;
+  totalSteals: number;
+  totalBlocks: number;
+  totalTurnovers: number;
+  totalFouls: number;
+  teamFgPercentage: number;
+  teamThreePtPercentage: number;
+  teamFtPercentage: number;
 }
 
 export interface CachedData<T> {
