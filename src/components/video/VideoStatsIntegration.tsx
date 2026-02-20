@@ -201,20 +201,60 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
     // Close dialog if open
     setShowConfirmDialog(false);
 
-    const gameInfo = await getGameInfo(Number(gameNumber));
+    const gameNum = Number(gameNumber);
+    const gameInfo = await getGameInfo(gameNum);
 
-    const result = await integrateVideoData(saveData, Number(gameNumber), {
+    // Build combined SaveData from ALL videos for this game (not just current quarter)
+    let combinedSaveData: SaveData = saveData;
+
+    try {
+      const dbProjects = await VideoProjectService.getProjectsForGame(gameNum);
+
+      if (dbProjects && dbProjects.length > 0) {
+        let allEvents: any[] = [];
+        const playerMap = new Map<string, any>();
+
+        for (const project of dbProjects) {
+          if (project.data) {
+            if (project.data.events) {
+              allEvents = [...allEvents, ...project.data.events];
+            }
+            // Merge players, dedup by id
+            if (project.data.players) {
+              for (const p of project.data.players) {
+                if (!playerMap.has(p.id)) {
+                  playerMap.set(p.id, p);
+                }
+              }
+            }
+          }
+        }
+
+        if (allEvents.length > 0) {
+          combinedSaveData = {
+            ...saveData,
+            events: allEvents,
+            players: Array.from(playerMap.values()),
+          };
+          console.log(`Combined ${dbProjects.length} videos: ${allEvents.length} events, ${playerMap.size} players`);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load all game videos, falling back to current quarter:', error);
+    }
+
+    const result = await integrateVideoData(combinedSaveData, gameNum, {
       homeTeam: gameInfo?.homeTeam || 'Pitbulls',
       awayTeam: gameInfo?.awayTeam || 'Opponent',
       finalScore: gameInfo?.finalScore || undefined,
       gameType: gameInfo?.gameType || 'Heim',
       updateExistingTotals: true,
       existingPlayerTotals: players,
-      saveToDb: true // Enable saving to DB
+      saveToDb: true
     });
 
     if (result.success) {
-      toast.success(`Successfully integrated ${result.gameLogs.length} player stats into Stats Hub!`);
+      toast.success(`Successfully integrated ${result.gameLogs.length} player stats from whole game into Stats Hub!`);
 
       // Refresh the stats hub to show new data
       await refreshStatsHub();
