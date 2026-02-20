@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { GameStats, PlayerStats, PlayerGameLog, VideoStats } from '@/types/stats';
+import { GameStats, PlayerStats, PlayerGameLog, VideoStats, VideoGameStats } from '@/types/stats';
 import { getPlayerImageUrl } from '@/utils/playerUtils';
 
 export class SupabaseStatsService {
@@ -205,6 +205,10 @@ export class SupabaseStatsService {
                 twoPointersAttempted: v.two_pointers_attempted,
                 threePointersMade: v.three_pointers_made,
                 threePointersAttempted: v.three_pointers_attempted,
+                freeThrowsMade: v.free_throws_made || 0,
+                freeThrowsAttempted: v.free_throws_attempted || 0,
+                fouls: v.fouls || 0,
+                totalPoints: v.total_points || 0,
                 steals: v.steals,
                 blocks: v.blocks,
                 assists: v.assists,
@@ -238,6 +242,10 @@ export class SupabaseStatsService {
                 two_pointers_attempted: s.twoPointersAttempted,
                 three_pointers_made: s.threePointersMade,
                 three_pointers_attempted: s.threePointersAttempted,
+                free_throws_made: s.freeThrowsMade,
+                free_throws_attempted: s.freeThrowsAttempted,
+                fouls: s.fouls,
+                total_points: s.totalPoints,
                 steals: s.steals,
                 blocks: s.blocks,
                 assists: s.assists,
@@ -252,6 +260,37 @@ export class SupabaseStatsService {
             if (error) throw error;
         } catch (error) {
             console.error('Error saving video stats:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Save video game stats (team-level) to the database (Upsert)
+     */
+    static async saveVideoGameStats(stats: VideoGameStats): Promise<void> {
+        try {
+            const dbStats = {
+                game_number: stats.gameNumber,
+                total_points: stats.totalPoints,
+                total_assists: stats.totalAssists,
+                total_rebounds: stats.totalRebounds,
+                total_steals: stats.totalSteals,
+                total_blocks: stats.totalBlocks,
+                total_turnovers: stats.totalTurnovers,
+                total_fouls: stats.totalFouls,
+                team_fg_percentage: stats.teamFgPercentage,
+                team_three_pt_percentage: stats.teamThreePtPercentage,
+                team_ft_percentage: stats.teamFtPercentage,
+                updated_at: new Date().toISOString()
+            };
+
+            const { error } = await supabase
+                .from('video_game_stats')
+                .upsert(dbStats, { onConflict: 'game_number' });
+
+            if (error) throw error;
+        } catch (error) {
+            console.error('Error saving video game stats:', error);
             throw error;
         }
     }
