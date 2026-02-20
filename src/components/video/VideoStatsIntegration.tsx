@@ -102,6 +102,9 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
 
       // Merge local saveData if applicable
       // This ensures we validate the Current State (including unsaved changes)
+      let mergedLocal = false;
+
+      // 1. Try to match by videoIndex
       if (typeof saveData.videoIndex === 'number') {
         const existingIndex = projectsToAnalyze.findIndex(p => p.video_index === saveData.videoIndex);
 
@@ -116,28 +119,33 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
               metadata: saveData.metadata
             }
           };
-        } else {
-          // Local video is new/not in DB yet? Add it.
-          projectsToAnalyze.push({
-            id: 'temp-local',
-            game_number: gameNum.toString(),
-            video_index: saveData.videoIndex,
-            video_id: saveData.videoId || '',
+          mergedLocal = true;
+        }
+      }
+
+      // 2. If not merged yet, try to match by videoId (if available)
+      if (!mergedLocal && saveData.videoId) {
+        const existingIndex = projectsToAnalyze.findIndex(p => p.video_id === saveData.videoId);
+        if (existingIndex >= 0) {
+          projectsToAnalyze[existingIndex] = {
+            ...projectsToAnalyze[existingIndex],
             data: {
+              ...projectsToAnalyze[existingIndex].data,
               events: saveData.events,
               players: saveData.players,
               metadata: saveData.metadata
-            },
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
+            }
+          };
+          mergedLocal = true;
         }
-      } else if (projectsToAnalyze.length === 0) {
-        // Fallback: No projects in DB and no videoIndex known? Use local data as single source
+      }
+
+      // 3. If still not merged, it's a new/unsaved video. Add it.
+      if (!mergedLocal) {
         projectsToAnalyze.push({
           id: 'temp-local',
           game_number: gameNum.toString(),
-          video_index: 0,
+          video_index: typeof saveData.videoIndex === 'number' ? saveData.videoIndex : 999,
           video_id: saveData.videoId || '',
           data: {
             events: saveData.events,
