@@ -169,9 +169,19 @@ export class SupabaseStatsService {
                 const isHome = game?.home_team_name?.toLowerCase().includes('neuenstadt') ||
                     game?.home_team_name?.toLowerCase().includes('pitbulls');
 
+                const gameNumber = game?.tsv_game_number ? parseInt(game.tsv_game_number) : parseInt(log.game_id);
+
+                // Debug: log any unmapped or problematic logs
+                if (!game) {
+                    console.warn(`[DEBUG] Game log with game_id="${log.game_id}" has no matching game entry. Player: ${log.player_slug}`);
+                }
+                if (isNaN(gameNumber)) {
+                    console.warn(`[DEBUG] Game log with game_id="${log.game_id}" resolved to NaN gameNumber. tsv_game_number: ${game?.tsv_game_number}`);
+                }
+
                 return {
                     playerId: log.player_slug,
-                    gameNumber: game?.tsv_game_number ? parseInt(game.tsv_game_number) : parseInt(log.game_id),
+                    gameNumber,
                     minutesPlayed: log.minutes_played || 0,
                     points: log.points || 0,
                     twoPointers: log.two_pointers || 0,
@@ -187,6 +197,19 @@ export class SupabaseStatsService {
                     gameType: isHome ? 'Heim' : 'Auswärts'
                 };
             });
+
+            // Debug: Show game number distribution
+            const gameNumberCounts = new Map<number, number>();
+            gameLogs.forEach(log => {
+                gameNumberCounts.set(log.gameNumber, (gameNumberCounts.get(log.gameNumber) || 0) + 1);
+            });
+            console.log('[DEBUG] gameLogs gameNumber distribution:', Object.fromEntries(gameNumberCounts));
+
+            // Debug: Show which games exist and their gameNumbers
+            console.log('[DEBUG] games with gameNumber:', games.map(g => ({ gameNumber: g.gameNumber, gameId: g.gameId })));
+
+            // Debug: Show gamesById keys
+            console.log('[DEBUG] gamesById keys:', Array.from(gamesById.keys()));
 
             // 4. Fetch Video Stats (New)
             const { data: videoData, error: videoStatsError } = await supabase

@@ -42,18 +42,27 @@ const Games: React.FC = () => {
     // First, group logs by game
     const logsByGame = new Map<number, PlayerGameLog[]>();
     gameLogs.forEach(log => {
-        if (!logsByGame.has(log.gameNumber)) {
-            logsByGame.set(log.gameNumber, []);
-        }
-        logsByGame.get(log.gameNumber)!.push(log);
+      if (!logsByGame.has(log.gameNumber)) {
+        logsByGame.set(log.gameNumber, []);
+      }
+      logsByGame.get(log.gameNumber)!.push(log);
     });
 
     // Then sort for each game
     logsByGame.forEach((logs, gameNumber) => {
-        // We only need top scorers, so sort by points descending
-        const sorted = [...logs].sort((a, b) => b.points - a.points);
-        map.set(gameNumber, sorted);
+      // We only need top scorers, so sort by points descending
+      const sorted = [...logs].sort((a, b) => b.points - a.points);
+      map.set(gameNumber, sorted);
     });
+
+    // DEBUG: Check which game numbers have top scorers mapped
+    console.log('[DEBUG Games.tsx] gamesTopScorersMap keys:', Array.from(map.keys()).sort((a, b) => a - b));
+    console.log('[DEBUG Games.tsx] gameLogs total count:', gameLogs.length);
+    console.log('[DEBUG Games.tsx] game 10 topScorers:', map.get(10)?.map(p => `${p.playerId}: ${p.points}pts`));
+    console.log('[DEBUG Games.tsx] game 11 topScorers:', map.get(11)?.map(p => `${p.playerId}: ${p.points}pts`));
+
+    // Also check: which game numbers exist in games list
+    console.log('[DEBUG Games.tsx] games gameNumbers:', games.map(g => g.gameNumber).sort((a, b) => a - b));
 
     return map;
   }, [gameLogs]);
