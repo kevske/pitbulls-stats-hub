@@ -63,6 +63,11 @@ const Stats = () => {
     return agg;
   }, [videoStats]);
 
+  const taggedGamesCount = useMemo(() => {
+    const uniqueGames = new Set(videoStats.map(s => s.gameNumber));
+    return uniqueGames.size;
+  }, [videoStats]);
+
   if (loading) {
     return (
       <Layout>
@@ -128,7 +133,7 @@ const Stats = () => {
                 <span className="text-xl">⚠️</span>
                 <div>
                   <p className="font-semibold mb-1">Hinweis zu Video-Stats (V)</p>
-                  <p>Die <strong>(V)</strong> markierten Spalten basieren ausschließlich auf <strong>getaggten Videodaten</strong>. Sie können von den offiziellen Spielberichten abweichen.</p>
+                  <p>Die <strong>(V)</strong> markierten Spalten basieren ausschließlich auf <strong>{taggedGamesCount} getaggten Spielen</strong>. Sie können von den offiziellen Spielberichten abweichen.</p>
                   <p className="mt-2 text-yellow-200/60">Detaillierte Auswertungen findest du unter <Link to="/videos" className="underline hover:text-yellow-100">Videos</Link>.</p>
                 </div>
               </div>
@@ -166,7 +171,7 @@ const Stats = () => {
             <span className="text-xl">⚠️</span>
             <div>
               <p className="font-semibold mb-1">Hinweis zu Video-Stats (V)</p>
-              <p>Die <strong>(V)</strong> markierten Spalten basieren ausschließlich auf <strong>getaggten Videodaten</strong> und sind unvollständig.</p>
+              <p>Die <strong>(V)</strong> markierten Spalten basieren ausschließlich auf <strong>{taggedGamesCount} getaggten Spielen</strong> und sind unvollständig.</p>
               <p className="mt-2 opacity-80">Detaillierte Auswertungen findest du unter <Link to="/videos" className="underline">Videos</Link>.</p>
             </div>
           </div>

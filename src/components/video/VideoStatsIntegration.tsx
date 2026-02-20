@@ -32,7 +32,7 @@ interface VideoStatsIntegrationProps {
 
 export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onIntegrationComplete }: VideoStatsIntegrationProps) {
   const { integrateVideoData, isIntegrating, integrationError } = useVideoStatsIntegration();
-  const { refresh: refreshStatsHub, games } = useStats();
+  const { refresh: refreshStatsHub, games, players } = useStats();
 
   const [gameNumber, setGameNumber] = useState(urlGameNumber || '');
   const [isLoadingGameInfo, setIsLoadingGameInfo] = useState(false);
@@ -193,6 +193,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
       finalScore: gameInfo?.finalScore || undefined,
       gameType: gameInfo?.gameType || 'Heim',
       updateExistingTotals: true,
+      existingPlayerTotals: players,
       saveToDb: true // Enable saving to DB
     });
 
