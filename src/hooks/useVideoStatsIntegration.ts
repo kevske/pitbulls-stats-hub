@@ -57,11 +57,18 @@ export function useVideoStatsIntegration() {
         // Create a map of Player Name -> Player Slug from existing totals
         const playerNameToSlug = new Map<string, string>();
         const playerIdToSlug = new Map<string, string>();
+        const playerJerseyToSlug = new Map<string, string>();
 
         existingPlayerTotals.forEach(p => {
           const fullName = `${p.firstName} ${p.lastName}`.toLowerCase().trim();
           playerNameToSlug.set(fullName, p.id);
-          playerIdToSlug.set(p.id, p.id); // In case video already uses slugs
+          // Also map just last name if unique? For now let's stick to full name
+
+          playerIdToSlug.set(p.id, p.id);
+
+          if (p.jerseyNumber) {
+            playerJerseyToSlug.set(p.jerseyNumber.toString(), p.id);
+          }
         });
 
         // Map to VideoStats format with ID resolution
@@ -73,13 +80,22 @@ export function useVideoStatsIntegration() {
           if (playerIdToSlug.has(stat.playerId)) {
             targetPlayerId = stat.playerId;
           }
-          // 2. Try name match
+          // 2. Try Name match
           else {
             const statName = stat.playerName.toLowerCase().trim();
             if (playerNameToSlug.has(statName)) {
               targetPlayerId = playerNameToSlug.get(statName)!;
-            } else {
-              console.warn(`Could not find matching player slug for video player: ${stat.playerName} (${stat.playerId})`);
+            }
+            // 3. Try Jersey Number match (if ID is a number or jerseyNumber field matches)
+            else if (playerJerseyToSlug.has(stat.jerseyNumber?.toString())) {
+              targetPlayerId = playerJerseyToSlug.get(stat.jerseyNumber.toString())!;
+            }
+            // 4. Try treating ID as Jersey Number (common in some taggers)
+            else if (playerJerseyToSlug.has(stat.playerId)) {
+              targetPlayerId = playerJerseyToSlug.get(stat.playerId)!;
+            }
+            else {
+              console.warn(`Could not find matching player slug for video player: ${stat.playerName} (ID: ${stat.playerId}, # ${stat.jerseyNumber})`);
             }
           }
 
