@@ -56,7 +56,13 @@ const VideoStatsTable = memo(({ stats, players }: VideoStatsTableProps) => {
                 };
             }
             const p = agg[stat.playerId];
-            p.games += 1;
+            // Only count this as a game played if the player had any activity
+            const hadActivity = stat.twoPointersMade + stat.twoPointersAttempted +
+                stat.threePointersMade + stat.threePointersAttempted +
+                stat.freeThrowsMade + stat.freeThrowsAttempted +
+                stat.steals + stat.blocks + stat.assists + stat.rebounds +
+                stat.turnovers + stat.fouls > 0;
+            if (hadActivity) p.games += 1;
             p.twoMade += stat.twoPointersMade;
             p.twoAtt += stat.twoPointersAttempted;
             p.threeMade += stat.threePointersMade;
@@ -72,6 +78,7 @@ const VideoStatsTable = memo(({ stats, players }: VideoStatsTableProps) => {
             p.turnovers += stat.turnovers;
         });
 
+        // Keep all players, even those with 0 games (per-game stats will show '-')
         return Object.values(agg).map(s => ({
             ...s,
             twoPct: s.twoAtt > 0 ? s.twoMade / s.twoAtt : 0,
