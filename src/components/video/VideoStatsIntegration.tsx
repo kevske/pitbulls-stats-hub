@@ -94,14 +94,68 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
       console.log('Game from context:', gameFromContext);
 
       // Get all videos for this game from Supabase
-      const projects = await VideoProjectService.getProjectsForGame(gameNum);
+      // Get all videos for this game from Supabase
+      const dbProjects = await VideoProjectService.getProjectsForGame(gameNum);
+
+      // Prepare projects list for analysis, starting with DB projects
+      let projectsToAnalyze = [...dbProjects];
+
+      // Merge local saveData if applicable
+      // This ensures we validate the Current State (including unsaved changes)
+      if (typeof saveData.videoIndex === 'number') {
+        const existingIndex = projectsToAnalyze.findIndex(p => p.video_index === saveData.videoIndex);
+
+        if (existingIndex >= 0) {
+          // Overlay local data onto the matching DB project
+          projectsToAnalyze[existingIndex] = {
+            ...projectsToAnalyze[existingIndex],
+            data: {
+              ...projectsToAnalyze[existingIndex].data,
+              events: saveData.events,
+              players: saveData.players,
+              metadata: saveData.metadata
+            }
+          };
+        } else {
+          // Local video is new/not in DB yet? Add it.
+          projectsToAnalyze.push({
+            id: 'temp-local',
+            game_number: gameNum.toString(),
+            video_index: saveData.videoIndex,
+            video_id: saveData.videoId || '',
+            data: {
+              events: saveData.events,
+              players: saveData.players,
+              metadata: saveData.metadata
+            },
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        }
+      } else if (projectsToAnalyze.length === 0) {
+        // Fallback: No projects in DB and no videoIndex known? Use local data as single source
+        projectsToAnalyze.push({
+          id: 'temp-local',
+          game_number: gameNum.toString(),
+          video_index: 0,
+          video_id: saveData.videoId || '',
+          data: {
+            events: saveData.events,
+            players: saveData.players,
+            metadata: saveData.metadata
+          },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      }
+
       let totalTaggedPoints = 0;
 
-      if (projects && projects.length > 0) {
-        console.log('Game videos:', projects.length);
+      if (projectsToAnalyze.length > 0) {
+        console.log('Analyzing projects:', projectsToAnalyze.length);
 
-        // Fetch and process each video in the playlist
-        for (const project of projects) {
+        // Fetch and process each project
+        for (const project of projectsToAnalyze) {
           if (project.data && project.data.events) {
             // Construct pseudo-SaveData for extraction
             const tempData: any = {
@@ -115,10 +169,6 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
             console.log(`Video ${project.video_index} points:`, extractedStats.teamStats.totalPoints);
           }
         }
-      } else {
-        // Fallback to current video if no playlist found
-        const extractedStats = extractStatsFromVideoData(saveData);
-        totalTaggedPoints = extractedStats.teamStats.totalPoints;
       }
 
       console.log('Total tagged points from all videos:', totalTaggedPoints);

@@ -232,7 +232,7 @@ const StatsTable = memo(({ players, videoStatsData = {}, showVideoStats = false 
         className="max-w-sm border-primary/30 focus:border-primary"
         aria-label="Nach Spielern suchen"
       />
-      <div className="rounded-lg border border-primary/20 overflow-hidden">
+      <div className="rounded-lg border border-primary/20 overflow-hidden overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-secondary hover:bg-secondary">
