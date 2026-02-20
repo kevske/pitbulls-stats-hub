@@ -1,6 +1,7 @@
 import Layout from "@/components/Layout";
 import StatsTable from "@/components/StatsTable";
 import VideoStatsTable from "@/components/VideoStatsTable";
+import { useMemo } from "react";
 import { useStats } from "@/contexts/StatsContext";
 import { useModernTheme } from "@/contexts/ModernThemeContext";
 import { motion } from "framer-motion";
@@ -10,6 +11,10 @@ import { Video } from "lucide-react";
 const Stats = () => {
   const { players, videoStats, loading, error } = useStats();
   const { isModernMode } = useModernTheme();
+
+  const taggedGamesCount = useMemo(() => {
+    return new Set(videoStats.map(s => s.gameNumber)).size;
+  }, [videoStats]);
 
   if (loading) {
     return (
@@ -72,6 +77,9 @@ const Stats = () => {
                 Video <span className="text-orange-400">Stats</span>
               </h2>
               <span className="text-[10px] font-bold tracking-widest text-orange-400/50 uppercase px-2 py-0.5 border border-orange-400/20 rounded-full">Beta</span>
+              {taggedGamesCount > 0 && (
+                <span className="text-xs text-white/40 ml-auto">Basiert auf {taggedGamesCount} {taggedGamesCount === 1 ? 'Spiel' : 'Spielen'}</span>
+              )}
             </div>
             <VideoStatsTable stats={videoStats} players={players} />
             <p className="mt-4 text-xs text-white/30">
@@ -96,6 +104,9 @@ const Stats = () => {
             <Video className="h-5 w-5 text-orange-500" />
             <h3 className="text-2xl font-bold text-orange-600 dark:text-orange-400">Video Stats</h3>
             <span className="text-[10px] font-bold tracking-widest text-orange-500/60 uppercase px-2 py-0.5 border border-orange-400/30 rounded-full">Beta</span>
+            {taggedGamesCount > 0 && (
+              <span className="text-xs text-muted-foreground ml-auto">Basiert auf {taggedGamesCount} {taggedGamesCount === 1 ? 'Spiel' : 'Spielen'}</span>
+            )}
           </div>
           <VideoStatsTable stats={videoStats} players={players} />
           <p className="mt-4 text-xs text-muted-foreground">
