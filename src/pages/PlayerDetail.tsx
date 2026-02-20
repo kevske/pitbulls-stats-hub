@@ -6,7 +6,7 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from "lucide-react";
 
-import { PlayerStats, PlayerGameLog } from '@/types/stats';
+import { PlayerStats, PlayerGameLog, VideoStats } from '@/types/stats';
 import { calculateAge } from '@/utils/dateUtils';
 import { BASE_PATH } from '@/config';
 import {
@@ -19,7 +19,8 @@ import {
   PlayerHeader,
   StatsGrid,
   StatsTrends,
-  GameLogTable
+  GameLogTable,
+  VideoStatsTable
 } from '@/features/player-detail';
 
 // Custom CSS for scrolling animation is now in index.css
@@ -35,7 +36,7 @@ const getPlayerSlugFromUrl = (imageUrl?: string): string | undefined => {
 const PlayerDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { games, gameLogs: allGameLogs } = useStats();
-  const { player, gameLogs } = usePlayerStats(id) as { player: PlayerStats | null; gameLogs: PlayerGameLog[] };
+  const { player, gameLogs, videoGameLogs } = usePlayerStats(id) as { player: PlayerStats | null; gameLogs: PlayerGameLog[]; videoGameLogs: VideoStats[] };
   const navigate = useNavigate();
 
   // Get player slug for gallery hook
@@ -135,6 +136,11 @@ const PlayerDetail: React.FC = () => {
           <GameLogTable
             gameLogs={gameLogs}
             hasBoxScoreData={hasBoxScoreData}
+            getOpponentName={getOpponentName}
+          />
+
+          <VideoStatsTable
+            videoGameLogs={videoGameLogs}
             getOpponentName={getOpponentName}
           />
         </div>
