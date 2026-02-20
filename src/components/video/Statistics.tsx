@@ -20,8 +20,8 @@ export function Statistics({ events, players = DEFAULT_PLAYERS }: StatisticsProp
   const [isLoadingWholeGame, setIsLoadingWholeGame] = useState(false);
 
   // Get stats for current quarter or whole game
-  const getStats = async () => {
-    if (!showWholeGame || !gameNumber) {
+  const getStats = async (wholeGame: boolean) => {
+    if (!wholeGame || !gameNumber) {
       // Current quarter stats
       return extractStatsFromVideoData({
         version: '1.0.0',
@@ -90,7 +90,7 @@ export function Statistics({ events, players = DEFAULT_PLAYERS }: StatisticsProp
   useEffect(() => {
     const initializeStats = async () => {
       setIsLoading(true);
-      const stats = await getStats();
+      const stats = await getStats(false);
       setExtractedStats(stats);
       setIsLoading(false);
     };
@@ -98,10 +98,10 @@ export function Statistics({ events, players = DEFAULT_PLAYERS }: StatisticsProp
   }, []);
 
   // Update stats when toggle changes
-  const handleToggle = async () => {
+  const handleToggle = async (wholeGame: boolean) => {
+    setShowWholeGame(wholeGame);
     setIsLoading(true);
-    setShowWholeGame(!showWholeGame);
-    const newStats = await getStats();
+    const newStats = await getStats(wholeGame);
     setExtractedStats(newStats);
     setIsLoading(false);
   };
@@ -121,15 +121,28 @@ export function Statistics({ events, players = DEFAULT_PLAYERS }: StatisticsProp
       <div className="p-3 border-b border-border/50 flex justify-between items-center">
         <h3 className="font-semibold text-sm">Enhanced Statistics</h3>
         {gameNumber && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleToggle}
-            disabled={isLoading || isLoadingWholeGame}
-            className="text-xs"
-          >
-            {isLoadingWholeGame ? 'Loading...' : showWholeGame ? 'Current Quarter' : 'Whole Game'}
-          </Button>
+          <div className="inline-flex rounded-md border border-border/50 overflow-hidden text-xs">
+            <button
+              onClick={() => handleToggle(false)}
+              disabled={isLoading || isLoadingWholeGame}
+              className={`px-3 py-1.5 transition-colors ${!showWholeGame
+                  ? 'bg-primary text-primary-foreground font-medium'
+                  : 'bg-transparent text-muted-foreground hover:bg-accent'
+                }`}
+            >
+              Quarter
+            </button>
+            <button
+              onClick={() => handleToggle(true)}
+              disabled={isLoading || isLoadingWholeGame}
+              className={`px-3 py-1.5 transition-colors ${showWholeGame
+                  ? 'bg-primary text-primary-foreground font-medium'
+                  : 'bg-transparent text-muted-foreground hover:bg-accent'
+                }`}
+            >
+              {isLoadingWholeGame ? 'Loading...' : 'Whole Game'}
+            </button>
+          </div>
         )}
       </div>
       <ScrollArea className="h-[400px]">
