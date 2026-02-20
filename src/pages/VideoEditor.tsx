@@ -182,13 +182,22 @@ const VideoEditor = () => {
     const initializeFromParams = async () => {
       // 1. Handle URL params for Video/Playlist
       if (videoUrl) {
-        const playlistMatch = videoUrl.match(/embed\/videoseries\?list=([^&]+)/);
-        if (playlistMatch) {
-          setPlaylistId(playlistMatch[1]);
+        const playlistOnlyMatch = videoUrl.match(/embed\/videoseries\?list=([^&]+)/);
+        if (playlistOnlyMatch) {
+          // Playlist-only URL (no specific video)
+          setPlaylistId(playlistOnlyMatch[1]);
         } else {
-          const videoIdMatch = videoUrl.match(/embed\/([^?]+)/);
-          if (videoIdMatch) {
-            setVideoId(videoIdMatch[1]);
+          // Check for combined video + playlist URL: embed/VIDEO_ID?list=PLAYLIST_ID
+          const videoWithListMatch = videoUrl.match(/embed\/([^?]+)\?list=([^&]+)/);
+          if (videoWithListMatch) {
+            setVideoId(videoWithListMatch[1]);
+            setPlaylistId(videoWithListMatch[2]);
+          } else {
+            // Video-only URL
+            const videoIdMatch = videoUrl.match(/embed\/([^?]+)/);
+            if (videoIdMatch) {
+              setVideoId(videoIdMatch[1]);
+            }
           }
         }
       }
@@ -345,6 +354,10 @@ const VideoEditor = () => {
 
   const handleVideoChange = useCallback((newVideoId: string, index: number) => {
     setCurrentPlaylistIndex(index);
+    // Update videoId to match the new playlist video
+    if (newVideoId) {
+      setVideoId(newVideoId);
+    }
     // Reset time for new video
     setCurrentTime(0);
     // Clear events when switching to a different video

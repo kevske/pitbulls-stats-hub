@@ -83,24 +83,36 @@ export class SupabaseStatsService {
 
                         // Populate youtubeLink (backwards compatibility - use first video)
                         const firstVideo = gameVideos[0];
-                        const firstLink = firstVideo.playlist_id
-                            ? `https://www.youtube.com/watch?v=${firstVideo.video_id}&list=${firstVideo.playlist_id}`
-                            : `https://www.youtube.com/watch?v=${firstVideo.video_id}`;
+                        const firstLink = firstVideo.video_id
+                            ? (firstVideo.playlist_id
+                                ? `https://www.youtube.com/watch?v=${firstVideo.video_id}&list=${firstVideo.playlist_id}`
+                                : `https://www.youtube.com/watch?v=${firstVideo.video_id}`)
+                            : (firstVideo.playlist_id
+                                ? `https://www.youtube.com/playlist?list=${firstVideo.playlist_id}`
+                                : '');
 
                         game.youtubeLink = firstLink;
 
                         // Populate youtubeLinks
                         game.youtubeLinks = gameVideos.map((vp: any) =>
-                            vp.playlist_id
-                                ? `https://www.youtube.com/watch?v=${vp.video_id}&list=${vp.playlist_id}`
-                                : `https://www.youtube.com/watch?v=${vp.video_id}`
+                            vp.video_id
+                                ? (vp.playlist_id
+                                    ? `https://www.youtube.com/watch?v=${vp.video_id}&list=${vp.playlist_id}`
+                                    : `https://www.youtube.com/watch?v=${vp.video_id}`)
+                                : (vp.playlist_id
+                                    ? `https://www.youtube.com/playlist?list=${vp.playlist_id}`
+                                    : '')
                         );
 
                         // Populate videoData
                         game.videoData = gameVideos.map((vp: any) => ({
-                            link: vp.playlist_id
-                                ? `https://www.youtube.com/watch?v=${vp.video_id}&list=${vp.playlist_id}`
-                                : `https://www.youtube.com/watch?v=${vp.video_id}`,
+                            link: vp.video_id
+                                ? (vp.playlist_id
+                                    ? `https://www.youtube.com/watch?v=${vp.video_id}&list=${vp.playlist_id}`
+                                    : `https://www.youtube.com/watch?v=${vp.video_id}`)
+                                : (vp.playlist_id
+                                    ? `https://www.youtube.com/playlist?list=${vp.playlist_id}`
+                                    : ''),
                             events: vp.data?.events || [],
                             players: vp.data?.players || [],
                             videoIndex: vp.video_index,

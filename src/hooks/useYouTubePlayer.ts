@@ -218,11 +218,10 @@ export function useYouTubePlayer({
     if (playlistId) {
       playerVars.list = playlistId;
       playerVars.listType = 'playlist';
-      // For playlists, don't set videoId initially
-      delete playerVars.videoId;
-      console.log('Setting playlist params:', { playlistId, playerVars });
+      // If we also have a videoId, keep it so the player starts at that specific video
+      console.log('Setting playlist params:', { videoId, playlistId, playerVars });
     } else if (videoId) {
-      playerVars.videoId = videoId;
+      // Video-only mode, no playlist
     }
 
     console.log('Creating YouTube player with config:', { videoId, playerVars });
@@ -326,8 +325,8 @@ export function useYouTubePlayer({
         },
       };
 
-      // Only add videoId if it's not a playlist
-      if (!playlistId && videoId) {
+      // Set videoId on config (works for both video-only and video+playlist modes)
+      if (videoId) {
         playerConfig.videoId = videoId;
       }
 

@@ -24,6 +24,11 @@ const getEmbedUrl = (url: string): string => {
   // Extract video ID from various YouTube URL formats
   const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([^&?/]+)/);
   if (videoIdMatch) {
+    // Also check for playlist ID in the same URL
+    const listMatch = url.match(/[?&]list=([^&]+)/);
+    if (listMatch) {
+      return `https://www.youtube.com/embed/${videoIdMatch[1]}?list=${listMatch[1]}`;
+    }
     return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
   }
 
@@ -51,24 +56,26 @@ const extractVideoId = (url: string): { videoId: string | null, playlistId: stri
 
   if (!url) return { videoId, playlistId };
 
-  // Check playlist first
-  // Validate playlist ID format: alphanumeric, dashes, underscores
-  const playlistMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
-  if (playlistMatch) {
-    playlistId = playlistMatch[1];
-    return { videoId, playlistId };
-  }
-
-  // Direct playlist ID input
+  // Direct playlist ID input (no URL, just the ID)
   if (url.startsWith('PL') && /^[a-zA-Z0-9_-]+$/.test(url)) {
     playlistId = url;
     return { videoId, playlistId };
   }
 
-  // Check unique video ID from URL
+  // Extract video ID from URL
   const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([a-zA-Z0-9_-]{11})/);
   if (videoIdMatch) {
     videoId = videoIdMatch[1];
+  }
+
+  // Extract playlist ID from URL (can coexist with video ID)
+  const playlistMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+  if (playlistMatch) {
+    playlistId = playlistMatch[1];
+  }
+
+  // If we found either, return
+  if (videoId || playlistId) {
     return { videoId, playlistId };
   }
 
@@ -258,7 +265,7 @@ const Videos = () => {
                   {/* Video Tagger Button */}
                   <div className="mt-4">
                     <Link
-                      to={`/video-editor?game=${game.gameNumber}&video=${getEmbedUrl(videoData.link)}`}
+                      to={`/video-editor?game=${game.gameNumber}&video=${encodeURIComponent(getEmbedUrl(videoData.link))}`}
                       state={{ adminPassword }}
                     >
                       <Button className="gap-2">
