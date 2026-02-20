@@ -32,7 +32,7 @@ interface VideoStatsIntegrationProps {
 
 export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onIntegrationComplete }: VideoStatsIntegrationProps) {
   const { integrateVideoData, isIntegrating, integrationError } = useVideoStatsIntegration();
-  const { refresh: refreshStatsHub, games, players } = useStats();
+  const { refresh: refreshStatsHub, games, players, loading: statsLoading } = useStats();
 
   const [gameNumber, setGameNumber] = useState(urlGameNumber || '');
   const [isLoadingGameInfo, setIsLoadingGameInfo] = useState(false);
@@ -276,14 +276,14 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
         {/* Integration Button */}
         <Button
           onClick={handleIntegrateClick}
-          disabled={!gameNumber || isIntegrating || isLoadingGameInfo || eventCount === 0}
+          disabled={!gameNumber || isIntegrating || isLoadingGameInfo || eventCount === 0 || statsLoading}
           className="w-full"
           size="sm"
         >
           {isIntegrating || isLoadingGameInfo ? (
             <>
               <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
-              {isLoadingGameInfo ? 'Loading Game Info...' : 'Integrating...'}
+              {isLoadingGameInfo ? 'Loading Game Info...' : statsLoading ? 'Loading Stats...' : 'Integrating...'}
             </>
           ) : (
             <>
