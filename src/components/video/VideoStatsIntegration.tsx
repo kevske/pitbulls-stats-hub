@@ -89,100 +89,37 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
     if (!gameNum) return;
 
     try {
-
-      // Get game info using the existing helper function (which checks DB projects, then games context)
-      // We don't want to trigger generic loading state here, but we can reuse the logic
+      // Resolve game info: prefer games context (has finalScore), fallback to DB metadata
       let gameInfo: any = null;
 
-      // 1. Try metadata from local SaveData first (most recent user input)
-      if (saveData.metadata && saveData.metadata.finalScore) {
+      // 1. Try games context first (most reliable for finalScore)
+      const gameFromContext = games.find(g => g.gameNumber === gameNum);
+      if (gameFromContext?.finalScore) {
         gameInfo = {
-          homeTeam: (saveData.metadata as any).homeTeam || 'Pitbulls',
-          awayTeam: (saveData.metadata as any).awayTeam || 'Opponent',
-          finalScore: (saveData.metadata as any).finalScore,
-          gameType: (saveData.metadata as any).gameType || 'Heim'
+          homeTeam: gameFromContext.homeTeam,
+          awayTeam: gameFromContext.awayTeam,
+          finalScore: gameFromContext.finalScore,
+          gameType: gameFromContext.homeTeam === 'Pitbulls' ? 'Heim' : 'Auswärts'
         };
       }
 
-      // 2. Fallback to getGameInfo (DB projects or games context)
+      // 2. Fallback to getGameInfo (DB project metadata)
       if (!gameInfo) {
         gameInfo = await getGameInfo(gameNum);
       }
 
       console.log('Resolved Game Info for Validity Check:', gameInfo);
 
-      // Get all videos for this game from Supabase
+      // Get all videos for this game from Supabase (already saved data)
       const dbProjects = await VideoProjectService.getProjectsForGame(gameNum);
-
-      // Prepare projects list for analysis, starting with DB projects
-      let projectsToAnalyze = [...dbProjects];
-
-      // Merge local saveData if applicable
-      // This ensures we validate the Current State (including unsaved changes)
-      let mergedLocal = false;
-
-      // 1. Try to match by videoIndex
-      if (typeof saveData.videoIndex === 'number') {
-        const existingIndex = projectsToAnalyze.findIndex(p => p.video_index === saveData.videoIndex);
-
-        if (existingIndex >= 0) {
-          // Overlay local data onto the matching DB project
-          projectsToAnalyze[existingIndex] = {
-            ...projectsToAnalyze[existingIndex],
-            data: {
-              ...projectsToAnalyze[existingIndex].data,
-              events: saveData.events,
-              players: saveData.players,
-              metadata: saveData.metadata
-            }
-          };
-          mergedLocal = true;
-        }
-      }
-
-      // 2. If not merged yet, try to match by videoId (if available)
-      if (!mergedLocal && saveData.videoId) {
-        const existingIndex = projectsToAnalyze.findIndex(p => p.video_id === saveData.videoId);
-        if (existingIndex >= 0) {
-          projectsToAnalyze[existingIndex] = {
-            ...projectsToAnalyze[existingIndex],
-            data: {
-              ...projectsToAnalyze[existingIndex].data,
-              events: saveData.events,
-              players: saveData.players,
-              metadata: saveData.metadata
-            }
-          };
-          mergedLocal = true;
-        }
-      }
-
-      // 3. If still not merged, it's a new/unsaved video. Add it.
-      if (!mergedLocal) {
-        projectsToAnalyze.push({
-          id: 'temp-local',
-          game_number: gameNum.toString(),
-          video_index: typeof saveData.videoIndex === 'number' ? saveData.videoIndex : 999,
-          video_id: saveData.videoId || '',
-          data: {
-            events: saveData.events,
-            players: saveData.players,
-            metadata: saveData.metadata
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-      }
 
       let totalTaggedPoints = 0;
 
-      if (projectsToAnalyze.length > 0) {
-        console.log('Analyzing projects:', projectsToAnalyze.length);
+      if (dbProjects.length > 0) {
+        console.log('Analyzing DB projects:', dbProjects.length);
 
-        // Fetch and process each project
-        for (const project of projectsToAnalyze) {
+        for (const project of dbProjects) {
           if (project.data && project.data.events) {
-            // Construct pseudo-SaveData for extraction
             const tempData: any = {
               events: project.data.events,
               players: project.data.players || [],
@@ -194,12 +131,15 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
             console.log(`Video ${project.video_index} points:`, extractedStats.teamStats.totalPoints);
           }
         }
+      } else {
+        // Fallback: no DB projects found, use local saveData only
+        const extractedStats = extractStatsFromVideoData(saveData);
+        totalTaggedPoints = extractedStats.teamStats.totalPoints;
       }
 
       console.log('Total tagged points from all videos:', totalTaggedPoints);
 
       if (!gameInfo?.finalScore) {
-        // Show test validity check even without game score
         setValidityCheck({
           actualScore: 'Score unknown',
           targetScore: 0,
@@ -229,16 +169,17 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
     }
   };
 
-  // Auto-check validity when game number or events change
+  // Auto-check validity when game number, events, or games context change
   useEffect(() => {
-    console.log('Validity check useEffect:', { gameNumber, eventCount: saveData.events.length, shouldRun: !!(gameNumber && saveData.events.length > 0) });
+    // Wait for stats to finish loading before running validity check
+    if (statsLoading) return;
+
+    console.log('Validity check useEffect:', { gameNumber, eventCount: saveData.events.length, gamesLoaded: games.length });
     if (gameNumber && saveData.events.length > 0) {
       console.log('Calling performValidityCheck');
       performValidityCheck(parseInt(gameNumber));
-    } else {
-      console.log('Not running validity check - missing game number or events');
     }
-  }, [gameNumber, saveData.events.length]);
+  }, [gameNumber, saveData.events.length, games, statsLoading]);
 
   const handleIntegrateClick = () => {
     if (!gameNumber || isNaN(Number(gameNumber))) {
