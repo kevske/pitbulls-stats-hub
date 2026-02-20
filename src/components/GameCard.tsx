@@ -87,11 +87,11 @@ const GameCard: React.FC<GameCardProps> = React.memo(({ game, topScorers, player
                   {game.finalScore ? (
                     <div className="flex items-center justify-center gap-2">
                       <span className="text-3xl font-bold">
-                        {game.finalScore.split('-')[0].trim()}
+                        {game.finalScore.split(/[-:]/)[0].trim()}
                       </span>
                       <span className="text-xl">:</span>
                       <span className="text-3xl font-bold">
-                        {game.finalScore.split('-')[1]?.trim()}
+                        {game.finalScore.split(/[-:]/)[1]?.trim()}
                       </span>
                     </div>
                   ) : (
