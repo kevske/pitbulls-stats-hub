@@ -9,3 +9,4 @@ export { PlayerHeader } from './components/PlayerHeader';
 export { StatsGrid } from './components/StatsGrid';
 export { StatsTrends } from './components/StatsTrends';
 export { GameLogTable } from './components/GameLogTable';
+export { VideoStatsTable } from './components/VideoStatsTable';
