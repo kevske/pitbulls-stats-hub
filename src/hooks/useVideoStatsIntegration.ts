@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { SaveData } from '@/services/saveLoad';
+import { SupabaseStatsService } from '@/services/supabaseStatsService';
 import {
   convertVideoToPlayerGameLogs,
   convertVideoToGameStats,
   updatePlayerTotalsWithVideoData,
-  integrateVideoDataWithStatsHub
+
 } from '@/services/videoToStatsHubBridge';
+import { extractStatsFromVideoData } from '@/services/statsExtraction';
 import { PlayerGameLog, GameStats, PlayerStats } from '@/types/stats';
 
 export function useVideoStatsIntegration() {
@@ -22,6 +24,7 @@ export function useVideoStatsIntegration() {
       gameType?: string;
       updateExistingTotals?: boolean;
       existingPlayerTotals?: PlayerStats[];
+      saveToDb?: boolean;
     } = {}
   ) => {
     setIsIntegrating(true);
@@ -45,6 +48,28 @@ export function useVideoStatsIntegration() {
 
       if (updateExistingTotals && existingPlayerTotals.length > 0) {
         updatedPlayerTotals = updatePlayerTotalsWithVideoData(existingPlayerTotals, videoData);
+      }
+
+      if (options.saveToDb) {
+        // Extract detailed stats using the helper
+        const extractedStats = extractStatsFromVideoData(videoData);
+
+        // Map to VideoStats format
+        const videoStats = extractedStats.playerStats.map(stat => ({
+          playerId: stat.playerId,
+          gameNumber: gameNumber,
+          twoPointersMade: stat.fieldGoalsMade - stat.threePointersMade,
+          twoPointersAttempted: stat.fieldGoalsAttempted - stat.threePointersAttempted,
+          threePointersMade: stat.threePointersMade,
+          threePointersAttempted: stat.threePointersAttempted,
+          steals: stat.steals,
+          blocks: stat.blocks,
+          assists: stat.assists,
+          rebounds: stat.rebounds,
+          turnovers: stat.turnovers
+        }));
+
+        await SupabaseStatsService.saveVideoStats(videoStats);
       }
 
       return {

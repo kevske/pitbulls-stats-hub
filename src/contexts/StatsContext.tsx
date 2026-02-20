@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { SupabaseStatsService } from '@/services/supabaseStatsService';
-import { GameStats, PlayerGameLog, PlayerStats } from '@/types/stats';
+import { GameStats, PlayerGameLog, PlayerStats, VideoStats } from '@/types/stats';
+
 
 interface StatsContextType {
   games: GameStats[];
   players: PlayerStats[];
   gameLogs: PlayerGameLog[];
+  videoStats: VideoStats[];
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
@@ -17,6 +19,7 @@ export const StatsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [games, setGames] = useState<GameStats[]>([]);
   const [players, setPlayers] = useState<PlayerStats[]>([]);
   const [gameLogs, setGameLogs] = useState<PlayerGameLog[]>([]);
+  const [videoStats, setVideoStats] = useState<VideoStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,10 +29,11 @@ export const StatsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       // Supabase fetch doesn't need forceRefresh as it's not using the same local storage caching strategy yet
       // or if it implements caching, it would be internal.
-      const { games, playerStats, gameLogs } = await SupabaseStatsService.fetchAllStatsData();
+      const { games, playerStats, gameLogs, videoStats } = await SupabaseStatsService.fetchAllStatsData();
       setGames(games);
       setPlayers(playerStats);
       setGameLogs(gameLogs);
+      setVideoStats(videoStats);
     } catch (err) {
       console.error('Failed to load data:', err);
       setError('Failed to load data. Please try again later.');
@@ -51,6 +55,7 @@ export const StatsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         games,
         players,
         gameLogs,
+        videoStats,
         loading,
         error,
         refresh: loadData

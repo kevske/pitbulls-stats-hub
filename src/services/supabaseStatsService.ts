@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { GameStats, PlayerStats, PlayerGameLog } from '@/types/stats';
+import { GameStats, PlayerStats, PlayerGameLog, VideoStats } from '@/types/stats';
 import { getPlayerImageUrl } from '@/utils/playerUtils';
 
 export class SupabaseStatsService {
@@ -10,6 +10,7 @@ export class SupabaseStatsService {
         games: GameStats[];
         playerStats: PlayerStats[];
         gameLogs: PlayerGameLog[];
+        videoStats: VideoStats[];
     }> {
         try {
             // 1. Fetch Games
@@ -187,14 +188,70 @@ export class SupabaseStatsService {
                 };
             });
 
+            // 4. Fetch Video Stats (New)
+            const { data: videoData, error: videoStatsError } = await supabase
+                .from('player_video_stats')
+                .select('*');
+
+            if (videoStatsError) {
+                console.warn('Error fetching player_video_stats', videoStatsError);
+            }
+
+            const videoStats: VideoStats[] = (videoData || []).map((v: any) => ({
+                id: v.id,
+                playerId: v.player_id,
+                gameNumber: v.game_number,
+                twoPointersMade: v.two_pointers_made,
+                twoPointersAttempted: v.two_pointers_attempted,
+                threePointersMade: v.three_pointers_made,
+                threePointersAttempted: v.three_pointers_attempted,
+                steals: v.steals,
+                blocks: v.blocks,
+                assists: v.assists,
+                rebounds: v.rebounds,
+                turnovers: v.turnovers
+            }));
+
             return {
                 games,
                 playerStats,
-                gameLogs
+                gameLogs,
+                videoStats
             };
 
         } catch (error) {
             console.error('Error in fetchAllStatsData:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Save video stats to the database (Upsert)
+     */
+    static async saveVideoStats(stats: VideoStats[]): Promise<void> {
+        try {
+            // Transform to snake_case for Supabase
+            const dbStats = stats.map(s => ({
+                player_id: s.playerId,
+                game_number: s.gameNumber,
+                two_pointers_made: s.twoPointersMade,
+                two_pointers_attempted: s.twoPointersAttempted,
+                three_pointers_made: s.threePointersMade,
+                three_pointers_attempted: s.threePointersAttempted,
+                steals: s.steals,
+                blocks: s.blocks,
+                assists: s.assists,
+                rebounds: s.rebounds,
+                turnovers: s.turnovers
+            }));
+
+            const { error } = await supabase
+                .from('player_video_stats')
+                .upsert(dbStats, { onConflict: 'player_id, game_number' });
+
+            if (error) throw error;
+        } catch (error) {
+            console.error('Error saving video stats:', error);
             throw error;
         }
     }
