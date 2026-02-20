@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit, Plus, Loader2, Tag } from "lucide-react";
+import { Edit, Plus, Loader2, Tag, CheckCircle } from "lucide-react";
 import { VideoPlayerWithLogs } from "@/components/video/VideoPlayerWithLogs";
 import { VideoProjectService } from '@/services/videoProjectService';
 import { toast } from "sonner";
@@ -83,7 +83,12 @@ const extractVideoId = (url: string): { videoId: string | null, playlistId: stri
 const Videos = () => {
   const [hasAccess, setHasAccess] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
-  const { games, loading, refresh } = useStats();
+  const { games, videoStats, loading, refresh } = useStats();
+
+  // Set of game numbers that have stats pushed to Stats Hub
+  const gamesWithStatsPushed = useMemo(() => {
+    return new Set(videoStats.map(s => s.gameNumber));
+  }, [videoStats]);
 
   // State for adding video
   const [selectedGame, setSelectedGame] = useState<string>("");
@@ -224,17 +229,24 @@ const Videos = () => {
 
                       return (
                         <span className={`text-xs px-2 py-0.5 rounded-full border ${status === 'excellent'
-                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                            : status === 'good'
-                              ? 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800'
-                              : status === 'poor'
-                                ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800'
-                                : 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'
+                          ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                          : status === 'good'
+                            ? 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800'
+                            : status === 'poor'
+                              ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800'
+                              : 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'
                           }`}>
                           {percentage}% Tagged
                         </span>
                       );
                     })()}
+                    {/* Stats Pushed Badge */}
+                    {gamesWithStatsPushed.has(game.gameNumber) && (
+                      <span className="text-xs px-2 py-0.5 rounded-full border bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800 flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        Stats
+                      </span>
+                    )}
                   </h2>
 
                   {/* Video player with event tags */}
