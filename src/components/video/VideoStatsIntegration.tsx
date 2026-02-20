@@ -13,6 +13,17 @@ import { VideoProjectService } from '@/services/videoProjectService';
 import { extractStatsFromVideoData } from '@/services/statsExtraction';
 import { calculateTaggingStatus } from '@/utils/taggingStatus';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 interface VideoStatsIntegrationProps {
   saveData: SaveData;
   gameNumber?: string | null;
@@ -32,22 +43,23 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
     percentage: number;
     status: 'excellent' | 'good' | 'poor' | 'unknown';
   } | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Auto-detect game info from Supabase database
   const getGameInfo = async (gameNum: number) => {
     setIsLoadingGameInfo(true);
     try {
       // Load from Supabase
-      const projects = await VideoProjectService.getProjectsForGame(gameNum.toString());
+      const projects = await VideoProjectService.getProjectsForGame(gameNum);
 
       if (projects && projects.length > 0) {
-        const gameData = projects[0]?.data;
+        const gameData = projects[0]?.data as any;
 
         return {
-          homeTeam: gameData?.metadata?.homeTeam || 'Pitbulls',
-          awayTeam: gameData?.metadata?.awayTeam || 'Opponent',
-          finalScore: gameData?.metadata?.finalScore,
-          gameType: gameData?.metadata?.gameType || 'Heim'
+          homeTeam: (gameData?.metadata as any)?.homeTeam || 'Pitbulls',
+          awayTeam: (gameData?.metadata as any)?.awayTeam || 'Opponent',
+          finalScore: (gameData?.metadata as any)?.finalScore,
+          gameType: (gameData?.metadata as any)?.gameType || 'Heim'
         };
       }
 
@@ -82,7 +94,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
       console.log('Game from context:', gameFromContext);
 
       // Get all videos for this game from Supabase
-      const projects = await VideoProjectService.getProjectsForGame(gameNum.toString());
+      const projects = await VideoProjectService.getProjectsForGame(gameNum);
       let totalTaggedPoints = 0;
 
       if (projects && projects.length > 0) {
@@ -153,11 +165,25 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
     }
   }, [gameNumber, saveData.events.length]);
 
-  const handleIntegrate = async () => {
+  const handleIntegrateClick = () => {
     if (!gameNumber || isNaN(Number(gameNumber))) {
       toast.error('Please enter a valid game number');
       return;
     }
+
+    // Security Check: > 95%
+    if (validityCheck && validityCheck.percentage > 95) {
+      executeIntegration();
+    } else {
+      setShowConfirmDialog(true);
+    }
+  };
+
+  const executeIntegration = async () => {
+    if (!gameNumber) return;
+
+    // Close dialog if open
+    setShowConfirmDialog(false);
 
     const gameInfo = await getGameInfo(Number(gameNumber));
 
@@ -166,7 +192,8 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
       awayTeam: gameInfo?.awayTeam || 'Opponent',
       finalScore: gameInfo?.finalScore || undefined,
       gameType: gameInfo?.gameType || 'Heim',
-      updateExistingTotals: true
+      updateExistingTotals: true,
+      saveToDb: true // Enable saving to DB
     });
 
     if (result.success) {
@@ -247,7 +274,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
 
         {/* Integration Button */}
         <Button
-          onClick={handleIntegrate}
+          onClick={handleIntegrateClick}
           disabled={!gameNumber || isIntegrating || isLoadingGameInfo || eventCount === 0}
           className="w-full"
           size="sm"
@@ -272,6 +299,23 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
           </div>
         )}
       </CardContent>
-    </Card>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Incomplete Tagging Warning</AlertDialogTitle>
+            <AlertDialogDescription>
+              The tagging completeness is {validityCheck?.percentage || 0}%, which is below the recommended 95%.
+              <br /><br />
+              Are you sure you want to feed these stats to the Hub? This might result in incomplete data being published.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeIntegration}>Yes, Feed Anyway</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card >
   );
 }

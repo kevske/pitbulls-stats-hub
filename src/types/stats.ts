@@ -60,6 +60,21 @@ export interface PlayerGameLog {
   gameType: string; // "Heim" or "Auswärts"
 }
 
+export interface VideoStats {
+  id?: string;
+  playerId: string;
+  gameNumber: number;
+  twoPointersMade: number;
+  twoPointersAttempted: number;
+  threePointersMade: number;
+  threePointersAttempted: number;
+  steals: number;
+  blocks: number;
+  assists: number;
+  rebounds: number;
+  turnovers: number;
+}
+
 export interface CachedData<T> {
   data: T[];
   timestamp: number;
