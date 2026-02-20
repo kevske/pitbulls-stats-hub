@@ -54,20 +54,49 @@ export function useVideoStatsIntegration() {
         // Extract detailed stats using the helper
         const extractedStats = extractStatsFromVideoData(videoData);
 
-        // Map to VideoStats format
-        const videoStats = extractedStats.playerStats.map(stat => ({
-          playerId: stat.playerId,
-          gameNumber: gameNumber,
-          twoPointersMade: stat.fieldGoalsMade - stat.threePointersMade,
-          twoPointersAttempted: stat.fieldGoalsAttempted - stat.threePointersAttempted,
-          threePointersMade: stat.threePointersMade,
-          threePointersAttempted: stat.threePointersAttempted,
-          steals: stat.steals,
-          blocks: stat.blocks,
-          assists: stat.assists,
-          rebounds: stat.rebounds,
-          turnovers: stat.turnovers
-        }));
+        // Create a map of Player Name -> Player Slug from existing totals
+        const playerNameToSlug = new Map<string, string>();
+        const playerIdToSlug = new Map<string, string>();
+
+        existingPlayerTotals.forEach(p => {
+          const fullName = `${p.firstName} ${p.lastName}`.toLowerCase().trim();
+          playerNameToSlug.set(fullName, p.id);
+          playerIdToSlug.set(p.id, p.id); // In case video already uses slugs
+        });
+
+        // Map to VideoStats format with ID resolution
+        const videoStats = extractedStats.playerStats.map(stat => {
+          // Try to find the correct player slug
+          let targetPlayerId = stat.playerId;
+
+          // 1. Try direct slug match
+          if (playerIdToSlug.has(stat.playerId)) {
+            targetPlayerId = stat.playerId;
+          }
+          // 2. Try name match
+          else {
+            const statName = stat.playerName.toLowerCase().trim();
+            if (playerNameToSlug.has(statName)) {
+              targetPlayerId = playerNameToSlug.get(statName)!;
+            } else {
+              console.warn(`Could not find matching player slug for video player: ${stat.playerName} (${stat.playerId})`);
+            }
+          }
+
+          return {
+            playerId: targetPlayerId,
+            gameNumber: gameNumber,
+            twoPointersMade: stat.fieldGoalsMade - stat.threePointersMade,
+            twoPointersAttempted: stat.fieldGoalsAttempted - stat.threePointersAttempted,
+            threePointersMade: stat.threePointersMade,
+            threePointersAttempted: stat.threePointersAttempted,
+            steals: stat.steals,
+            blocks: stat.blocks,
+            assists: stat.assists,
+            rebounds: stat.rebounds,
+            turnovers: stat.turnovers
+          };
+        });
 
         await SupabaseStatsService.saveVideoStats(videoStats);
       }
