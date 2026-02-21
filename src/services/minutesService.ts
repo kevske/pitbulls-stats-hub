@@ -55,8 +55,6 @@ export class MinutesService {
         return [];
       }
 
-      console.log(`Game ${gameNumber}: TSV Neuenstadt team ID is ${tsvNeuenstadtTeamId}`);
-
       // Fetch active roster for name-to-slug lookup
       const { data: rosterPlayers, error: rosterError } = await supabase
         .from('player_info')
@@ -186,7 +184,6 @@ export class MinutesService {
         throw new Error(result.message || result.error || 'Failed to update minutes');
       }
 
-      console.log('Update result:', result);
       return result.success !== false;
     } catch (error) {
       console.error('=== SAVE OPERATION FAILED ===', error);
@@ -280,9 +277,6 @@ export class MinutesService {
 
       if (allGamesError) throw allGamesError;
 
-      console.log('All TSV Neuenstadt games (past/present):', allGames?.length || 0);
-      console.log('Sample game IDs from games table:', allGames?.slice(0, 3).map(g => ({ id: g.game_id, date: g.game_date })));
-
       // Create a map for quick game info lookup including TSV Neuenstadt team ID
       const gameInfoMap = new Map<string, {
         homeTeam: string;
@@ -314,8 +308,6 @@ export class MinutesService {
         }
       });
 
-      console.log('TSV Neuenstadt team IDs found:', Array.from(tsvTeamIds));
-
       // Single clean approach: Get box scores for TSV Neuenstadt games
       const gameIds = allGames?.map(g => g.game_id) || [];
       const { data: boxScores, error: boxScoresError } = await supabase
@@ -342,7 +334,6 @@ export class MinutesService {
       });
 
       const boxScoresData = Array.from(uniquePlayers.values());
-      console.log('Found TSV Neuenstadt box scores:', boxScoresData.length);
 
       // Group by game and count unique players, also calculate total minutes
       const gameStats = new Map<string, {
@@ -410,10 +401,6 @@ export class MinutesService {
           });
         }
       });
-
-      console.log('Final game stats count:', gameStats.size);
-      console.log('Games without box scores:', Array.from(gameStats.entries()).filter(([_, stats]) => stats.totalPlayers === 0).length);
-      console.log('Games with box scores:', Array.from(gameStats.entries()).filter(([_, stats]) => stats.totalPlayers > 0).map(([gameId, _]) => gameId));
 
       // Convert to expected format
       return Array.from(gameStats.entries())
