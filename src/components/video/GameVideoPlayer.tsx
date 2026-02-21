@@ -6,13 +6,14 @@ import { VideoProjectService } from '@/services/videoProjectService';
 import { PlayCircle, FastForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSkipDeadTime } from '@/hooks/useSkipDeadTime';
+import { extractVideoId } from '@/utils/videoUtils';
 
-interface VideoPlayerWithLogsProps {
+interface GameVideoPlayerProps {
     gameNumber: number;
     youtubeLink: string;
 }
 
-export const VideoPlayerWithLogs = memo(({ gameNumber, youtubeLink }: VideoPlayerWithLogsProps) => {
+export const GameVideoPlayer = memo(({ gameNumber, youtubeLink }: GameVideoPlayerProps) => {
     const [videoId, setVideoId] = useState<string | undefined>();
     const [playlistId, setPlaylistId] = useState<string | undefined>();
     const [events, setEvents] = useState<TaggedEvent[]>([]);
@@ -24,58 +25,44 @@ export const VideoPlayerWithLogs = memo(({ gameNumber, youtubeLink }: VideoPlaye
     const pendingSeekTime = useRef<number | null>(null);
     const [isSkippingEnabled, setIsSkippingEnabled] = useState(false);
 
+    const loadEvents = useCallback(async (index: number) => {
+        lastLoadedIndex.current = index;
+        try {
+            // 1-based index for database
+            const projectData = await VideoProjectService.loadProject(gameNumber, index);
+
+            if (projectData && projectData.events) {
+                setEvents(projectData.events);
+            } else {
+                setEvents([]);
+            }
+        } catch (error) {
+            console.error('GameVideoPlayer Error loading events:', error);
+            setEvents([]);
+        }
+    }, [gameNumber]);
+
     // Extract video/playlist IDs from URL
     useEffect(() => {
         setShouldLoadPlayer(false);
         if (!youtubeLink) return;
 
-        // Check for playlist first
-        const playlistMatch = youtubeLink.match(/[?&]list=([^&]+)/) ||
-            youtubeLink.match(/videoseries\?list=([^&]+)/);
+        const { videoId: extractedVideoId, playlistId: extractedPlaylistId } = extractVideoId(youtubeLink);
 
-        // Check for video ID
-        const videoMatch = youtubeLink.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([^&?/]+)/);
-
-        if (playlistMatch) {
-            setPlaylistId(playlistMatch[1]);
+        if (extractedPlaylistId) {
+            setPlaylistId(extractedPlaylistId);
             setVideoId(undefined); // Playlist takes precedence
-        } else if (videoMatch) {
-            setVideoId(videoMatch[1]);
+        } else if (extractedVideoId) {
+            setVideoId(extractedVideoId);
             setPlaylistId(undefined);
-        } else if (youtubeLink.startsWith('PL')) {
-            // Direct playlist ID
-            setPlaylistId(youtubeLink);
-            setVideoId(undefined);
         } else {
-            // Assume it's a video ID if nothing else matches and it's not a url
-            setVideoId(youtubeLink);
+            setVideoId(undefined);
             setPlaylistId(undefined);
         }
 
         // Initial load for the first video
         loadEvents(1);
-    }, [youtubeLink]);
-
-    const loadEvents = async (index: number) => {
-        lastLoadedIndex.current = index;
-        try {
-            console.log(`VideoPlayerWithLogs triggering load events for Game: ${gameNumber}, Index: ${index}`);
-            // 1-based index for database
-            const projectData = await VideoProjectService.loadProject(gameNumber, index);
-            console.log(`VideoPlayerWithLogs loaded data for Game: ${gameNumber}, Index: ${index}`, projectData);
-
-            if (projectData && projectData.events) {
-                console.log(`VideoPlayerWithLogs found ${projectData.events.length} events`);
-                setEvents(projectData.events);
-            } else {
-                console.log(`VideoPlayerWithLogs found no events or no project data`);
-                setEvents([]);
-            }
-        } catch (error) {
-            console.error('VideoPlayerWithLogs Error loading events:', error);
-            setEvents([]);
-        }
-    };
+    }, [youtubeLink, loadEvents]);
 
     const handleTimeUpdate = useCallback((time: number) => {
         setCurrentTime(time);
@@ -107,7 +94,7 @@ export const VideoPlayerWithLogs = memo(({ gameNumber, youtubeLink }: VideoPlaye
     const handleVideoChange = useCallback((newVideoId: string, index: number) => {
         // index is 0-based from player, we need 1-based for DB
         loadEvents(index + 1);
-    }, [gameNumber]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [loadEvents]);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[85vh]">
@@ -180,4 +167,4 @@ export const VideoPlayerWithLogs = memo(({ gameNumber, youtubeLink }: VideoPlaye
     );
 });
 
-VideoPlayerWithLogs.displayName = 'VideoPlayerWithLogs';
+GameVideoPlayer.displayName = 'GameVideoPlayer';
