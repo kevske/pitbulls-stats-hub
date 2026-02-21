@@ -220,9 +220,15 @@ export const useVideoEditor = () => {
     try {
       const saveData = await loadSaveFile(file);
       handleLoadData(saveData);
-      toast.success('Project loaded successfully!');
+      toast.success('Project loaded successfully!', {
+        id: 'file-load-success',
+        duration: 3000
+      });
     } catch (error) {
-      toast.error('Failed to load project: ' + (error as Error).message);
+      toast.error('Failed to load project: ' + (error as Error).message, {
+        id: 'file-load-error',
+        duration: 5000
+      });
     }
 
     // Reset file input

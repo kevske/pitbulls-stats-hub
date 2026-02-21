@@ -89,9 +89,15 @@ export const useVideoProjectPersistence = ({
                         });
 
                         if (comparison.isOlder) {
-                            toast.warning(`Remote version is newer: ${comparison.summary}`);
+                            toast.warning(`Remote version is newer: ${comparison.summary}`, {
+                                id: `conflict-warn-${gameNum}-${videoIdx}`,
+                                duration: 5000
+                            });
                         } else {
-                            toast.info(`Local version is newer: ${comparison.summary}`);
+                            toast.info(`Local version is newer: ${comparison.summary}`, {
+                                id: `conflict-info-${gameNum}-${videoIdx}`,
+                                duration: 5000
+                            });
                         }
                     } else {
                         setTimestampConflict(null);
@@ -107,7 +113,10 @@ export const useVideoProjectPersistence = ({
                 if (projectData.playlistId) setPlaylistId(projectData.playlistId);
 
                 setLastSavedData(projectData);
-                toast.success(`Loaded project for video ${videoIdx}`);
+                toast.success(`Loaded project for video ${videoIdx}`, {
+                    id: `project-load-${gameNum}-${videoIdx}`,
+                    duration: 3000
+                });
             } else {
                 console.log('No saved data found on Supabase');
                 if (currentLastSavedData?.events?.length && currentLastSavedData.videoIndex !== videoIdx) {
@@ -156,15 +165,24 @@ export const useVideoProjectPersistence = ({
             const savedId = await VideoProjectService.saveProject(saveData, adminPassword);
 
             if (savedId) {
-                toast.success(`Saved to Supabase`);
+                toast.success(`Saved to Supabase`, {
+                    id: `save-success-${gameNumber}-${currentPlaylistIndex}`,
+                    duration: 3000
+                });
                 setLastSavedData(saveData);
                 setTimestampConflict(null);
             } else {
-                toast.error('Failed to save to Supabase - check console');
+                toast.error('Failed to save to Supabase - check console', {
+                    id: `save-fail-${gameNumber}-${currentPlaylistIndex}`,
+                    duration: 5000
+                });
             }
         } catch (error) {
             console.error('Error saving:', error);
-            toast.error(`Failed to save data: ${(error as Error).message}`);
+            toast.error(`Failed to save data: ${(error as Error).message}`, {
+                id: `save-error-${gameNumber}-${currentPlaylistIndex}`,
+                duration: 5000
+            });
         }
     }, [gameNumber, currentPlaylistIndex, events, players, videoId, playlistId, adminPassword]);
 
@@ -199,7 +217,10 @@ export const useVideoProjectPersistence = ({
                     // If remote is newer than what we have loaded/saved
                     if (remoteLastModified && (!localLastModified || new Date(remoteLastModified) > new Date(localLastModified))) {
                         console.log('Remote change detected, auto-updating...');
-                        toast.info('Remote changes detected. Updating...');
+                        toast.info('Remote changes detected. Updating...', {
+                            id: `remote-update-${gameNumber}`,
+                            duration: 3000
+                        });
 
                         const projectData = newData.data;
                         setEvents(projectData.events || []);
