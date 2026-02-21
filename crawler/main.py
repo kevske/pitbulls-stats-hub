@@ -161,6 +161,7 @@ class BasketballBundCrawler:
         try:
             logger.info("Fetching box scores for games synchronously...")
             box_scores = []
+            quarter_score_updates = []
             
             # Filter games
             games_to_fetch = []
@@ -181,13 +182,19 @@ class BasketballBundCrawler:
                     rate_limiter.wait()
 
                     logger.info(f"Fetching box score for game {game_id} ({index+1}/{len(games_to_fetch)})")
-                    entries = self.fetch_game_box_score(game_id, game)
+                    entries, qs_update = self.fetch_game_box_score(game_id, game)
                     if entries:
                         box_scores.extend(entries)
+                    if qs_update:
+                        quarter_score_updates.append(qs_update)
                         
                 except Exception as e:
                     logger.error(f"Error processing game {game_id}: {e}")
                     continue
+
+            # Batch update quarter scores
+            if quarter_score_updates:
+                self.batch_update_quarter_scores(quarter_score_updates)
 
             logger.info(f"Fetched box scores for {len(box_scores)} player entries")
             return box_scores
@@ -250,22 +257,15 @@ class BasketballBundCrawler:
             response.raise_for_status()
 
             box_score_entries, quarter_scores = self.parse_box_score_data(response.content, game_id, game_data)
-
-            # Store quarter scores in the games table if found
-            if quarter_scores:
-                # Need to unpack the tuple if it's returned as (game_id, scores)
-                # But parse_box_score_data returns (game_id, scores) in the second element
-                _, scores = quarter_scores
-                self.update_game_with_quarter_scores(game_id, scores)
             
-            return box_score_entries
+            return box_score_entries, quarter_scores
             
         except requests.RequestException as e:
             logger.error(f"Error fetching box score HTML for game {game_id}: {e}")
-            return []
+            return [], None
         except Exception as e:
             logger.error(f"Error parsing box score for game {game_id}: {e}")
-            return []
+            return [], None
     
     def parse_player_stats(self, soup, team_id, team_type, game_id):
         """Parse player statistics from the HTML table"""
@@ -423,26 +423,29 @@ class BasketballBundCrawler:
             logger.warning(f"Error parsing score pair '{score_text}': {e}")
             return None
     
-    def update_game_with_quarter_scores(self, game_id, quarter_scores):
-        """Update the games table with quarter scores"""
+    def batch_update_quarter_scores(self, updates):
+        """Batch update the games table with quarter scores"""
         try:
-            update_data = {
-                'quarter_scores': quarter_scores,
-                'updated_at': datetime.now(timezone.utc).isoformat()
-            }
+            if not updates:
+                return
+
+            update_data = []
+            current_time = datetime.now(timezone.utc).isoformat()
             
-            result = self.supabase.table('games').update(update_data).eq('game_id', game_id).execute()
+            for game_id, quarter_scores in updates:
+                update_data.append({
+                    'game_id': game_id,
+                    'quarter_scores': quarter_scores,
+                    'updated_at': current_time
+                })
+
+            result = self.supabase.table('games').upsert(update_data).execute()
             
             if result.data:
-                logger.info(f"Updated game {game_id} with quarter scores")
-                return True
-            else:
-                logger.warning(f"No game found with ID {game_id} to update quarter scores")
-                return False
-                
+                logger.info(f"Batch updated quarter scores for {len(result.data)} games")
+
         except Exception as e:
-            logger.error(f"Error updating game {game_id} with quarter scores: {e}")
-            return False
+            logger.error(f"Error in batch_update_quarter_scores: {e}")
     
     def extract_teams_from_data(self, standings, games):
         """Extract unique teams from standings and games"""
