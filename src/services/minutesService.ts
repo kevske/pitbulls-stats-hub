@@ -48,7 +48,14 @@ export class MinutesService {
 
       // Determine which team ID represents TSV Neuenstadt
       const isTSVNeuenstadtHome = gameData.home_team_name?.toLowerCase().includes('neuenstadt');
-      const tsvNeuenstadtTeamId = isTSVNeuenstadtHome ? gameData.home_team_id : gameData.away_team_id;
+      const isTSVNeuenstadtAway = gameData.away_team_name?.toLowerCase().includes('neuenstadt');
+
+      let tsvNeuenstadtTeamId;
+      if (isTSVNeuenstadtHome) {
+        tsvNeuenstadtTeamId = gameData.home_team_id;
+      } else if (isTSVNeuenstadtAway) {
+        tsvNeuenstadtTeamId = gameData.away_team_id;
+      }
 
       if (!tsvNeuenstadtTeamId) {
         console.warn('Could not determine TSV Neuenstadt team ID for game:', gameNumber);
@@ -209,7 +216,14 @@ export class MinutesService {
 
       // Determine which team ID represents TSV Neuenstadt
       const isTSVNeuenstadtHome = gameData.home_team_name?.toLowerCase().includes('neuenstadt');
-      const tsvNeuenstadtTeamId = isTSVNeuenstadtHome ? gameData.home_team_id : gameData.away_team_id;
+      const isTSVNeuenstadtAway = gameData.away_team_name?.toLowerCase().includes('neuenstadt');
+
+      let tsvNeuenstadtTeamId;
+      if (isTSVNeuenstadtHome) {
+        tsvNeuenstadtTeamId = gameData.home_team_id;
+      } else if (isTSVNeuenstadtAway) {
+        tsvNeuenstadtTeamId = gameData.away_team_id;
+      }
 
       if (!tsvNeuenstadtTeamId) {
         console.warn('Could not determine TSV Neuenstadt team ID for game:', gameNumber);
@@ -242,7 +256,7 @@ export class MinutesService {
 
       const players = Array.from(uniquePlayers.values());
       const totalMinutes = Math.round((players.reduce((sum, player) => sum + (player.minutes_played || 0), 0)) * 1000) / 1000;
-      const playersWithMinutes = players.filter(player => (player.minutes_played || 0) >= 0).length; // Include 0 minutes as "having minutes"
+      const playersWithMinutes = players.filter(player => player.minutes_played !== null && player.minutes_played !== undefined).length;
       const playersNeedingMinutes = players.filter(player => player.minutes_played === null || player.minutes_played === undefined).length; // Only count truly missing data
 
       return {
