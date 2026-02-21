@@ -1,6 +1,5 @@
 import { YouTubePlayer } from '@/components/video/YouTubePlayer';
 import { VideoControls } from '@/components/video/VideoControls';
-import { EventInput } from '@/components/video/EventInput';
 import { EventList } from '@/components/video/EventList';
 import { PlayerManager } from '@/components/video/PlayerManager';
 import { Statistics } from '@/components/video/Statistics';
@@ -205,20 +204,12 @@ const VideoEditor = () => {
                       <TabsTrigger value="players" className="flex-1">Players</TabsTrigger>
                     </TabsList>
                     <TabsContent value="events" className="mt-3">
-                      <EventInput
-                        players={players}
+                      <EventList
+                        events={events}
+                        onDeleteEvent={handleDeleteEvent}
+                        onSeekTo={handleSeekTo}
                         currentTime={currentTime}
-                        isPlaying={isPlaying}
-                        onAddEvent={handleAddEvent}
                       />
-                      <div className="mt-4">
-                        <EventList
-                          events={events}
-                          onDeleteEvent={handleDeleteEvent}
-                          onSeekTo={handleSeekTo}
-                          currentTime={currentTime}
-                        />
-                      </div>
                     </TabsContent>
                     <TabsContent value="stats" className="mt-3">
                       <Statistics events={events} players={players} />
