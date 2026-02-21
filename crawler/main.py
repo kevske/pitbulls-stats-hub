@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 import logging
 from datetime import datetime, timezone
 import time
+import concurrent.futures
 from bs4 import BeautifulSoup
 from crawler.rate_limiter import RateLimiter
 
@@ -175,19 +176,32 @@ class BasketballBundCrawler:
             # Use rate limiter to be nice to the server while allowing faster processing
             rate_limiter = RateLimiter(min_interval=0.5)
 
-            for index, (game_id, game) in enumerate(games_to_fetch):
+            def fetch_with_rate_limit(args):
+                game_id, game, index, total = args
                 try:
                     # Respect rate limit
                     rate_limiter.wait()
 
-                    logger.info(f"Fetching box score for game {game_id} ({index+1}/{len(games_to_fetch)})")
-                    entries = self.fetch_game_box_score(game_id, game)
-                    if entries:
-                        box_scores.extend(entries)
-                        
+                    logger.info(f"Fetching box score for game {game_id} ({index}/{total})")
+                    return self.fetch_game_box_score(game_id, game)
                 except Exception as e:
                     logger.error(f"Error processing game {game_id}: {e}")
-                    continue
+                    return []
+
+            # Prepare arguments for parallel execution
+            tasks = []
+            total_games = len(games_to_fetch)
+            for index, (game_id, game) in enumerate(games_to_fetch):
+                tasks.append((game_id, game, index + 1, total_games))
+
+            # Execute in parallel with ThreadPoolExecutor
+            # Using 5 workers as a balance between parallelism and rate limiting/load
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                results = executor.map(fetch_with_rate_limit, tasks)
+
+                for result in results:
+                    if result:
+                        box_scores.extend(result)
 
             logger.info(f"Fetched box scores for {len(box_scores)} player entries")
             return box_scores
