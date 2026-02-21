@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { SupabaseStatsService } from '@/services/supabaseStatsService';
 import { GameStats, PlayerGameLog, PlayerStats, VideoStats } from '@/types/stats';
 
@@ -23,7 +23,7 @@ export const StatsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = async (forceRefresh = false) => {
+  const loadData = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
     try {
@@ -40,27 +40,24 @@ export const StatsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } finally {
       setLoading(false);
     }
-  };
-
-  // Expose a refresh function that forces a refresh
-  const refresh = () => loadData(true);
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
+
+  const value = useMemo(() => ({
+    games,
+    players,
+    gameLogs,
+    videoStats,
+    loading,
+    error,
+    refresh: loadData
+  }), [games, players, gameLogs, videoStats, loading, error, loadData]);
 
   return (
-    <StatsContext.Provider
-      value={{
-        games,
-        players,
-        gameLogs,
-        videoStats,
-        loading,
-        error,
-        refresh: loadData
-      }}
-    >
+    <StatsContext.Provider value={value}>
       {children}
     </StatsContext.Provider>
   );
