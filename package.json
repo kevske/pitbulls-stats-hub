@@ -9,7 +9,6 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "test": "vitest",
     "preview": "vite preview",
     "test": "vitest",
     "generate-images": "node scripts/generatePlayerImages.js"
