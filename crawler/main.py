@@ -107,7 +107,7 @@ class BasketballBundCrawler:
         try:
             url = f"{self.api_base_url}/competition/list"
             payload = [int(self.league_id)]
-            response = self.session.post(url, json=payload)
+            response = self.session.post(url, json=payload, timeout=30)
             response.raise_for_status()
             
             api_response = response.json()
@@ -124,7 +124,7 @@ class BasketballBundCrawler:
         """Fetch league standings/table"""
         try:
             url = f"{self.api_base_url}/competition/table/id/{self.league_id}"
-            response = self.session.get(url)
+            response = self.session.get(url, timeout=30)
             response.raise_for_status()
             
             api_response = response.json()
@@ -142,7 +142,7 @@ class BasketballBundCrawler:
         """Fetch game schedule"""
         try:
             url = f"{self.api_base_url}/competition/spielplan/id/{self.league_id}"
-            response = self.session.get(url)
+            response = self.session.get(url, timeout=30)
             response.raise_for_status()
             
             api_response = response.json()
@@ -246,7 +246,7 @@ class BasketballBundCrawler:
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
             })
 
-            response = html_session.get(url)
+            response = html_session.get(url, timeout=30)
             response.raise_for_status()
 
             box_score_entries, quarter_scores = self.parse_box_score_data(response.content, game_id, game_data)
