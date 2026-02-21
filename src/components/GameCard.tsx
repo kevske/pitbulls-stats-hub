@@ -2,10 +2,9 @@ import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { GameStats, PlayerGameLog, PlayerStats } from '@/types/stats';
-import { format, parse } from 'date-fns';
-import { de } from 'date-fns/locale';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { formatGameDate } from '@/utils/spielplanUtils';
 
 interface GameCardProps {
   game: GameStats;
@@ -26,30 +25,6 @@ const GameCard: React.FC<GameCardProps> = React.memo(({ game, topScorers, player
         e.preventDefault();
       }
       navigate(`/games/${game.gameNumber}`);
-    }
-  };
-
-  const formatGameDate = (dateString: string) => {
-    try {
-      // Handle different date formats from Supabase
-      let date: Date;
-
-      // Try ISO format first (from Supabase)
-      if (dateString.includes('T') || dateString.includes('-')) {
-        date = new Date(dateString);
-      } else {
-        // Try DD.MM.YYYY HH:mm format (old format)
-        date = parse(dateString, 'dd.MM.yyyy HH:mm', new Date());
-      }
-
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return dateString; // Return original if parsing fails
-      }
-
-      return format(date, 'EEEE, dd.MM.yyyy - HH:mm', { locale: de });
-    } catch (e) {
-      return dateString;
     }
   };
 
