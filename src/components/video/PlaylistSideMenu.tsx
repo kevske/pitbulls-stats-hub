@@ -164,9 +164,15 @@ export function PlaylistSideMenu({
                     <Card
                       key={`${video.videoId}-${index}`}
                       className={`cursor-pointer transition-all ${isCurrent
-                          ? 'bg-primary/10 border-primary/30'
-                          : 'hover:bg-accent/50'
+                        ? 'bg-primary/10 border-primary/30'
+                        : 'hover:bg-accent/50'
                         }`}
+                      onClick={() => {
+                        if (!isCurrent) {
+                          onSelectVideo(index);
+                          onToggle();
+                        }
+                      }}
                     >
                       <CardContent className="p-3">
                         <div className="flex items-start gap-3">
@@ -200,9 +206,12 @@ export function PlaylistSideMenu({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => {
-                                  onSelectVideo(index);
-                                  onToggle(); // Close menu for better visibility
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!isCurrent) {
+                                    onSelectVideo(index);
+                                    onToggle(); // Close menu for better visibility
+                                  }
                                 }}
                                 className="h-6 px-2 text-xs"
                                 disabled={isCurrent}
@@ -214,7 +223,10 @@ export function PlaylistSideMenu({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => onRemoveFromQueue(index)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemoveFromQueue(index);
+                                  }}
                                   className="h-6 px-2 text-xs text-destructive hover:text-destructive"
                                 >
                                   <X className="h-3 w-3" />

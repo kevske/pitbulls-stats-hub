@@ -73,10 +73,14 @@ export const usePlaylistManager = ({
             console.log('Switching to video at index:', index, 'videoId:', playlistVideos[index].videoId);
             setCurrentPlaylistIndex(index);
 
-            // Use the YouTube player's playVideoAt method
-            youtubePlayerRef.current?.playVideoAt(index);
+            if (isQueueMode) {
+                setVideoId(playlistVideos[index].videoId);
+            } else {
+                // Use the YouTube player's playVideoAt method
+                youtubePlayerRef.current?.playVideoAt(index);
+            }
         }
-    }, [playlistVideos, isQueueMode, youtubePlayerRef]);
+    }, [playlistVideos, isQueueMode, youtubePlayerRef, setVideoId]);
 
     const handleMarkVideoComplete = useCallback(() => {
         if (playlistVideos.length > 0) {
