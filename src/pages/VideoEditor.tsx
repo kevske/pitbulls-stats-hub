@@ -28,6 +28,7 @@ import { useSkipDeadTime } from '@/hooks/useSkipDeadTime';
 import { calculateTaggingStatus } from '@/utils/taggingStatus';
 import { useStats } from '@/contexts/StatsContext';
 import { extractStatsFromVideoData } from '@/services/statsExtraction';
+import { VideoProjectService } from '@/services/videoProjectService';
 
 const VideoEditor = () => {
   const [searchParams] = useSearchParams();
@@ -261,28 +262,12 @@ const VideoEditor = () => {
       const gameFromContext = games.find(g => g.gameNumber === parseInt(gameNumber));
 
       if (gameFromContext) {
-        // We need total points. If only one video, we can calculate from current events.
-        // If playlist, it's harder without fetching all projects.
-        // For LEAN solution: just calculate based on CURRENT events for now, 
-        // OR better: use extractStatsFromVideoData on current events.
-        // NOTE: This assumes we are saving the WHOLE game or this video contributes to it.
-        // If it's a playlist, this might be partial data, but let's store what we know.
-
-        // TODO: For strict correctness in playlists, we'd need to fetch other videos.
-        // But for "lean", let's just calculate based on what we have in memory + what we might know.
-        // Actually, let's just use current events for this video.
-        // If the user wants "Game" status, they should use the Integration component which does the full check.
-        // But the requirement is "on video page", so we do want the aggregate if possible.
-        // Let's stick to current events for safety/speed, or if possible, fetch others?
-        // Fetching others in save might be slow.
-        // Let's just calculate for *this* video/project and store it. 
-        // The Overview page might need to aggregate if there are multiple videos, OR we just show status for the main one.
-
-        const extracted = extractStatsFromVideoData({
+        // Calculate stats for CURRENT video
+        const currentExtracted = extractStatsFromVideoData({
           events,
           players,
           gameNumber: parseInt(gameNumber),
-          videoIndex: currentPlaylistIndex,
+          videoIndex: currentPlaylistIndex + 1,
           videoId,
           playlistId,
           timestamp: new Date().toISOString(),
@@ -290,35 +275,49 @@ const VideoEditor = () => {
           version: '1.0.0'
         });
 
+        let totalPoints = currentExtracted.teamStats.totalPoints;
+
+        // Fetch other videos if present (for playlists) to get complete game stats
+        try {
+          // Fetch all projects for this game
+          const allProjects = await VideoProjectService.getProjectsForGame(parseInt(gameNumber));
+
+          // Filter out the current video based on videoIndex
+          // Note: DB video_index is 1-based, matches currentPlaylistIndex + 1
+          const otherProjects = allProjects.filter(p => p.video_index !== (currentPlaylistIndex + 1));
+
+          for (const project of otherProjects) {
+            // Create a minimal SaveData object for extraction
+            const projectData = {
+              events: project.data.events || [],
+              players: project.data.players || [],
+              // Dummy required fields
+              timestamp: new Date().toISOString(),
+              lastModified: new Date().toISOString(),
+              version: '1.0.0',
+              gameNumber: parseInt(gameNumber),
+              videoIndex: project.video_index,
+              videoId: project.video_id,
+              playlistId: project.playlist_id
+            };
+
+            // We cast to any because SaveData might have stricter requirements for some fields
+            // but extractStatsFromVideoData mainly needs events and players
+            const projectStats = extractStatsFromVideoData(projectData as any);
+            totalPoints += projectStats.teamStats.totalPoints;
+          }
+        } catch (error) {
+          console.error('Failed to fetch playlist stats for aggregation:', error);
+          // Continue with current video stats only if fetch fails
+        }
+
         taggingStatus = calculateTaggingStatus(
-          extracted.teamStats.totalPoints,
+          totalPoints,
           gameFromContext.finalScore,
           { home: gameFromContext.homeTeam, away: gameFromContext.awayTeam }
         );
       }
     }
-
-    // 2. Pass metadata override to the hook's save function
-    // We need to modify useVideoProjectPersistence to accept metadata overrides or 
-    // manually call the service here. 
-    // Actually, useVideoProjectPersistence handles the saving logic.
-    // Let's modify the hook to accept metadata or just modify the save data in place?
-    // The hook uses `events`, `players` from state.
-    // It calls `VideoProjectService.saveProject`.
-    // We can't easily inject metadata into `handleSaveToStorage` from the hook without modifying the hook.
-    // Let's modify `useVideoProjectPersistence` to allow passing extra metadata specific to the save action?
-    // OR: we can update the hook to *always* include this status if game info is available?
-
-    // DECISION: Modify useVideoProjectPersistence to accept optional metadata merger.
-    // But since I can't modify the hook right now in this step (checking file first would be better),
-    // let's see if baseHandleSaveToStorage accepts args.
-    // It probably doesn't.
-
-    // Workaround: We will reimplement the save call here for the specific metadata requirement
-    // OR better, update the hook in a separate step? 
-    // Let's assume I can update the hook or `handleSaveToStorage` is flexible.
-    // Checking `useVideoProjectPersistence`... I haven't read it yet.
-    // Let's read the hook first to be safe.
 
     await baseHandleSaveToStorage(taggingStatus ? { taggingStatus } : undefined);
   };
