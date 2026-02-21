@@ -3,6 +3,7 @@ import { SupabaseStatsService } from './supabaseStatsService';
 import { PlayerInfo } from '@/types/supabase';
 import { PlayerStats } from '@/types/stats';
 import { getPlayerImageUrl } from '@/utils/playerUtils';
+import { calculateAge } from '@/utils/dateUtils';
 
 // Service to fetch player data from Supabase with computed stats
 export class SupabasePlayerService {
@@ -22,7 +23,7 @@ export class SupabasePlayerService {
         imageUrl: getPlayerImageUrl(player.first_name, player.last_name),
         jerseyNumber: player.jersey_number || 0,
         position: player.position || '',
-        age: player.birth_date ? new Date().getFullYear() - new Date(player.birth_date).getFullYear() : 0,
+        age: calculateAge(player.birth_date) || 0,
         height: player.height || '',
         bio: player.bio || '',
         gamesPlayed: 0,
