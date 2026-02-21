@@ -85,7 +85,6 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
 
   // Calculate validity check for all videos in playlist
   const performValidityCheck = async (gameNum: number) => {
-    console.log('Performing validity check for game:', gameNum);
     if (!gameNum) return;
 
     try {
@@ -108,16 +107,12 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
         gameInfo = await getGameInfo(gameNum);
       }
 
-      console.log('Resolved Game Info for Validity Check:', gameInfo);
-
       // Get all videos for this game from Supabase (already saved data)
       const dbProjects = await VideoProjectService.getProjectsForGame(gameNum);
 
       let totalTaggedPoints = 0;
 
       if (dbProjects.length > 0) {
-        console.log('Analyzing DB projects:', dbProjects.length);
-
         for (const project of dbProjects) {
           if (project.data && project.data.events) {
             const tempData: any = {
@@ -128,7 +123,6 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
 
             const extractedStats = extractStatsFromVideoData(tempData);
             totalTaggedPoints += extractedStats.teamStats.totalPoints;
-            console.log(`Video ${project.video_index} points:`, extractedStats.teamStats.totalPoints);
           }
         }
       } else {
@@ -136,8 +130,6 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
         const extractedStats = extractStatsFromVideoData(saveData);
         totalTaggedPoints = extractedStats.teamStats.totalPoints;
       }
-
-      console.log('Total tagged points from all videos:', totalTaggedPoints);
 
       if (!gameInfo?.finalScore) {
         setValidityCheck({
@@ -156,7 +148,6 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
         { home: gameInfo.homeTeam, away: gameInfo.awayTeam }
       );
 
-      console.log('Setting validity check:', taggingStatus);
       setValidityCheck({
         actualScore: gameInfo.finalScore,
         targetScore: taggingStatus.targetScore,
@@ -174,9 +165,7 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
     // Wait for stats to finish loading before running validity check
     if (statsLoading) return;
 
-    console.log('Validity check useEffect:', { gameNumber, eventCount: saveData.events.length, gamesLoaded: games.length });
     if (gameNumber && saveData.events.length > 0) {
-      console.log('Calling performValidityCheck');
       performValidityCheck(parseInt(gameNumber));
     }
   }, [gameNumber, saveData.events.length, games, statsLoading]);
@@ -236,7 +225,6 @@ export function VideoStatsIntegration({ saveData, gameNumber: urlGameNumber, onI
             events: allEvents,
             players: Array.from(playerMap.values()),
           };
-          console.log(`Combined ${dbProjects.length} videos: ${allEvents.length} events, ${playerMap.size} players`);
         }
       }
     } catch (error) {
