@@ -1,7 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { Player, TaggedEvent, DEFAULT_PLAYERS, PositionType, generateEventDescription, formatTime } from '@/types/basketball';
 import { YouTubePlayer } from '@/components/video/YouTubePlayer';
-import { VideoInput } from '@/components/video/VideoInput';
 import { VideoControls } from '@/components/video/VideoControls';
 import { EventInput } from '@/components/video/EventInput';
 import { EventList } from '@/components/video/EventList';
@@ -15,512 +12,97 @@ import { LearningDialog } from '@/components/video/LearningDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, FileText, List, Save, X } from 'lucide-react';
-import { generateSaveData, SaveData, loadSaveFile } from '@/services/saveLoad';
-import { toast } from 'sonner';
+import { Save } from 'lucide-react';
+import { generateSaveData } from '@/services/saveLoad';
 import Layout from '@/components/Layout';
-import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
-import { useVideoProjectPersistence } from '@/hooks/useVideoProjectPersistence';
-import { usePlaylistManager } from '@/hooks/usePlaylistManager';
-import { useVideoPlayer } from '@/hooks/useVideoPlayer';
-import { PlayerInfoService } from '@/services/playerInfoService';
-import { useSkipDeadTime } from '@/hooks/useSkipDeadTime';
-import { calculateTaggingStatus } from '@/utils/taggingStatus';
-import { useStats } from '@/contexts/StatsContext';
-import { extractStatsFromVideoData } from '@/services/statsExtraction';
-import { GameStatsService } from '@/services/gameStatsService';
+import { useVideoEditor } from '@/hooks/useVideoEditor';
+import { VideoEditorWelcome } from '@/components/video/VideoEditorWelcome';
+import { VideoEditorHeader } from '@/components/video/VideoEditorHeader';
 
 const VideoEditor = () => {
-  const [searchParams] = useSearchParams();
-
-  const location = useLocation();
-  const navigate = useNavigate();
-  const adminPassword = location.state?.adminPassword;
-  const gameNumber = searchParams.get('game');
-  const videoUrl = searchParams.get('video');
-
-  // Core State
-  const [videoId, setVideoId] = useState('');
-  const [playlistId, setPlaylistId] = useState<string | undefined>();
-  const [players, setPlayers] = useState<Player[]>(DEFAULT_PLAYERS);
-  const [events, setEvents] = useState<TaggedEvent[]>([]);
-
-  // UI State
-  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
-  const [currentPlayersOnCourt, setCurrentPlayersOnCourt] = useState<Player[]>([]);
-  const [shouldResetPlayers, setShouldResetPlayers] = useState(false);
-  const [isSkippingEnabled, setIsSkippingEnabled] = useState(false);
-
-  // Learning Dialog State
-  const [isLearningDialogOpen, setIsLearningDialogOpen] = useState(false);
-  const [pendingLearningEvent, setPendingLearningEvent] = useState<Omit<TaggedEvent, 'id' | 'description'> | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const hasLoadedProjectRef = useRef(false);
-  const dbPlayersRef = useRef<Player[]>([]);
-
-  // Helper to merge player lists
-  const mergePlayers = useCallback((baseList: Player[], newPlayers: Player[]) => {
-    // If baseList looks like DEFAULT_PLAYERS (simple numeric IDs), and we have new DB players (UUIDs),
-    // we should prioritize the NEW players and filter out defaults to avoid clutter/confusion,
-    // BUT only if we haven't loaded a project (which might rely on those defaults).
-    // This is hard to detect perfectly.
-
-    // Standard merge:
-    const existingIds = new Set(baseList.map(p => p.id));
-    const existingNames = new Set(baseList.map(p => p.name));
-
-    const playersToAdd = newPlayers.filter(p =>
-      !existingIds.has(p.id) && !existingNames.has(p.name)
-    );
-
-    return [...baseList, ...playersToAdd];
-  }, []);
-
-  // Hooks
   const {
+    state,
+    handlers,
+    refs,
+    computed
+  } = useVideoEditor();
+
+  const {
+    videoId,
+    playlistId,
+    players,
+    events,
+    isSideMenuOpen,
+    currentPlayersOnCourt,
+    shouldResetPlayers,
+    isSkippingEnabled,
+    isLearningDialogOpen,
     currentTime,
     isPlaying,
-    youtubePlayerRef,
-    setCurrentTime,
-    handleTimeUpdate,
-    handleStateChange,
+    lastSavedData,
+    timestampConflict,
+    isPlaylistMode,
+    playlistVideos,
+    currentPlaylistIndex,
+    gameNumber,
+  } = state;
+
+  const {
+    setIsSideMenuOpen,
+    setCurrentPlayersOnCourt,
+    setIsSkippingEnabled,
+    setIsLearningDialogOpen,
+    setPendingLearningEvent,
+    handleLoadData,
+    handleLoadFile,
+    handleFileSelect,
+    handleSaveToStorage,
+    handleVideoSelect,
+    handleVideoChange,
+    handleAddPlayer,
+    handleRemovePlayer,
+    handleQuickAction,
+    handleSaveLearning,
+    handleAddEvent,
+    handleDeleteEvent,
     handlePlayPause,
     handleSeekBackward,
     handleSeekForward,
     handleRestart,
-    handleSeekTo
-  } = useVideoPlayer();
-
-  const { games } = useStats();
-
-  // Handle skipping dead time
-  useSkipDeadTime({
-    currentTime,
-    events,
-    seekTo: handleSeekTo,
-    isEnabled: isSkippingEnabled
-  });
-
-  const {
-    playlistVideos,
-    currentPlaylistIndex,
-    setCurrentPlaylistIndex,
-    isQueueMode,
-    setIsQueueMode,
+    handleSeekTo,
+    handleTimeUpdate,
+    handleStateChange,
     handleAddToQueue,
     handleRemoveFromQueue,
-    handlePlaylistReady,
     handleSelectPlaylistVideo,
-  } = usePlaylistManager({
-    videoId,
-    setVideoId,
-    youtubePlayerRef
-  });
+    handlePlaylistReady,
+    navigate
+  } = handlers;
 
-  const {
-    lastSavedData,
-    timestampConflict,
-    setLastSavedData,
-    loadWithTimestampCheck,
-    handleSaveToStorage: baseHandleSaveToStorage
-  } = useVideoProjectPersistence({
-    gameNumber,
-    currentPlaylistIndex,
-    events,
-    players,
-    videoId,
-    playlistId,
-    adminPassword,
-    setEvents,
-    setPlayers: useCallback((newPlayers) => {
-      hasLoadedProjectRef.current = true;
-      // Merge loaded players with any DB players we already fetched
-      const merged = mergePlayers(newPlayers, dbPlayersRef.current);
-      setPlayers(merged);
-    }, [mergePlayers]),
-    setVideoId,
-    setPlaylistId
-  });
-
-  // Fetch active players from DB on mount
-  useEffect(() => {
-    const fetchActivePlayers = async () => {
-      try {
-        const activePlayers = await PlayerInfoService.getActivePlayers();
-
-        if (activePlayers && activePlayers.length > 0) {
-          const mappedPlayers: Player[] = activePlayers.map(p => ({
-            id: p.id,
-            name: `${p.first_name} ${p.last_name}`,
-            jerseyNumber: p.jersey_number || 0,
-            position: (['Guard', 'Forward', 'Center'].includes(p.position || '') ? p.position : 'Guard') as PositionType
-          }));
-
-          // Save to ref so future project loads can use it
-          dbPlayersRef.current = mappedPlayers;
-
-          // Merge with current state immediately
-          setPlayers(current => {
-            // If we are still on default players (check first ID '1'), replace them entirely with DB players
-            // This ensures we don't have duplicates or "ghost" default players for new projects
-            if (current.length === DEFAULT_PLAYERS.length && current[0]?.id === '1') {
-              return mappedPlayers;
-            }
-            return mergePlayers(current, mappedPlayers);
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch active players:', error);
-      }
-    };
-
-    fetchActivePlayers();
-  }, [mergePlayers]);
-
-  // Handle URL parameters and load game data
-  useEffect(() => {
-    const initializeFromParams = async () => {
-      // 1. Handle URL params for Video/Playlist
-      if (videoUrl) {
-        const playlistOnlyMatch = videoUrl.match(/embed\/videoseries\?list=([^&]+)/);
-        if (playlistOnlyMatch) {
-          // Playlist-only URL (no specific video)
-          setPlaylistId(playlistOnlyMatch[1]);
-        } else {
-          // Check for combined video + playlist URL: embed/VIDEO_ID?list=PLAYLIST_ID
-          const videoWithListMatch = videoUrl.match(/embed\/([^?]+)\?list=([^&]+)/);
-          if (videoWithListMatch) {
-            setVideoId(videoWithListMatch[1]);
-            setPlaylistId(videoWithListMatch[2]);
-          } else {
-            // Video-only URL
-            const videoIdMatch = videoUrl.match(/embed\/([^?]+)/);
-            if (videoIdMatch) {
-              setVideoId(videoIdMatch[1]);
-            }
-          }
-        }
-      }
-
-      // 2. Load Game Data if game number exists
-      if (gameNumber) {
-        await loadWithTimestampCheck(gameNumber, currentPlaylistIndex + 1);
-      }
-    };
-
-    initializeFromParams();
-  }, [gameNumber, videoUrl, currentPlaylistIndex, loadWithTimestampCheck]);
-
-  const handleLoadData = useCallback((saveData: SaveData) => {
-    console.log('Loading data:', saveData);
-    hasLoadedProjectRef.current = true;
-    setPlayers(saveData.players);
-    setEvents(saveData.events);
-    setVideoId(saveData.videoId || '');
-    setPlaylistId(saveData.playlistId);
-    setLastSavedData(saveData);
-
-    // Reset current players on court - user will select manually in edit mode
-    console.log('Setting shouldResetPlayers to true');
-    setShouldResetPlayers(true);
-    setCurrentPlayersOnCourt([]); // Clear current players
-    // Reset the trigger after a short delay
-    setTimeout(() => {
-      console.log('Setting shouldResetPlayers to false');
-      setShouldResetPlayers(false);
-    }, 100);
-  }, [setLastSavedData]);
-
-  const handleLoadFile = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const saveData = await loadSaveFile(file);
-      handleLoadData(saveData);
-      toast.success('Project loaded successfully!');
-    } catch (error) {
-      toast.error('Failed to load project: ' + (error as Error).message);
-    }
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleSaveToStorage = async () => {
-    // 1. Calculate tagging status before saving
-    let taggingStatus = undefined;
-
-    if (gameNumber) {
-      const gameFromContext = games.find(g => g.gameNumber === parseInt(gameNumber));
-
-      if (gameFromContext) {
-        // Calculate stats for CURRENT video
-        const currentExtracted = extractStatsFromVideoData({
-          events,
-          players,
-          gameNumber: parseInt(gameNumber),
-          videoIndex: currentPlaylistIndex + 1,
-          videoId,
-          playlistId,
-          timestamp: new Date().toISOString(),
-          lastModified: new Date().toISOString(),
-          version: '1.0.0'
-        });
-
-        let totalPoints = currentExtracted.teamStats.totalPoints;
-
-        // Fetch stats from other videos in the playlist to get complete game totals
-        // Note: DB video_index is 1-based, matches currentPlaylistIndex + 1
-        const otherVideosPoints = await GameStatsService.getPlaylistTotalPoints(
-          parseInt(gameNumber),
-          currentPlaylistIndex + 1
-        );
-
-        totalPoints += otherVideosPoints;
-
-        taggingStatus = calculateTaggingStatus(
-          totalPoints,
-          gameFromContext.finalScore,
-          { home: gameFromContext.homeTeam, away: gameFromContext.awayTeam }
-        );
-      }
-    }
-
-    await baseHandleSaveToStorage(taggingStatus ? { taggingStatus } : undefined);
-  };
-
-  // Sort players by last substitution out (most recent first)
-  const sortedPlayers = useMemo(() => {
-    const lastSubOut: Record<string, number> = {};
-
-    events.forEach((event) => {
-      if (event.type === 'substitution' && event.substitutionOut) {
-        lastSubOut[event.substitutionOut] = event.timestamp;
-      }
-    });
-
-    return [...players].sort((a, b) => {
-      const aTime = lastSubOut[a.name] ?? -1;
-      const bTime = lastSubOut[b.name] ?? -1;
-      return bTime - aTime;
-    });
-  }, [players, events]);
-
-  const handleVideoSelect = (selectedVideoId: string, selectedPlaylistId?: string) => {
-    if (selectedPlaylistId) {
-      setPlaylistId(selectedPlaylistId);
-      setVideoId(selectedVideoId);
-      setIsQueueMode(false);
-    } else {
-      setPlaylistId(undefined);
-      setVideoId(selectedVideoId);
-      setIsQueueMode(false);
-    }
-  };
-
-  const handleVideoChange = useCallback((newVideoId: string, index: number) => {
-    setCurrentPlaylistIndex(index);
-    // Update videoId to match the new playlist video
-    if (newVideoId) {
-      setVideoId(newVideoId);
-    }
-    // Reset time for new video
-    setCurrentTime(0);
-    // Clear events when switching to a different video
-    setEvents([]);
-  }, [setCurrentPlaylistIndex, setCurrentTime]);
-
-  const handleAddPlayer = (name: string, jerseyNumber: number, position: PositionType) => {
-    setPlayers((prev) => [...prev, { id: crypto.randomUUID(), name, jerseyNumber, position }]);
-  };
-
-  const handleRemovePlayer = (id: string) => {
-    setPlayers((prev) => prev.filter((p) => p.id !== id));
-  };
-
-  const handleQuickAction = (type: string, label: string, icon: string) => {
-    const eventData: Omit<TaggedEvent, 'id' | 'description'> = {
-      timestamp: currentTime,
-      formattedTime: formatTime(currentTime),
-      type: type as any,
-    };
-
-    if (type === 'learning') {
-      setPendingLearningEvent(eventData);
-      setIsLearningDialogOpen(true);
-      return;
-    }
-
-    handleAddEvent(eventData);
-  };
-
-  const handleSaveLearning = (note: string) => {
-    if (pendingLearningEvent) {
-      // Create description with user input
-      // We manually construct the event with the custom description
-      const eventWithDescription: TaggedEvent = {
-        ...pendingLearningEvent,
-        id: crypto.randomUUID(),
-        description: `Learning: ${note}`,
-        type: 'learning' // Explicitly set type
-      };
-
-      setEvents((prev) => [...prev, eventWithDescription]);
-      setPendingLearningEvent(null);
-      setIsLearningDialogOpen(false);
-    }
-  };
-
-  const handleAddEvent = (event: Omit<TaggedEvent, 'id' | 'description'>) => {
-    // Generate the complete event
-    const completeEvent: TaggedEvent = {
-      ...event,
-      id: crypto.randomUUID(),
-      description: generateEventDescription(event),
-    };
-
-    setEvents((prev) => [...prev, completeEvent]);
-  };
-
-  const handleDeleteEvent = useCallback((id: string) => {
-    setEvents((prev) => prev.filter((e) => e.id !== id));
-  }, []);
-
-  // Calculate available players (bench players)
-  const availablePlayers = useMemo(() => {
-    const currentPlayerNames = new Set(currentPlayersOnCourt.map(p => p.name));
-    return players.filter(player => !currentPlayerNames.has(player.name));
-  }, [players, currentPlayersOnCourt]);
-
-  const isPlaylistMode = playlistVideos.length > 0;
+  const { availablePlayers } = computed;
 
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20">
-        {/* Header */}
-        <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🏀</span>
-                <h1 className="text-xl font-bold">Basketball Event Tagger</h1>
-              </div>
-              <div className="flex items-center gap-2">
-                {isPlaylistMode && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsSideMenuOpen(!isSideMenuOpen)}
-                    className="h-8 px-3 gap-2"
-                  >
-                    <List className="h-4 w-4" />
-                    Show Queue
-                  </Button>
-                )}
-                {/* Close Editor Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/videos')}
-                  className="h-8 px-3 gap-2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                  Editor schließen
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
+        <VideoEditorHeader
+          isPlaylistMode={isPlaylistMode}
+          isSideMenuOpen={isSideMenuOpen}
+          setIsSideMenuOpen={setIsSideMenuOpen}
+          onClose={() => navigate('/videos')}
+        />
 
         <main className="container mx-auto px-4 py-6">
           {!videoId && !playlistId ? (
-            /* Video Input Screen */
-            <div className="max-w-2xl mx-auto mt-20">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold mb-3">Tag Basketball Events Live</h2>
-                <p className="text-muted-foreground">
-                  Enter a YouTube URL, video ID, or playlist URL to start tagging, or load a saved project.
-                </p>
-              </div>
-
-              {/* Input Options */}
-              <div className="space-y-6">
-                {/* Load File Option */}
-                <div className="p-6 rounded-xl bg-card/50 border border-border/50">
-                  <div className="flex items-center gap-3 mb-3">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    <h3 className="font-semibold">Load Saved Project</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Load a previously saved project to restore tags and video
-                  </p>
-                  <Button onClick={handleLoadFile} className="w-full gap-2">
-                    <Upload className="h-4 w-4" />
-                    Load Project File
-                  </Button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".json"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                </div>
-
-                {/* Divider */}
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 h-px bg-border/50"></div>
-                  <span className="text-sm text-muted-foreground">OR</span>
-                  <div className="flex-1 h-px bg-border/50"></div>
-                </div>
-
-                {/* Video Input Option */}
-                <div className="p-6 rounded-xl bg-card/50 border border-border/50">
-                  <div className="flex items-center gap-3 mb-3">
-                    <List className="h-5 w-5 text-muted-foreground" />
-                    <h3 className="font-semibold">Start New Project</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Enter a YouTube URL, video ID, or playlist URL to start tagging
-                  </p>
-                  <VideoInput
-                    onVideoSelect={handleVideoSelect}
-                    onAddToQueue={handleAddToQueue}
-                    showQueueOption={true}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-12 grid grid-cols-3 gap-6 text-center">
-                <div className="p-4 rounded-xl bg-card/50 border border-border/50">
-                  <div className="text-2xl mb-2">⏱️</div>
-                  <h3 className="font-semibold mb-1">Real-time Tagging</h3>
-                  <p className="text-xs text-muted-foreground">Tag events as they happen during playback</p>
-                </div>
-                <div className="p-4 rounded-xl bg-card/50 border border-border/50">
-                  <div className="text-2xl mb-2">📋</div>
-                  <h3 className="font-semibold mb-1">Playlist Support</h3>
-                  <p className="text-xs text-muted-foreground">Process entire playlists with video queue</p>
-                </div>
-                <div className="p-4 rounded-xl bg-card/50 border border-border/50">
-                  <div className="text-2xl mb-2">📊</div>
-                  <h3 className="font-semibold mb-1">Easy Export</h3>
-                  <p className="text-xs text-muted-foreground">Copy timestamps for YouTube descriptions</p>
-                </div>
-              </div>
-            </div>
+            <VideoEditorWelcome
+              onLoadFile={handleLoadFile}
+              fileInputRef={refs.fileInputRef}
+              onFileSelect={handleFileSelect}
+              onVideoSelect={handleVideoSelect}
+              onAddToQueue={handleAddToQueue}
+              showQueueOption={true}
+            />
           ) : (
-            /* Main Tagging Interface */
             <div className="space-y-6">
-              {/* Video Controls - Top */}
               <VideoControls
                 isPlaying={isPlaying}
                 currentTime={currentTime}
@@ -533,12 +115,10 @@ const VideoEditor = () => {
                 onToggleSkip={() => setIsSkippingEnabled(!isSkippingEnabled)}
               />
 
-              {/* Video Player and Game Tags */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Video Player - Takes 2 columns on large screens */}
                 <div className="lg:col-span-2 space-y-4">
                   <YouTubePlayer
-                    ref={youtubePlayerRef}
+                    ref={refs.youtubePlayerRef}
                     videoId={videoId || undefined}
                     playlistId={playlistId}
                     onTimeUpdate={handleTimeUpdate}
@@ -547,13 +127,11 @@ const VideoEditor = () => {
                     onVideoChange={handleVideoChange}
                   />
 
-                  {/* Save Button */}
                   <Button onClick={handleSaveToStorage} className="w-full gap-2">
                     <Save className="w-4 h-4" />
                     Save to Cloud Storage
                   </Button>
 
-                  {/* Timestamp Conflict Alert */}
                   {timestampConflict && timestampConflict.hasConflict && (
                     <Card className={`border-2 ${timestampConflict.localIsNewer
                       ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20'
@@ -591,7 +169,6 @@ const VideoEditor = () => {
                     </Card>
                   )}
 
-                  {/* Export Panel */}
                   <ExportPanel
                     events={events}
                     players={players}
@@ -601,7 +178,6 @@ const VideoEditor = () => {
                     lastSavedData={lastSavedData}
                   />
 
-                  {/* Video Stats Integration */}
                   <VideoStatsIntegration
                     saveData={generateSaveData(players, events, videoId, playlistId)}
                     gameNumber={gameNumber}
@@ -611,10 +187,7 @@ const VideoEditor = () => {
                   />
                 </div>
 
-                {/* Game Tags - Right panel */}
                 <div className="space-y-4">
-
-                  {/* Current Players on Field - Always visible */}
                   <CurrentPlayersOnField
                     players={players}
                     events={events}
@@ -625,7 +198,6 @@ const VideoEditor = () => {
                     resetOnLoad={shouldResetPlayers}
                   />
 
-                  {/* Tabs for Events, Stats, and Players */}
                   <Tabs defaultValue="events" className="w-full">
                     <TabsList className="w-full">
                       <TabsTrigger value="events" className="flex-1">Events</TabsTrigger>
@@ -633,12 +205,20 @@ const VideoEditor = () => {
                       <TabsTrigger value="players" className="flex-1">Players</TabsTrigger>
                     </TabsList>
                     <TabsContent value="events" className="mt-3">
-                      <EventList
-                        events={events}
-                        onDeleteEvent={handleDeleteEvent}
-                        onSeekTo={handleSeekTo}
+                      <EventInput
+                        players={players}
                         currentTime={currentTime}
+                        isPlaying={isPlaying}
+                        onAddEvent={handleAddEvent}
                       />
+                      <div className="mt-4">
+                        <EventList
+                          events={events}
+                          onDeleteEvent={handleDeleteEvent}
+                          onSeekTo={handleSeekTo}
+                          currentTime={currentTime}
+                        />
+                      </div>
                     </TabsContent>
                     <TabsContent value="stats" className="mt-3">
                       <Statistics events={events} players={players} />

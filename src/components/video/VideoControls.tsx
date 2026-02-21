@@ -10,7 +10,7 @@ import {
   VolumeX,
   FastForward
 } from 'lucide-react';
-import { EVENT_TEMPLATES } from '@/types/basketball';
+import { EVENT_TEMPLATES, EventType } from '@/types/basketball';
 
 interface VideoControlsProps {
   isPlaying: boolean;
@@ -21,7 +21,7 @@ interface VideoControlsProps {
   onRestart: () => void;
   onToggleMute?: () => void;
   isMuted?: boolean;
-  onQuickAction?: (type: string, label: string, icon: string) => void;
+  onQuickAction?: (type: EventType, label: string, icon: string) => void;
   isSkipping?: boolean;
   onToggleSkip?: () => void;
 }
