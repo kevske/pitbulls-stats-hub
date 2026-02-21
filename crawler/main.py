@@ -6,12 +6,10 @@ Fetches data from basketball-bund.net REST API and stores it in Supabase
 
 import os
 import requests
-import asyncio
 
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import logging
-import json
 from datetime import datetime, timezone
 import time
 from bs4 import BeautifulSoup
