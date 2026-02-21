@@ -37,18 +37,24 @@ export class PlayerInfoService {
 
     if (error) throw error;
 
-    // Log the creation
-    const currentUser = await AuthService.getCurrentUser();
-    if (currentUser && data) {
-      await AuditService.logAction({
-        table_name: 'player_info',
-        record_id: data.id,
-        action: 'CREATE',
-        new_data: data,
-        user_email: currentUser.user.email || 'unknown',
-        user_id: currentUser.user.id,
-      });
-    }
+    // Log the creation (non-blocking)
+    (async () => {
+      try {
+        const currentUser = await AuthService.getCurrentUser();
+        if (currentUser && data) {
+          await AuditService.logAction({
+            table_name: 'player_info',
+            record_id: data.id,
+            action: 'CREATE',
+            new_data: data,
+            user_email: currentUser.user.email || 'unknown',
+            user_id: currentUser.user.id,
+          });
+        }
+      } catch (error) {
+        console.error('Background audit logging failed:', error);
+      }
+    })();
 
     return data;
   }
@@ -71,19 +77,25 @@ export class PlayerInfoService {
 
     if (error) throw error;
 
-    // Log the update
-    const currentUser = await AuthService.getCurrentUser();
-    if (currentUser && data) {
-      await AuditService.logAction({
-        table_name: 'player_info',
-        record_id: id,
-        action: 'UPDATE',
-        old_data: oldData,
-        new_data: data,
-        user_email: currentUser.user.email || 'unknown',
-        user_id: currentUser.user.id,
-      });
-    }
+    // Log the update (non-blocking)
+    (async () => {
+      try {
+        const currentUser = await AuthService.getCurrentUser();
+        if (currentUser && data) {
+          await AuditService.logAction({
+            table_name: 'player_info',
+            record_id: id,
+            action: 'UPDATE',
+            old_data: oldData,
+            new_data: data,
+            user_email: currentUser.user.email || 'unknown',
+            user_id: currentUser.user.id,
+          });
+        }
+      } catch (error) {
+        console.error('Background audit logging failed:', error);
+      }
+    })();
 
     return data;
   }
@@ -104,18 +116,24 @@ export class PlayerInfoService {
 
     if (error) throw error;
 
-    // Log the deletion
-    const currentUser = await AuthService.getCurrentUser();
-    if (currentUser && oldData) {
-      await AuditService.logAction({
-        table_name: 'player_info',
-        record_id: id,
-        action: 'DELETE',
-        old_data: oldData,
-        user_email: currentUser.user.email || 'unknown',
-        user_id: currentUser.user.id,
-      });
-    }
+    // Log the deletion (non-blocking)
+    (async () => {
+      try {
+        const currentUser = await AuthService.getCurrentUser();
+        if (currentUser && oldData) {
+          await AuditService.logAction({
+            table_name: 'player_info',
+            record_id: id,
+            action: 'DELETE',
+            old_data: oldData,
+            user_email: currentUser.user.email || 'unknown',
+            user_id: currentUser.user.id,
+          });
+        }
+      } catch (error) {
+        console.error('Background audit logging failed:', error);
+      }
+    })();
   }
 
   // Get active players only
