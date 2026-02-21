@@ -32,77 +32,37 @@ export class VideoProjectService {
     static async saveProject(data: SaveData, adminPassword?: string): Promise<string | null> {
         try {
             // Use Edge Function if password is provided (secure way)
-            if (adminPassword) {
-                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-                const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-                const response = await fetch(`${supabaseUrl}/functions/v1/admin-manage-videos`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${supabaseAnonKey}`
-                    },
-                    body: JSON.stringify({
-                        action: 'save_project',
-                        payload: data,
-                        adminPassword
-                    })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    console.error('Edge function error:', result);
-                    throw new Error(result.message || result.error || 'Failed to save video project');
-                }
-
-                return result.id;
+            if (!adminPassword) {
+                console.error('Security restriction: Admin password is required to save projects.');
+                // We return null to indicate failure without exposing details,
+                // but logging clearly indicates the security requirement.
+                return null;
             }
 
-            // Fallback for public access (will fail if RLS is locked down and public write is disabled)
-            const {
-                gameNumber,
-                videoIndex,
-                videoId,
-                playlistId,
-                events,
-                players,
-                metadata
-            } = data;
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-            const projectData = {
-                events,
-                players,
-                metadata
-            };
-
-            const payload = {
-                game_number: gameNumber.toString(), // Add game_number for NOT NULL constraint
-                tsv_game_number: gameNumber, // Use TSV_game_number directly
-                video_index: videoIndex,
-                video_id: videoId,
-                playlist_id: playlistId || null,
-                data: projectData,
-                updated_at: new Date().toISOString()
-            };
-
-            // Upsert: Try to update if exists, otherwise insert
-            // We rely on the UNIQUE constraint on (tsv_game_number, video_index)
-            const { data: savedProject, error } = await supabase
-                .from('video_projects')
-                .upsert(payload, {
-                    onConflict: 'tsv_game_number,video_index',
-                    ignoreDuplicates: false
+            const response = await fetch(`${supabaseUrl}/functions/v1/admin-manage-videos`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseAnonKey}`
+                },
+                body: JSON.stringify({
+                    action: 'save_project',
+                    payload: data,
+                    adminPassword
                 })
-                .select()
-                .single();
+            });
 
-            if (error) {
-                console.error('Error saving video project:', error);
-                throw error;
+            const result = await response.json();
+
+            if (!response.ok) {
+                console.error('Edge function error:', result);
+                throw new Error(result.message || result.error || 'Failed to save video project');
             }
 
-            return savedProject.id;
+            return result.id;
         } catch (error) {
             console.error('VideoProjectService.saveProject error:', error);
             return null;
