@@ -155,10 +155,9 @@ export const useVideoEditor = () => {
     fetchActivePlayers();
   }, [mergePlayers]);
 
-  // Handle URL parameters and load game data
+  // Parse URL parameters ONCE on mount or when URL actually changes
   useEffect(() => {
-    const initializeFromParams = async () => {
-      // 1. Handle URL params for Video/Playlist
+    const initializeFromParams = () => {
       if (videoUrl) {
         const playlistOnlyMatch = videoUrl.match(/embed\/videoseries\?list=([^&]+)/);
         if (playlistOnlyMatch) {
@@ -179,15 +178,20 @@ export const useVideoEditor = () => {
           }
         }
       }
+    };
 
-      // 2. Load Game Data if game number exists
+    initializeFromParams();
+  }, [videoUrl]); // ONLY parse when videoUrl parameter changes natively
+
+  // Load Game Data when needed
+  useEffect(() => {
+    const loadData = async () => {
       if (gameNumber) {
         await loadWithTimestampCheck(gameNumber, currentPlaylistIndex + 1);
       }
     };
-
-    initializeFromParams();
-  }, [gameNumber, videoUrl, currentPlaylistIndex, loadWithTimestampCheck]);
+    loadData();
+  }, [gameNumber, currentPlaylistIndex, loadWithTimestampCheck]);
 
   const handleLoadData = useCallback((saveData: SaveData) => {
     console.log('Loading data:', saveData);
