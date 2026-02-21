@@ -181,7 +181,13 @@ export function useYouTubePlayer({
       } catch (error) {
         console.log('Error checking existing player, will reinitialize:', error);
       }
+
+      if (timeIntervalRef.current) {
+        clearInterval(timeIntervalRef.current);
+        timeIntervalRef.current = null;
+      }
       playerRef.current.destroy();
+      playerRef.current = null;
     }
 
     // Generate a unique ID for this player instance to avoid DOM conflicts
@@ -341,15 +347,24 @@ export function useYouTubePlayer({
 
   useEffect(() => {
     initPlayer();
+  }, [initPlayer]);
+
+  useEffect(() => {
     return () => {
       if (timeIntervalRef.current) {
         clearInterval(timeIntervalRef.current);
+        timeIntervalRef.current = null;
       }
       if (playerRef.current) {
-        playerRef.current.destroy();
+        try {
+          playerRef.current.destroy();
+        } catch (e) {
+          console.error('Error destroying player on unmount:', e);
+        }
+        playerRef.current = null;
       }
     };
-  }, [initPlayer]);
+  }, []);
 
   const getCurrentTime = useCallback((): number => {
     return playerRef.current?.getCurrentTime() ?? 0;
