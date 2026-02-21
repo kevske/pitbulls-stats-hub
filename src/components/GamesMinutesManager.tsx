@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
-import PasswordProtection from '@/components/PasswordProtection';
+import AuthGuard from '@/components/AuthGuard';
 import MinutesPlayedInput from '@/components/MinutesPlayedInput';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,8 +14,6 @@ interface GamesMinutesManagerProps {
 }
 
 const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber }) => {
-  const [hasAccess, setHasAccess] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
   const { gameNumber: paramGameNumber } = useParams<{ gameNumber: string }>();
   const [selectedGame, setSelectedGame] = useState<number | null>(
     gameNumber || (paramGameNumber ? parseInt(paramGameNumber) : null)
@@ -46,26 +44,8 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
       }
     };
 
-    if (hasAccess) {
-      loadGamesNeedingMinutes();
-    }
-  }, [hasAccess]);
-
-  if (!hasAccess) {
-    return (
-      <Layout>
-        <div className="container mx-auto max-w-4xl">
-          <PasswordProtection
-            onSuccess={(password) => {
-              setAdminPassword(password || '');
-              setHasAccess(true);
-            }}
-          // No correctPassword prop - validation happens server-side
-          />
-        </div>
-      </Layout>
-    );
-  }
+    loadGamesNeedingMinutes();
+  }, []);
 
   const handleGameSelect = (gameNum: number) => {
     setSelectedGame(gameNum);
@@ -109,7 +89,6 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
           <MinutesPlayedInput
             gameNumber={selectedGame}
             onSuccess={handleSuccess}
-            adminPassword={adminPassword}
           />
         </div>
       </Layout>
@@ -118,8 +97,9 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
 
   return (
     <Layout>
-      <div className="container mx-auto max-w-4xl p-4">
-        <div className="mb-6">
+      <AuthGuard>
+        <div className="container mx-auto max-w-4xl p-4">
+          <div className="mb-6">
           <div className="flex items-center gap-3">
             <Settings className="h-6 w-6 text-primary" />
             <h1 className="text-3xl font-bold">Minuten-Verwaltung</h1>
@@ -238,7 +218,8 @@ const GamesMinutesManager: React.FC<GamesMinutesManagerProps> = ({ gameNumber })
 
           </div>
         )}
-      </div>
+        </div>
+      </AuthGuard>
     </Layout>
   );
 };

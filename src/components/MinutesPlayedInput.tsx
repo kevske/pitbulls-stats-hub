@@ -17,10 +17,9 @@ interface PlayerMinutes {
 interface MinutesPlayedInputProps {
   gameNumber: number;
   onSuccess?: () => void;
-  adminPassword: string;
 }
 
-const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onSuccess, adminPassword }) => {
+const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onSuccess }) => {
   const { players } = useStats();
   const [playerMinutes, setPlayerMinutes] = useState<PlayerMinutes[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,7 +124,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
         playerId: pm.playerId,
         seconds: pm.seconds // Store exact seconds as integer
       }));
-      const success = await MinutesService.updatePlayerMinutes(gameNumber, serviceData, adminPassword);
+      const success = await MinutesService.updatePlayerMinutes(gameNumber, serviceData);
 
       if (success) {
         toast.success(`Minuten für Spiel ${gameNumber} erfolgreich gespeichert!`);

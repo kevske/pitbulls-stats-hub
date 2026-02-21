@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
-import PasswordProtection from "@/components/PasswordProtection";
+import AuthGuard from "@/components/AuthGuard";
 import { useStats } from "@/contexts/StatsContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,8 +88,6 @@ const extractVideoId = (url: string): { videoId: string | null, playlistId: stri
 }
 
 const Videos = () => {
-  const [hasAccess, setHasAccess] = useState(false);
-  const [adminPassword, setAdminPassword] = useState("");
   const { games, videoStats, loading, refresh } = useStats();
 
   // Set of game numbers that have stats pushed to Stats Hub
@@ -112,22 +110,6 @@ const Videos = () => {
     .filter(game => (!game.youtubeLink || game.youtubeLink.trim() === '') && (!game.youtubeLinks || game.youtubeLinks.length === 0))
     .sort((a, b) => b.gameNumber - a.gameNumber), [games]);
 
-  if (!hasAccess) {
-    return (
-      <Layout>
-        <div className="container mx-auto max-w-4xl">
-          <PasswordProtection
-            onSuccess={(password) => {
-              setAdminPassword(password || '');
-              setHasAccess(true);
-            }}
-          // No correctPassword prop - validation happens via Edge Function
-          />
-        </div>
-      </Layout>
-    );
-  }
-
   const handleAddVideo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedGame || !videoLink) return;
@@ -145,8 +127,7 @@ const Videos = () => {
       await VideoProjectService.addVideoToGame(
         parseInt(selectedGame),
         videoId || '',
-        playlistId || undefined,
-        adminPassword
+        playlistId || undefined
       );
 
       toast.success("Video erfolgreich hinzugefügt!");
@@ -164,8 +145,9 @@ const Videos = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto max-w-[98vw] px-2 py-4">
-        <div className="mb-6">
+      <AuthGuard>
+        <div className="container mx-auto max-w-[98vw] px-2 py-4">
+          <div className="mb-6">
           <div>
             <h1 className="text-4xl font-bold text-primary mb-2">Letzte Spiele</h1>
             <div className="w-20 h-1 bg-primary"></div>
@@ -266,7 +248,6 @@ const Videos = () => {
                   <div className="mt-4">
                     <Link
                       to={`/video-editor?game=${game.gameNumber}&video=${encodeURIComponent(getEmbedUrl(videoData.link))}`}
-                      state={{ adminPassword }}
                     >
                       <Button className="gap-2">
                         <Tag className="w-4 h-4" />
@@ -332,8 +313,9 @@ const Videos = () => {
               </Button>
             </form>
           </div>
+          </div>
         </div>
-      </div>
+      </AuthGuard>
     </Layout>
   );
 };

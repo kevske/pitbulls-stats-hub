@@ -27,7 +27,7 @@ serve(async (req: Request) => {
 
     try {
         const body = await req.json()
-        const { action, payload, adminPassword } = body
+        const { action, payload } = body
 
         if (!action || typeof action !== 'string') {
             return new Response(
@@ -80,29 +80,55 @@ serve(async (req: Request) => {
             )
         }
 
-        // Validate admin password server-side
-        const expectedPassword = Deno.env.get('ADMIN_PASSWORD')
-        if (!expectedPassword) {
-            console.error('Configuration error: ADMIN_PASSWORD environment variable is missing or empty')
+        // Auth Check
+        const authHeader = req.headers.get('Authorization')
+        if (!authHeader) {
+            return new Response(
+                JSON.stringify({ error: 'Unauthorized', message: 'Missing Authorization header' }),
+                { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')
+        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+
+        if (!supabaseUrl || !supabaseAnonKey) {
             return new Response(
                 JSON.stringify({ error: 'Configuration error', message: 'Server is not properly configured' }),
                 { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
 
-        if (!adminPassword || !await secureCompare(adminPassword, expectedPassword)) {
-            console.log('Auth failed: password mismatch')
+        // Create client with user's token
+        const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+            global: { headers: { Authorization: authHeader } }
+        })
+
+        const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+        if (userError || !user) {
             return new Response(
-                JSON.stringify({ error: 'Unauthorized', message: 'Invalid admin password' }),
+                JSON.stringify({ error: 'Unauthorized', message: 'Invalid token' }),
                 { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
 
+        // Admin Email Check
+        const adminEmails = Deno.env.get('ADMIN_EMAILS') || ''
+        const allowedEmails = adminEmails.split(',').map(e => e.trim().toLowerCase())
+
+        if (!user.email || !allowedEmails.includes(user.email.toLowerCase())) {
+            console.error(`Unauthorized access attempt by: ${user.email}`)
+            return new Response(
+                JSON.stringify({ error: 'Forbidden', message: 'You do not have permission to perform this action' }),
+                { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
         // Create admin client with service role key (server-side only)
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')
         const supabaseServiceKey = Deno.env.get('SERVICE_ROLE_KEY')
 
-        if (!supabaseUrl || !supabaseServiceKey) {
+        if (!supabaseServiceKey) {
             console.error('Missing Supabase configuration')
             return new Response(
                 JSON.stringify({ error: 'Configuration error', message: 'Server is not properly configured' }),
@@ -187,27 +213,3 @@ serve(async (req: Request) => {
         )
     }
 })
-
-/**
- * Constant-time string comparison using SHA-256 hashing to prevent timing attacks.
- */
-async function secureCompare(a: string, b: string): Promise<boolean> {
-    const encoder = new TextEncoder()
-    const aBuf = encoder.encode(a)
-    const bBuf = encoder.encode(b)
-
-    // Use SHA-256 to hash the inputs
-    const aHash = await crypto.subtle.digest('SHA-256', aBuf)
-    const bHash = await crypto.subtle.digest('SHA-256', bBuf)
-
-    const aHashArr = new Uint8Array(aHash)
-    const bHashArr = new Uint8Array(bHash)
-
-    // Compare hashes in constant time
-    let result = 0
-    for (let i = 0; i < aHashArr.length; i++) {
-        result |= aHashArr[i] ^ bHashArr[i]
-    }
-
-    return result === 0
-}
