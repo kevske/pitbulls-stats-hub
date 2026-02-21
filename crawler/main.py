@@ -15,6 +15,7 @@ import json
 from datetime import datetime, timezone
 import time
 from bs4 import BeautifulSoup
+from crawler.rate_limiter import RateLimiter
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -160,7 +161,7 @@ class BasketballBundCrawler:
     def fetch_box_scores(self, games):
         """Fetch box scores for finished games"""
         try:
-            logger.info(f"Fetching box scores for games synchronously...")
+            logger.info("Fetching box scores for games synchronously...")
             box_scores = []
             
             # Filter games
@@ -173,15 +174,18 @@ class BasketballBundCrawler:
             
             logger.info(f"Found {len(games_to_fetch)} games to fetch box scores for")
             
+            # Use rate limiter to be nice to the server while allowing faster processing
+            rate_limiter = RateLimiter(min_interval=0.5)
+
             for index, (game_id, game) in enumerate(games_to_fetch):
                 try:
+                    # Respect rate limit
+                    rate_limiter.wait()
+
                     logger.info(f"Fetching box score for game {game_id} ({index+1}/{len(games_to_fetch)})")
                     entries = self.fetch_game_box_score(game_id, game)
                     if entries:
                         box_scores.extend(entries)
-                    
-                    # Be nice to the server
-                    time.sleep(0.5)
                         
                 except Exception as e:
                     logger.error(f"Error processing game {game_id}: {e}")
