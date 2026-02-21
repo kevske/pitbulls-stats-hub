@@ -1,14 +1,47 @@
 import { DangerousPlayer, BoxScore } from '@/types/supabase';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, parse } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-export const formatGameDate = (gameDate: string, gameTime?: string) => {
+export const formatGameDate = (dateString: string, timeString?: string, formatStr: string = 'EEEE, dd.MM.yyyy - HH:mm') => {
     try {
-        const dateTimeString = gameTime ? `${gameDate}T${gameTime}` : gameDate;
-        const date = parseISO(dateTimeString);
-        return format(date, 'EEEE, dd.MM.yyyy - HH:mm', { locale: de });
+        if (!dateString) return '';
+
+        let date: Date;
+
+        // Handle ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss)
+        // Check for T or - which are typical for ISO dates but not German DD.MM.YYYY
+        if (dateString.includes('T') || dateString.includes('-')) {
+            let dateTimeString = dateString;
+
+            // If timeString is provided and dateString doesn't look like it has time (no T)
+            if (timeString && !dateString.includes('T')) {
+                dateTimeString = `${dateString}T${timeString}`;
+            }
+
+            date = parseISO(dateTimeString);
+        } else if (dateString.includes('.')) {
+            // Handle German format (DD.MM.YYYY)
+            let dateToParse = dateString;
+            let formatToUse = dateString.includes(':') ? 'dd.MM.yyyy HH:mm' : 'dd.MM.yyyy';
+
+            if (timeString && !dateString.includes(':')) {
+                dateToParse = `${dateString} ${timeString}`;
+                formatToUse = 'dd.MM.yyyy HH:mm';
+            }
+
+            date = parse(dateToParse, formatToUse, new Date());
+        } else {
+            return dateString;
+        }
+
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+            return dateString;
+        }
+
+        return format(date, formatStr, { locale: de });
     } catch (e) {
-        return gameDate;
+        return dateString;
     }
 };
 
