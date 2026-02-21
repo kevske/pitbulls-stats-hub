@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStats } from '@/contexts/StatsContext';
-import { format, parse } from 'date-fns';
-import { de } from 'date-fns/locale';
 import Layout from '@/components/Layout';
+import { formatGameDate } from '@/utils/spielplanUtils';
 import { BoxscoreService } from '@/services/boxscoreService';
 import { BoxScore } from '@/types/supabase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -123,15 +122,6 @@ const GameDetail: React.FC = () => {
     );
   }
 
-  const formatGameDate = (dateString: string) => {
-    try {
-      const date = parse(dateString, 'dd.MM.yyyy HH:mm', new Date());
-      return format(date, "EEEE, dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de });
-    } catch (e) {
-      return dateString;
-    }
-  };
-
   const getPlayerName = (playerId: string, asLink: boolean = false) => {
     const player = players.find(p => p.id === playerId);
     if (!player) return 'Unbekannter Spieler';
@@ -200,7 +190,7 @@ const GameDetail: React.FC = () => {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="text-2xl">
-              Spieltag {game.gameNumber} • {formatGameDate(game.date)}
+              Spieltag {game.gameNumber} • {formatGameDate(game.date, undefined, "EEEE, dd.MM.yyyy 'um' HH:mm 'Uhr'")}
             </CardTitle>
           </CardHeader>
           <CardContent>
