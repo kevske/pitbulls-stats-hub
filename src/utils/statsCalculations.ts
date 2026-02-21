@@ -53,13 +53,6 @@ export const calculateAverages = (
   const totals = calculateTotals(games, playerId, location);
   const gamesPlayed = totals.games || 1;
 
-  // Calculate average minutes as a number (in minutes)
-  const playerGames = getPlayerGames(games, playerId);
-  const totalMinutes = playerGames.reduce((sum, game) => {
-    const playerStats = game.playerStats.find(ps => ps.playerId === playerId);
-    return sum + (playerStats?.minutesPlayed || 0);
-  }, 0);
-
   return {
     games: totals.games,
     points: parseFloat((totals.points / gamesPlayed).toFixed(1)),
@@ -68,10 +61,13 @@ export const calculateAverages = (
     freeThrowsMade: parseFloat((totals.freeThrowsMade / gamesPlayed).toFixed(1)),
     freeThrowAttempts: parseFloat((totals.freeThrowAttempts / gamesPlayed).toFixed(1)),
     fouls: parseFloat((totals.fouls / gamesPlayed).toFixed(1)),
-    minutesPlayed: parseFloat((totalMinutes / gamesPlayed).toFixed(1))
+    minutesPlayed: parseFloat((totals.minutesPlayed / gamesPlayed).toFixed(1))
   };
 };
 
+/**
+ * @deprecated This function is no longer used internally and may be removed in future versions.
+ */
 export const getPlayerGames = (games: Game[], playerId: string) => {
   return games
     .filter((game) => game.playerStats.some((ps) => ps.playerId === playerId))
