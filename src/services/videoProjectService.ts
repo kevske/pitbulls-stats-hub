@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Player, TaggedEvent } from '@/types/basketball';
-import { SaveData } from '@/types/video';
+import { SaveData, SaveDataMetadata } from '@/types/video';
 
 // Re-export SaveData for backward compatibility with imports from this file
 export type { SaveData };
@@ -161,6 +161,24 @@ export class VideoProjectService {
             created_at: project.created_at,
             updated_at: project.updated_at
         }));
+    }
+
+    /**
+     * Convert a database VideoProject object to a SaveData object
+     */
+    static toSaveData(project: VideoProject): SaveData {
+        return {
+            gameNumber: parseInt(project.game_number),
+            videoIndex: project.video_index,
+            videoId: project.video_id,
+            playlistId: project.playlist_id,
+            events: project.data.events || [],
+            players: project.data.players || [],
+            metadata: project.data.metadata as SaveDataMetadata,
+            timestamp: project.created_at,
+            lastModified: project.updated_at,
+            version: '1.0.0'
+        };
     }
 
     /**

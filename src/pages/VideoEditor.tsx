@@ -28,7 +28,7 @@ import { useSkipDeadTime } from '@/hooks/useSkipDeadTime';
 import { calculateTaggingStatus } from '@/utils/taggingStatus';
 import { useStats } from '@/contexts/StatsContext';
 import { extractStatsFromVideoData } from '@/services/statsExtraction';
-import { VideoProjectService } from '@/services/videoProjectService';
+import { GameStatsService } from '@/services/gameStatsService';
 
 const VideoEditor = () => {
   const [searchParams] = useSearchParams();
@@ -277,39 +277,14 @@ const VideoEditor = () => {
 
         let totalPoints = currentExtracted.teamStats.totalPoints;
 
-        // Fetch other videos if present (for playlists) to get complete game stats
-        try {
-          // Fetch all projects for this game
-          const allProjects = await VideoProjectService.getProjectsForGame(parseInt(gameNumber));
+        // Fetch stats from other videos in the playlist to get complete game totals
+        // Note: DB video_index is 1-based, matches currentPlaylistIndex + 1
+        const otherVideosPoints = await GameStatsService.getPlaylistTotalPoints(
+          parseInt(gameNumber),
+          currentPlaylistIndex + 1
+        );
 
-          // Filter out the current video based on videoIndex
-          // Note: DB video_index is 1-based, matches currentPlaylistIndex + 1
-          const otherProjects = allProjects.filter(p => p.video_index !== (currentPlaylistIndex + 1));
-
-          for (const project of otherProjects) {
-            // Create a minimal SaveData object for extraction
-            const projectData = {
-              events: project.data.events || [],
-              players: project.data.players || [],
-              // Dummy required fields
-              timestamp: new Date().toISOString(),
-              lastModified: new Date().toISOString(),
-              version: '1.0.0',
-              gameNumber: parseInt(gameNumber),
-              videoIndex: project.video_index,
-              videoId: project.video_id,
-              playlistId: project.playlist_id
-            };
-
-            // We cast to any because SaveData might have stricter requirements for some fields
-            // but extractStatsFromVideoData mainly needs events and players
-            const projectStats = extractStatsFromVideoData(projectData as any);
-            totalPoints += projectStats.teamStats.totalPoints;
-          }
-        } catch (error) {
-          console.error('Failed to fetch playlist stats for aggregation:', error);
-          // Continue with current video stats only if fetch fails
-        }
+        totalPoints += otherVideosPoints;
 
         taggingStatus = calculateTaggingStatus(
           totalPoints,
