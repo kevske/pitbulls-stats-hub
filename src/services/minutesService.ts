@@ -157,34 +157,22 @@ export class MinutesService {
   // Now uses Edge Function for secure admin operations
   static async updatePlayerMinutes(
     gameNumber: number,
-    playerSeconds: Array<{ playerId: string, seconds: number }>,
-    adminPassword: string
+    playerSeconds: Array<{ playerId: string, seconds: number }>
   ): Promise<boolean> {
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      const response = await fetch(`${supabaseUrl}/functions/v1/admin-update-minutes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseAnonKey}`
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('admin-update-minutes', {
+        body: {
           gameNumber,
-          playerSeconds,
-          adminPassword
-        })
+          playerSeconds
+        }
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error('Edge function error:', result);
-        throw new Error(result.message || result.error || 'Failed to update minutes');
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to update minutes');
       }
 
-      return result.success !== false;
+      return data?.success !== false;
     } catch (error) {
       console.error('=== SAVE OPERATION FAILED ===', error);
       throw error;

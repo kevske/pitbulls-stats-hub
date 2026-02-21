@@ -19,6 +19,7 @@ import { Upload, FileText, List, Save, X } from 'lucide-react';
 import { generateSaveData, SaveData, loadSaveFile } from '@/services/saveLoad';
 import { toast } from 'sonner';
 import Layout from '@/components/Layout';
+import AuthGuard from '@/components/AuthGuard';
 import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { useVideoProjectPersistence } from '@/hooks/useVideoProjectPersistence';
 import { usePlaylistManager } from '@/hooks/usePlaylistManager';
@@ -33,9 +34,7 @@ import { VideoProjectService } from '@/services/videoProjectService';
 const VideoEditor = () => {
   const [searchParams] = useSearchParams();
 
-  const location = useLocation();
   const navigate = useNavigate();
-  const adminPassword = location.state?.adminPassword;
   const gameNumber = searchParams.get('game');
   const videoUrl = searchParams.get('video');
 
@@ -131,7 +130,6 @@ const VideoEditor = () => {
     players,
     videoId,
     playlistId,
-    adminPassword,
     setEvents,
     setPlayers: useCallback((newPlayers) => {
       hasLoadedProjectRef.current = true;
@@ -429,6 +427,7 @@ const VideoEditor = () => {
 
   return (
     <Layout>
+      <AuthGuard>
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20">
         {/* Header */}
         <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
@@ -707,6 +706,7 @@ const VideoEditor = () => {
           }}
         />
       </div>
+      </AuthGuard>
     </Layout>
   );
 };

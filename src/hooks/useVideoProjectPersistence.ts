@@ -12,7 +12,6 @@ interface UseVideoProjectPersistenceProps {
     players: Player[];
     videoId: string;
     playlistId: string | undefined;
-    adminPassword?: string;
     setEvents: (events: TaggedEvent[]) => void;
     setPlayers: (players: Player[]) => void;
     setVideoId: (id: string) => void;
@@ -26,7 +25,6 @@ export const useVideoProjectPersistence = ({
     players,
     videoId,
     playlistId,
-    adminPassword,
     setEvents,
     setPlayers,
     setVideoId,
@@ -153,7 +151,7 @@ export const useVideoProjectPersistence = ({
 
             console.log('Saving data to Supabase:', saveData);
 
-            const savedId = await VideoProjectService.saveProject(saveData, adminPassword);
+            const savedId = await VideoProjectService.saveProject(saveData);
 
             if (savedId) {
                 toast.success(`Saved to Supabase`);
@@ -166,7 +164,7 @@ export const useVideoProjectPersistence = ({
             console.error('Error saving:', error);
             toast.error(`Failed to save data: ${(error as Error).message}`);
         }
-    }, [gameNumber, currentPlaylistIndex, events, players, videoId, playlistId, adminPassword]);
+    }, [gameNumber, currentPlaylistIndex, events, players, videoId, playlistId]);
 
     // Autosave and Realtime
     useEffect(() => {
@@ -257,7 +255,7 @@ export const useVideoProjectPersistence = ({
                     version: '1.0.0'
                 };
 
-                const savedId = await VideoProjectService.saveProject(saveData, adminPassword);
+                const savedId = await VideoProjectService.saveProject(saveData);
                 if (savedId) {
                     setLastSavedData(saveData);
                     // toast.success('Auto-saved'); // Optional: don't spam toasts
@@ -266,7 +264,7 @@ export const useVideoProjectPersistence = ({
         }, 2000); // 2 second debounce
 
         return () => clearTimeout(timeoutId);
-    }, [events, players, gameNumber, currentPlaylistIndex, videoId, playlistId, lastSavedData, adminPassword]);
+    }, [events, players, gameNumber, currentPlaylistIndex, videoId, playlistId, lastSavedData]);
 
     // Exit protection
     useEffect(() => {
