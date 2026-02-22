@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlayerStats } from '@/types/stats';
 import { useModernTheme } from '@/contexts/ModernThemeContext';
+import { BASE_PATH } from '@/config';
 
 interface BirthdayInfo {
   player: PlayerStats;
@@ -29,16 +30,12 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
     const results = players
       .filter(player => player.birthDate && player.firstName !== 'Gesamtsumme')
       .map(player => {
-        // Debug individual player
-        // console.log(`Checking ${player.firstName} ${player.lastName}: ${player.birthDate}`);
-
         if (!player.birthDate) return null;
 
         // Handle potential German date format DD.MM.YYYY
         let birthDate: Date;
         if (player.birthDate.includes('.')) {
           const parts = player.birthDate.split('.');
-          // Assuming DD.MM.YYYY
           if (parts.length === 3) {
             birthDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
           } else {
@@ -49,19 +46,15 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
         }
 
         if (isNaN(birthDate.getTime())) {
-          console.log(`Invalid date for ${player.firstName}: ${player.birthDate}`);
           return null;
         }
 
-        // Check birthdays for previous, current, and next year to find the closest one
-        // This handles wrap-arounds (e.g. Dec 31 to Jan 1) correctly
         const candidates = [
           setYear(birthDate, currentYear - 1),
           setYear(birthDate, currentYear),
           setYear(birthDate, currentYear + 1)
         ];
 
-        // Find the candidate with the smallest absolute difference in days
         const closestBirthday = candidates.reduce((closest, candidate) => {
           const diffClosest = Math.abs(differenceInCalendarDays(closest, today));
           const diffCandidate = Math.abs(differenceInCalendarDays(candidate, today));
@@ -69,37 +62,7 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
         });
 
         const daysUntil = differenceInCalendarDays(closestBirthday, today);
-
-        // Calculate age
-        // Since we found the closest birthday, we can calculate age based on that year
         let age = closestBirthday.getFullYear() - birthDate.getFullYear();
-
-        // If the closest birthday is in the future (or today), they are turning that age.
-        // If it was in the past, they already turned that age. 
-        // Logic check:
-        // Born 1990. Current Year 2026.
-        // Birthday Jan 30. Today Jan 31.
-        // Closest birthday: Jan 30, 2026. (Days until: -1).
-        // Age = 2026 - 1990 = 36.
-        // Did they turn 36 yesterday? Yes.
-
-        // Born 1990. Current Year 2026.
-        // Birthday Feb 20. Today Jan 31.
-        // Closest birthday: Feb 20, 2026. (Days until: +20).
-        // Age = 2026 - 1990 = 36.
-        // Will they turn 36? Yes.
-
-        // Wait, what if closest birthday is next year (e.g. today Dec 31, birthday Jan 1)?
-        // Born 1990. Today Dec 30, 2025.
-        // Closest birthday: Jan 1, 2026.
-        // Age = 2026 - 1990 = 36.
-        // They will turn 36 in 2 days. Correct.
-
-        // What if closest birthday was last year? (unlikely with +- 10 days filter but possible logic-wise)
-        // Born 1990. Today Jan 2, 2026. Birthday Dec 30.
-        // Closest birthday: Dec 30, 2025.
-        // Age = 2025 - 1990 = 35. 
-        // They turned 35 recently. Correct.
 
         return {
           player,
@@ -115,7 +78,6 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
     return results;
   }, [players]);
 
-  // Show notification if there are birthdays
   useEffect(() => {
     setIsVisible(birthdayInfos.length > 0);
   }, [birthdayInfos]);
@@ -156,7 +118,6 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
   };
 
   const getCardClass = (daysUntil: number) => {
-    // Force dark styles if in modern mode, regardless of system preference
     if (isModernMode) {
       if (daysUntil === 0) return 'border-pink-500 bg-gray-900 text-white shadow-xl shadow-pink-500/10';
       if (daysUntil > 0) return 'border-blue-500 bg-gray-900 text-white shadow-xl shadow-blue-500/10';
@@ -200,12 +161,24 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
 
           <div className="space-y-3">
             {birthdayInfos.map((info, index) => (
-              <div key={info.player.id} className={`flex items-start gap-3 ${index > 0 ? 'pt-2 border-t border-border' : ''}`}>
-                <div className="flex-shrink-0 mt-1">
-                  {getBirthdayIcon(info.daysUntil)}
+              <div key={info.player.id} className={`flex items-center gap-4 ${index > 0 ? 'pt-2 border-t border-border' : ''}`}>
+                <div className="flex-shrink-0 relative">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/20 shadow-sm bg-muted flex items-center justify-center">
+                    <img
+                      src={info.player.imageUrl || `${BASE_PATH}/placeholder-player.png`}
+                      alt={`${info.player.firstName} ${info.player.lastName}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `${BASE_PATH}/placeholder-player.png`;
+                      }}
+                    />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-1 shadow-sm border border-border flex items-center justify-center">
+                    {React.cloneElement(getBirthdayIcon(info.daysUntil) as React.ReactElement, { className: 'w-3 h-3' })}
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground leading-tight">
                     {getBirthdayMessage(info)}
                   </p>
                   {info.player.position && (
