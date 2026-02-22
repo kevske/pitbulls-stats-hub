@@ -260,6 +260,24 @@ function extractTeamStats(playerStats: PlayerGameStats[]): TeamGameStats {
   return teamStats;
 }
 
+function sanitizeCSVField(field: string): string {
+  let sanitized = field;
+
+  // Prevent CSV Injection (Formula Injection)
+  // If the field starts with =, +, -, or @, prepend a single quote
+  if (/^[=+\-@]/.test(sanitized)) {
+    sanitized = "'" + sanitized;
+  }
+
+  // If the field contains commas, quotes, or newlines, wrap it in quotes
+  // and escape existing quotes by doubling them
+  if (/[",\n]/.test(sanitized)) {
+    sanitized = `"${sanitized.replace(/"/g, '""')}"`;
+  }
+
+  return sanitized;
+}
+
 export function exportStatsToCSV(extractedStats: ExtractedGameStats): string {
   const headers = [
     'Player Name', 'Jersey #', 'Points', 'FGM', 'FGA', 'FG%',
@@ -289,7 +307,9 @@ export function exportStatsToCSV(extractedStats: ExtractedGameStats): string {
     player.substitutions.toString()
   ]);
 
-  return [headers, ...rows].map(row => row.join(',')).join('\n');
+  return [headers, ...rows]
+    .map(row => row.map(sanitizeCSVField).join(','))
+    .join('\n');
 }
 
 export function calculatePlayerEfficiency(playerStats: PlayerGameStats): number {
