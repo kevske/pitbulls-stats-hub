@@ -260,6 +260,22 @@ function extractTeamStats(playerStats: PlayerGameStats[]): TeamGameStats {
   return teamStats;
 }
 
+export function escapeCSVField(field: string | number): string {
+  let stringField = String(field);
+
+  // Prevent CSV Injection (Excel formulas)
+  if (/^[=+\-@]/.test(stringField)) {
+    stringField = `'${stringField}`;
+  }
+
+  // Escape quotes and wrap in quotes if necessary
+  if (/[",\n]/.test(stringField)) {
+    return `"${stringField.replace(/"/g, '""')}"`;
+  }
+
+  return stringField;
+}
+
 export function exportStatsToCSV(extractedStats: ExtractedGameStats): string {
   const headers = [
     'Player Name', 'Jersey #', 'Points', 'FGM', 'FGA', 'FG%',
@@ -287,7 +303,7 @@ export function exportStatsToCSV(extractedStats: ExtractedGameStats): string {
     player.turnovers.toString(),
     player.fouls.toString(),
     player.substitutions.toString()
-  ]);
+  ].map(escapeCSVField));
 
   return [headers, ...rows].map(row => row.join(',')).join('\n');
 }

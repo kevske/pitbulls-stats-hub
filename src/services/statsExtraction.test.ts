@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculatePlayerEfficiency, PlayerGameStats, ExtractedGameStats, TeamGameStats, exportStatsToCSV, extractStatsFromVideoData } from './statsExtraction';
+import { calculatePlayerEfficiency, PlayerGameStats, ExtractedGameStats, TeamGameStats, exportStatsToCSV, extractStatsFromVideoData, escapeCSVField } from './statsExtraction';
 import { SaveData } from '@/services/saveLoad';
 import { TaggedEvent, Player, EventType } from '@/types/basketball';
 
@@ -185,6 +185,59 @@ describe('exportStatsToCSV', () => {
     expect(lines).toHaveLength(3);
     expect(lines[1]).toContain('Player One,1');
     expect(lines[2]).toContain('Player Two,2');
+  });
+
+  it('escapes CSV fields with special characters', () => {
+    const playerStats = createMockStats({
+      playerName: 'Smith, John',
+      jerseyNumber: 99
+    });
+    const stats = createMockExtractedStats([playerStats]);
+    const csv = exportStatsToCSV(stats);
+
+    expect(csv).toContain('"Smith, John",99');
+  });
+
+  it('sanitizes CSV injection payloads', () => {
+    const playerStats = createMockStats({
+      playerName: '=cmd| /C calc',
+      jerseyNumber: 66
+    });
+    const stats = createMockExtractedStats([playerStats]);
+    const csv = exportStatsToCSV(stats);
+
+    // Should prepend a single quote
+    expect(csv).toContain("'=cmd| /C calc,66");
+  });
+});
+
+describe('escapeCSVField', () => {
+  it('escapes fields with special characters', () => {
+    expect(escapeCSVField('Smith, John')).toBe('"Smith, John"');
+    expect(escapeCSVField('Say "Hello"')).toBe('"Say ""Hello"""');
+    expect(escapeCSVField('Line\nBreak')).toBe('"Line\nBreak"');
+  });
+
+  it('sanitizes injection characters', () => {
+    expect(escapeCSVField('=cmd')).toBe("'=cmd");
+    expect(escapeCSVField('+cmd')).toBe("'+cmd");
+    expect(escapeCSVField('-cmd')).toBe("'-cmd");
+    expect(escapeCSVField('@cmd')).toBe("'@cmd");
+  });
+
+  it('handles both injection and special characters', () => {
+    // Starts with + (injection) AND contains comma (special char)
+    // 1. Prepend ' -> '+1,2'
+    // 2. Wrap in quotes because of comma -> "'+1,2"
+    // Wait, let's trace my implementation:
+    // if (/^[=+\-@]/.test(stringField)) stringField = `'${stringField}`;
+    // if (/[",\n]/.test(stringField)) ...
+
+    // Input: +1,2
+    // step 1: '+1,2
+    // step 2: "'+1,2" (contains comma)
+    // Expected result: "'+1,2"
+    expect(escapeCSVField('+1,2')).toBe('"\' +1,2"'.replace(' ', ''));
   });
 });
 
