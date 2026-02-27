@@ -186,6 +186,64 @@ describe('exportStatsToCSV', () => {
     expect(lines[1]).toContain('Player One,1');
     expect(lines[2]).toContain('Player Two,2');
   });
+
+  // Security & Edge Case Tests
+  it('correctly escapes fields containing commas', () => {
+    const playerStats = createMockStats({
+      playerName: 'Doe, John',
+      jerseyNumber: 99
+    });
+    const stats = createMockExtractedStats([playerStats]);
+    const csv = exportStatsToCSV(stats);
+    const lines = csv.split('\n');
+
+    // Should be wrapped in quotes
+    expect(lines[1]).toContain('"Doe, John",99');
+  });
+
+  it('correctly escapes fields containing double quotes', () => {
+    const playerStats = createMockStats({
+      playerName: 'John "The Rock" Doe',
+      jerseyNumber: 1
+    });
+    const stats = createMockExtractedStats([playerStats]);
+    const csv = exportStatsToCSV(stats);
+    const lines = csv.split('\n');
+
+    // Should double the quotes and wrap in quotes
+    // Expected: "John ""The Rock"" Doe",1
+    expect(lines[1]).toContain('"John ""The Rock"" Doe",1');
+  });
+
+  it('sanitizes fields starting with CSV injection characters (=, +, -, @)', () => {
+    const maliciousNames = [
+      '=cmd| /C calc!A0',
+      '+SUM(1+1)*cmd',
+      '-1+1',
+      '@SUM(1+1)'
+    ];
+
+    maliciousNames.forEach(name => {
+      const playerStats = createMockStats({ playerName: name });
+      const stats = createMockExtractedStats([playerStats]);
+      const csv = exportStatsToCSV(stats);
+      const lines = csv.split('\n');
+
+      // Should be prepended with a single quote to neutralize formula
+      // And potentially wrapped in quotes if it contains other special chars
+      // Ideally: "'=cmd| /C calc!A0',..."
+      // Or simply verifying it starts with ' if it was a formula
+
+      // Let's expect the sanitized version to start with a single quote inside the CSV field
+      const nameField = lines[1].split(',')[0];
+      // It might be quoted, so strip outer quotes if present
+      const cleanField = nameField.startsWith('"') && nameField.endsWith('"')
+        ? nameField.slice(1, -1)
+        : nameField;
+
+      expect(cleanField.startsWith("'")).toBe(true);
+    });
+  });
 });
 
 describe('extractStatsFromVideoData', () => {

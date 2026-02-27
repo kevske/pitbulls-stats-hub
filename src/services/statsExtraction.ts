@@ -260,6 +260,28 @@ function extractTeamStats(playerStats: PlayerGameStats[]): TeamGameStats {
   return teamStats;
 }
 
+/**
+ * Escapes a field for CSV format:
+ * 1. Wraps in quotes if it contains commas, quotes, or newlines.
+ * 2. Escapes internal double quotes by doubling them.
+ * 3. Sanitizes fields starting with formulas (=, +, -, @) to prevent CSV Injection.
+ */
+export function escapeCSVField(field: string | number): string {
+  let value = String(field);
+
+  // Prevent CSV Injection (Formula Injection)
+  if (/^[=+\-@]/.test(value)) {
+    value = "'" + value;
+  }
+
+  // If value contains comma, double quote, or newline, wrap in quotes and escape internal quotes
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+
+  return value;
+}
+
 export function exportStatsToCSV(extractedStats: ExtractedGameStats): string {
   const headers = [
     'Player Name', 'Jersey #', 'Points', 'FGM', 'FGA', 'FG%',
@@ -269,27 +291,28 @@ export function exportStatsToCSV(extractedStats: ExtractedGameStats): string {
 
   const rows = extractedStats.playerStats.map(player => [
     player.playerName,
-    player.jerseyNumber.toString(),
-    player.totalPoints.toString(),
-    player.fieldGoalsMade.toString(),
-    player.fieldGoalsAttempted.toString(),
+    player.jerseyNumber,
+    player.totalPoints,
+    player.fieldGoalsMade,
+    player.fieldGoalsAttempted,
     player.fieldGoalPercentage.toString() + '%',
-    player.threePointersMade.toString(),
-    player.threePointersAttempted.toString(),
+    player.threePointersMade,
+    player.threePointersAttempted,
     player.threePointPercentage.toString() + '%',
-    player.freeThrowsMade.toString(),
-    player.freeThrowsAttempted.toString(),
+    player.freeThrowsMade,
+    player.freeThrowsAttempted,
     player.freeThrowPercentage.toString() + '%',
-    player.assists.toString(),
-    player.rebounds.toString(),
-    player.steals.toString(),
-    player.blocks.toString(),
-    player.turnovers.toString(),
-    player.fouls.toString(),
-    player.substitutions.toString()
+    player.assists,
+    player.rebounds,
+    player.steals,
+    player.blocks,
+    player.turnovers,
+    player.fouls,
+    player.substitutions
   ]);
 
-  return [headers, ...rows].map(row => row.join(',')).join('\n');
+  // Use map to apply escaping to each field before joining
+  return [headers, ...rows].map(row => row.map(escapeCSVField).join(',')).join('\n');
 }
 
 export function calculatePlayerEfficiency(playerStats: PlayerGameStats): number {
