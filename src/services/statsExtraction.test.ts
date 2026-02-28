@@ -186,6 +186,24 @@ describe('exportStatsToCSV', () => {
     expect(lines[1]).toContain('Player One,1');
     expect(lines[2]).toContain('Player Two,2');
   });
+
+  it('escapes CSV injection payloads', () => {
+    // Malicious player name attempting formula injection
+    const maliciousPlayer = createMockStats({
+      playerName: '=cmd|\' /C calc\'!A0',
+      jerseyNumber: 99
+    });
+
+    const stats = createMockExtractedStats([maliciousPlayer]);
+    const csv = exportStatsToCSV(stats);
+
+    const lines = csv.split('\n');
+    // Expect the value to be wrapped in quotes (due to space/pipe) AND prepended with single quote to neutralize formula
+    // The implementation might vary, but typical safe CSV is "'=payload"
+    // We will implement sanitize function to ensure this.
+    // For now, let's just assert it contains the single quote prefix
+    expect(lines[1]).toContain("'=cmd|' /C calc'!A0");
+  });
 });
 
 describe('extractStatsFromVideoData', () => {
