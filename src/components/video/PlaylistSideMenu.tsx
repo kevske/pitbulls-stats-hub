@@ -16,6 +16,7 @@ import {
   Menu,
   ExternalLink
 } from 'lucide-react';
+import { extractVideoId } from '@/utils/videoUtils';
 
 export interface PlaylistVideo {
   videoId: string;
@@ -46,28 +47,9 @@ export function PlaylistSideMenu({
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
 
-  const extractVideoId = (url: string): string | null => {
-    const trimmedUrl = url.trim();
-
-    // Check for video URL patterns
-    const videoPatterns = [
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-      /^[a-zA-Z0-9_-]{11}$/,
-    ];
-
-    for (const pattern of videoPatterns) {
-      const match = trimmedUrl.match(pattern);
-      if (match) {
-        return match[1] || match[0];
-      }
-    }
-
-    return null;
-  };
-
   const handleAddVideo = (e: React.FormEvent) => {
     e.preventDefault();
-    const videoId = extractVideoId(newVideoUrl);
+    const { videoId } = extractVideoId(newVideoUrl);
 
     if (videoId) {
       onAddToQueue(videoId);
