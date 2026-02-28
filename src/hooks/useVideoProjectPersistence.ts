@@ -72,40 +72,38 @@ export const useVideoProjectPersistence = ({
             const currentEvents = eventsRef.current;
 
             if (projectData) {
-                const isSameVideo = currentLastSavedData &&
-                    currentLastSavedData.gameNumber === parseInt(gameNum) &&
-                    currentLastSavedData.videoIndex === videoIdx;
+                // Ensure we only compare timestamps if the locally loaded data matches
+                // the project we are fetching, or if it's an imported file without game context.
+                const isSameProject = !currentLastSavedData?.gameNumber ||
+                    (currentLastSavedData.gameNumber === parseInt(gameNum) &&
+                        currentLastSavedData.videoIndex === videoIdx);
 
-                if (isSameVideo) {
-                    const localTimestamp = currentLastSavedData.lastModified || currentLastSavedData.timestamp;
-                    const remoteTimestamp = remoteMeta?.lastModified;
+                const localTimestamp = isSameProject ? (currentLastSavedData?.lastModified || currentLastSavedData?.timestamp) : undefined;
+                const remoteTimestamp = remoteMeta?.lastModified;
 
-                    if (localTimestamp && remoteTimestamp) {
-                        // Compare timestamps
-                        const comparison = compareTimestamps(localTimestamp, remoteTimestamp);
+                if (localTimestamp && remoteTimestamp) {
+                    // Compare timestamps
+                    const comparison = compareTimestamps(localTimestamp, remoteTimestamp);
 
-                        console.log('Timestamp comparison:', comparison);
+                    console.log('Timestamp comparison:', comparison);
 
-                        if (!comparison.isSame) {
-                            setTimestampConflict({
-                                hasConflict: true,
-                                localIsNewer: comparison.isNewer,
-                                comparison
+                    if (!comparison.isSame) {
+                        setTimestampConflict({
+                            hasConflict: true,
+                            localIsNewer: comparison.isNewer,
+                            comparison
+                        });
+
+                        if (comparison.isOlder) {
+                            toast.warning(`Remote version is newer: ${comparison.summary}`, {
+                                id: `conflict-warn-${gameNum}-${videoIdx}`,
+                                duration: 5000
                             });
-
-                            if (comparison.isOlder) {
-                                toast.warning(`Remote version is newer: ${comparison.summary}`, {
-                                    id: `conflict-warn-${gameNum}-${videoIdx}`,
-                                    duration: 5000
-                                });
-                            } else {
-                                toast.info(`Local version is newer: ${comparison.summary}`, {
-                                    id: `conflict-info-${gameNum}-${videoIdx}`,
-                                    duration: 5000
-                                });
-                            }
                         } else {
-                            setTimestampConflict(null);
+                            toast.info(`Local version is newer: ${comparison.summary}`, {
+                                id: `conflict-info-${gameNum}-${videoIdx}`,
+                                duration: 5000
+                            });
                         }
                     } else {
                         setTimestampConflict(null);
