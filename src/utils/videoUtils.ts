@@ -1,39 +1,22 @@
 
+const VALID_VIDEO_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
+const VALID_PLAYLIST_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
+
 // Helper function to convert YouTube URL to embed format
 export const getEmbedUrl = (url: string): string => {
   if (!url) return '';
 
-  // If already an embed URL, return as is
-  if (url.includes('/embed/')) {
-    return url;
+  const { videoId, playlistId } = extractVideoId(url);
+
+  if (videoId && playlistId) {
+    return `https://www.youtube.com/embed/${videoId}?list=${playlistId}`;
+  } else if (playlistId) {
+    return `https://www.youtube.com/embed/videoseries?list=${playlistId}`;
+  } else if (videoId) {
+    return `https://www.youtube.com/embed/${videoId}`;
   }
 
-  // Extract video ID from various YouTube URL formats
-  const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([^&?/]+)/);
-  if (videoIdMatch) {
-    // Also check for playlist ID in the same URL
-    const listMatch = url.match(/[?&]list=([^&]+)/);
-    if (listMatch) {
-      return `https://www.youtube.com/embed/${videoIdMatch[1]}?list=${listMatch[1]}`;
-    }
-    return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
-  }
-
-  // Extract playlist ID
-  const playlistMatch = url.match(/[?&]list=([^&]+)/);
-  if (playlistMatch) {
-    return `https://www.youtube.com/embed/videoseries?list=${playlistMatch[1]}`;
-  }
-
-  // If it's just a video/playlist ID, create embed URL
-  if (!url.includes('http')) {
-    if (url.startsWith('PL')) {
-      return `https://www.youtube.com/embed/videoseries?list=${url}`;
-    }
-    return `https://www.youtube.com/embed/${url}`;
-  }
-
-  return url;
+  return '';
 };
 
 // Helper to extract ID from link
@@ -41,34 +24,30 @@ export const extractVideoId = (url: string): { videoId: string | null, playlistI
   let videoId: string | null = null;
   let playlistId: string | null = null;
 
-  if (!url) return { videoId, playlistId };
+  if (!url || typeof url !== 'string') return { videoId, playlistId };
 
-  // Direct playlist ID input (no URL, just the ID)
-  if (url.startsWith('PL') && /^[a-zA-Z0-9_-]+$/.test(url)) {
-    playlistId = url;
-    return { videoId, playlistId };
-  }
+  const trimmedUrl = url.trim();
 
-  // Extract video ID from URL
-  const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([a-zA-Z0-9_-]{11})/);
-  if (videoIdMatch) {
-    videoId = videoIdMatch[1];
-  }
-
-  // Extract playlist ID from URL (can coexist with video ID)
-  const playlistMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
-  if (playlistMatch) {
+  // Extract playlist ID from URL
+  const playlistMatch = trimmedUrl.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+  if (playlistMatch && VALID_PLAYLIST_ID_REGEX.test(playlistMatch[1])) {
     playlistId = playlistMatch[1];
   }
 
-  // If we found either, return
-  if (videoId || playlistId) {
-    return { videoId, playlistId };
+  // Direct playlist ID input
+  if (!playlistId && trimmedUrl.startsWith('PL') && VALID_PLAYLIST_ID_REGEX.test(trimmedUrl)) {
+    playlistId = trimmedUrl;
   }
 
-  // Fallback: Check if input IS a valid video ID (exactly 11 chars, safe charset)
-  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) {
-    videoId = url;
+  // Extract video ID from URL
+  const videoIdMatch = trimmedUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+  if (videoIdMatch && VALID_VIDEO_ID_REGEX.test(videoIdMatch[1])) {
+    videoId = videoIdMatch[1];
+  }
+
+  // Direct video ID input
+  if (!videoId && VALID_VIDEO_ID_REGEX.test(trimmedUrl)) {
+    videoId = trimmedUrl;
   }
 
   return { videoId, playlistId };
