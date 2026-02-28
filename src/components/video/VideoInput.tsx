@@ -2,39 +2,12 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
+import { extractVideoId as extractVideoInfo } from '@/utils/videoUtils';
 
 interface VideoInputProps {
   onVideoSelect: (videoId: string, playlistId?: string) => void;
   onAddToQueue?: (videoId: string) => void;
   showQueueOption?: boolean;
-}
-
-function extractVideoInfo(url: string): { videoId: string | null; playlistId: string | null } {
-  const trimmedUrl = url.trim();
-  
-  // Check for playlist URL - handle more complex URLs with additional parameters
-  const playlistMatch = trimmedUrl.match(/[?&]list=([a-zA-Z0-9_-]+)/);
-  const playlistId = playlistMatch ? playlistMatch[1] : null;
-  
-  console.log('Extracting video info from URL:', { url: trimmedUrl, playlistMatch, playlistId });
-
-  // Check for video URL patterns
-  const videoPatterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /^[a-zA-Z0-9_-]{11}$/,
-  ];
-
-  let videoId: string | null = null;
-  for (const pattern of videoPatterns) {
-    const match = trimmedUrl.match(pattern);
-    if (match) {
-      videoId = match[1] || match[0];
-      break;
-    }
-  }
-
-  console.log('Video extraction result:', { videoId, playlistId });
-  return { videoId, playlistId };
 }
 
 export function VideoInput({ onVideoSelect, onAddToQueue, showQueueOption = false }: VideoInputProps) {
