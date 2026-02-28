@@ -72,32 +72,40 @@ export const useVideoProjectPersistence = ({
             const currentEvents = eventsRef.current;
 
             if (projectData) {
-                const localTimestamp = currentLastSavedData?.lastModified || currentLastSavedData?.timestamp;
-                const remoteTimestamp = remoteMeta?.lastModified;
+                const isSameVideo = currentLastSavedData &&
+                    currentLastSavedData.gameNumber === parseInt(gameNum) &&
+                    currentLastSavedData.videoIndex === videoIdx;
 
-                if (localTimestamp && remoteTimestamp) {
-                    // Compare timestamps
-                    const comparison = compareTimestamps(localTimestamp, remoteTimestamp);
+                if (isSameVideo) {
+                    const localTimestamp = currentLastSavedData.lastModified || currentLastSavedData.timestamp;
+                    const remoteTimestamp = remoteMeta?.lastModified;
 
-                    console.log('Timestamp comparison:', comparison);
+                    if (localTimestamp && remoteTimestamp) {
+                        // Compare timestamps
+                        const comparison = compareTimestamps(localTimestamp, remoteTimestamp);
 
-                    if (!comparison.isSame) {
-                        setTimestampConflict({
-                            hasConflict: true,
-                            localIsNewer: comparison.isNewer,
-                            comparison
-                        });
+                        console.log('Timestamp comparison:', comparison);
 
-                        if (comparison.isOlder) {
-                            toast.warning(`Remote version is newer: ${comparison.summary}`, {
-                                id: `conflict-warn-${gameNum}-${videoIdx}`,
-                                duration: 5000
+                        if (!comparison.isSame) {
+                            setTimestampConflict({
+                                hasConflict: true,
+                                localIsNewer: comparison.isNewer,
+                                comparison
                             });
+
+                            if (comparison.isOlder) {
+                                toast.warning(`Remote version is newer: ${comparison.summary}`, {
+                                    id: `conflict-warn-${gameNum}-${videoIdx}`,
+                                    duration: 5000
+                                });
+                            } else {
+                                toast.info(`Local version is newer: ${comparison.summary}`, {
+                                    id: `conflict-info-${gameNum}-${videoIdx}`,
+                                    duration: 5000
+                                });
+                            }
                         } else {
-                            toast.info(`Local version is newer: ${comparison.summary}`, {
-                                id: `conflict-info-${gameNum}-${videoIdx}`,
-                                duration: 5000
-                            });
+                            setTimestampConflict(null);
                         }
                     } else {
                         setTimestampConflict(null);
