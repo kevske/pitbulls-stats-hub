@@ -13,7 +13,10 @@ import logging
 from datetime import datetime, timezone
 import time
 from bs4 import BeautifulSoup
-from crawler.rate_limiter import RateLimiter
+try:
+    from crawler.rate_limiter import RateLimiter
+except ImportError:
+    from rate_limiter import RateLimiter
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
