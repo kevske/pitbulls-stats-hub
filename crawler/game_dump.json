@@ -1,0 +1,36 @@
+{
+  "ligaData": null,
+  "matchId": 2786721,
+  "matchDay": 10,
+  "matchNo": 50,
+  "kickoffDate": "2026-01-17",
+  "kickoffTime": "16:00",
+  "homeTeam": {
+    "seasonTeamId": 431208,
+    "teamCompetitionId": 431208,
+    "teamPermanentId": 153170,
+    "teamname": "Mamo Baskets Freiberg",
+    "teamnameSmall": "MBF",
+    "clubId": 376,
+    "verzicht": false
+  },
+  "guestTeam": {
+    "seasonTeamId": 431209,
+    "teamCompetitionId": 431209,
+    "teamPermanentId": 168416,
+    "teamname": "TSV Neuenstadt",
+    "teamnameSmall": "TSVN",
+    "clubId": 172,
+    "verzicht": false
+  },
+  "result": "88:77",
+  "ergebnisbestaetigt": true,
+  "statisticType": null,
+  "verzicht": false,
+  "abgesagt": false,
+  "matchResult": null,
+  "matchInfo": null,
+  "matchBoxscore": null,
+  "playByPlay": null,
+  "hasPlayByPlay": null
+}
