@@ -46,6 +46,7 @@ const Playbook = () => {
           title="Playbook"
           allowFullScreen
           loading="eager"
+          sandbox="allow-scripts allow-same-origin allow-popups"
         />
       </div>
     </Layout>
