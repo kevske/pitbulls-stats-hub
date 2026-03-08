@@ -46,9 +46,7 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
 
   // Reset current players when a file is loaded
   useEffect(() => {
-    console.log('Reset useEffect triggered:', resetOnLoad);
     if (resetOnLoad) {
-      console.log('Resetting players - setting empty court');
       setCurrentPlayers([]);
       setIsSelectingStartingFive(true);
       onCurrentPlayersChange?.([]);
@@ -57,32 +55,26 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
       // Clear the flag after a longer delay to ensure all useEffect cycles complete
       setTimeout(() => {
         justLoadedRef.current = false;
-        console.log('Clearing justLoadedRef');
       }, 1000); // Increased from 200ms to 1000ms
     }
   }, [resetOnLoad, onCurrentPlayersChange]);
 
   // Calculate current players based on substitution events
   useEffect(() => {
-    console.log('Substitution useEffect triggered:', { resetOnLoad, eventsLength: events.length, justLoaded: justLoadedRef.current, hasProcessedLoadedEvents: hasProcessedLoadedEventsRef.current, currentPlayersLength: currentPlayers.length });
-    
     // Don't process substitutions if we just loaded a file - user will select manually
     if (justLoadedRef.current || resetOnLoad) {
-      console.log('Skipping substitution processing - file was just loaded or reset triggered');
       return;
     }
     
     // IMPORTANT: Don't process substitutions if user is still selecting starting five
     // This prevents automatic lineup reconstruction when user manually selects players
     if (isSelectingStartingFive) {
-      console.log('Skipping substitution processing - user is selecting starting five');
       return;
     }
     
     // IMPORTANT: Only process substitutions if we have user-selected current players
     // If we have loaded events but no current players, this means we loaded a file but haven't selected starting five yet
     if (events.length > 0 && currentPlayers.length === 0) {
-      console.log('Skipping substitution processing - no user-selected current players (likely after file load)');
       return;
     }
     
@@ -90,11 +82,8 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
       .filter(event => event.type === 'substitution')
       .sort((a, b) => a.timestamp - b.timestamp);
 
-    console.log('Substitution events found:', substitutionEvents.length);
-
     // If we have no current players and no substitution events, nothing to do
     if (currentPlayers.length === 0 && substitutionEvents.length === 0) {
-      console.log('No current players and no substitution events - nothing to process');
       return;
     }
 
@@ -111,12 +100,10 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
     // Apply NEW substitution events only (events added after current timestamp)
     // This prevents reconstructing lineup from loaded historical substitution events
     const currentTimeThreshold = Math.max(...currentPlayers.map(cp => cp.enteredAt), 0);
-    console.log('Current time threshold:', currentTimeThreshold);
 
     substitutionEvents.forEach(event => {
       // Only process substitution events that occurred after the latest current player entry
       if (event.timestamp > currentTimeThreshold) {
-        console.log('Processing new substitution event:', event);
         if (event.player) {
           // Player enters
           activePlayers.add(event.player);
@@ -126,8 +113,6 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
           // Player exits
           activePlayers.delete(event.substitutionOut);
         }
-      } else {
-        console.log('Skipping old substitution event:', event);
       }
     });
 
@@ -143,8 +128,6 @@ export function CurrentPlayersOnField({ players, events, onAddEvent, currentTime
         return null;
       })
       .filter(Boolean) as CurrentPlayer[];
-
-    console.log('Updated current players:', updatedCurrentPlayers.length);
 
     setCurrentPlayers(updatedCurrentPlayers);
     // Only exit starting five selection mode when we have exactly 5 players
