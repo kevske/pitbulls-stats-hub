@@ -122,9 +122,9 @@ const GameDetail: React.FC = () => {
     );
   }
 
-  const getPlayerName = (playerId: string, asLink: boolean = false) => {
+  const getPlayerName = (playerId: string, asLink: boolean = false, fallbackName?: string) => {
     const player = players.find(p => p.id === playerId);
-    if (!player) return 'Unbekannter Spieler';
+    if (!player) return fallbackName || 'Unbekannter Spieler';
 
     const playerName = `${player.firstName} ${player.lastName}`;
 
@@ -158,14 +158,24 @@ const GameDetail: React.FC = () => {
 
       // 2. Map to format expected by UI
       if (ourStats.length > 0) {
-        return ourStats.map(bs => ({
-          playerId: bs.player_slug || '',
-          points: bs.points,
-          threePointers: bs.three_pointers,
-          twoPointers: bs.two_pointers,
-          freeThrowsMade: bs.free_throws_made,
-          freeThrowAttempts: bs.free_throw_attempts
-        }));
+        return ourStats.map(bs => {
+          // Try to resolve player ID using the same logic as the stats table
+          const resolvedPlayerId = bs.player_slug || players.find(p =>
+            p.firstName.toLowerCase() === bs.player_first_name?.toLowerCase() &&
+            p.lastName.toLowerCase() === bs.player_last_name?.toLowerCase()
+          )?.id || '';
+
+          return {
+            playerId: resolvedPlayerId,
+            firstName: bs.player_first_name,
+            lastName: bs.player_last_name,
+            points: bs.points,
+            threePointers: bs.three_pointers,
+            twoPointers: bs.two_pointers,
+            freeThrowsMade: bs.free_throws_made,
+            freeThrowAttempts: bs.free_throw_attempts
+          };
+        });
       }
     }
 
@@ -260,7 +270,13 @@ const GameDetail: React.FC = () => {
                     <div className="flex items-center space-x-3">
                       <div className="text-2xl font-bold text-muted-foreground">#{index + 1}</div>
                       <div>
-                        <div className="font-medium">{getPlayerName(player.playerId, true)}</div>
+                        <div className="font-medium">
+                          {(() => {
+                            const p = player as any;
+                            const fallback = p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : undefined;
+                            return getPlayerName(player.playerId, true, fallback);
+                          })()}
+                        </div>
                         <div className="text-2xl font-bold">{player.points} Punkte</div>
                         <div className="text-sm text-muted-foreground">
                           {player.threePointers} 3P • {player.twoPointers} 2P • {player.freeThrowsMade}/{player.freeThrowAttempts} FT
