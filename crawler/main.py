@@ -190,6 +190,8 @@ class BasketballBundCrawler:
                         box_scores.extend(entries)
                     if qs_update:
                         quarter_score_updates.append(qs_update)
+                        # Attach to the game object so transform_games_data can persist it
+                        game['quarter_scores'] = qs_update[1]
                         
                 except Exception as e:
                     logger.error(f"Error processing game {game_id}: {e}")
@@ -197,7 +199,10 @@ class BasketballBundCrawler:
 
             # Batch update quarter scores
             if quarter_score_updates:
+                logger.info(f"Triggering batch update for {len(quarter_score_updates)} quarter score records...")
                 self.batch_update_quarter_scores(quarter_score_updates)
+            else:
+                logger.warning("No quarter score updates were extracted.")
 
             logger.info(f"Fetched box scores for {len(box_scores)} player entries")
             return box_scores
@@ -456,10 +461,12 @@ class BasketballBundCrawler:
                     'updated_at': current_time
                 })
 
-            result = self.supabase.table('games').upsert(update_data).execute()
+            result = self.supabase.table('games').upsert(update_data, on_conflict='game_id').execute()
             
             if result.data:
-                logger.info(f"Batch updated quarter scores for {len(result.data)} games")
+                logger.info(f"Successfully updated/merged quarter scores for {len(result.data)} games in Supabase")
+            else:
+                logger.warning("Batch update quarter scores returned no rows. This might be due to RLS policies preventing updates with the current key.")
 
         except Exception as e:
             logger.error(f"Error in batch_update_quarter_scores: {e}")
@@ -646,7 +653,8 @@ class BasketballBundCrawler:
                 'away_score': away_score,
                 'status': status,
                 'league_id': self.league_id,
-                'box_score_url': box_score_url
+                'box_score_url': box_score_url,
+                'quarter_scores': game.get('quarter_scores')
             }
             
             transformed_games.append(transformed_game)
