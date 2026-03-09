@@ -361,11 +361,24 @@ class BasketballBundCrawler:
             tables = soup.find_all('table', class_='sportView')
             
             for table in tables:
-                # Look for table with quarter headers
+                # Find all potential headers
                 headers = table.find_all('td', class_='sportViewHeader')
                 header_texts = [h.get_text(strip=True) for h in headers]
                 
-                if '1.\xa0Viertel' in header_texts and 'Halbzeit' in header_texts and '3.\xa0Viertel' in header_texts:
+                # Dynamic index finding for better robustness
+                q1_idx = -1
+                ht_idx = -1
+                q3_idx = -1
+                
+                for idx, text in enumerate(header_texts):
+                    if '1.' in text and 'Viertel' in text:
+                        q1_idx = idx
+                    elif 'Halbzeit' in text:
+                        ht_idx = idx
+                    elif '3.' in text and 'Viertel' in text:
+                        q3_idx = idx
+                
+                if q1_idx != -1 and ht_idx != -1 and q3_idx != -1:
                     # Find data rows (try sportItem first, then all rows)
                     rows = table.find_all('tr', class_=lambda x: x and ('sportItem' in str(x)))
                     
@@ -380,13 +393,14 @@ class BasketballBundCrawler:
                         if len(cells) == 0:
                             cells = row.find_all('td')
                         
-                        if len(cells) >= 9:  # Should have enough columns for quarter data
-                            # Extract quarter scores from columns 6, 7, 8 (0-indexed)
-                            first_quarter = cells[6].get_text(strip=True)
-                            halftime = cells[7].get_text(strip=True)
-                            third_quarter = cells[8].get_text(strip=True)
+                        max_idx = max(q1_idx, ht_idx, q3_idx)
+                        if len(cells) > max_idx:
+                            # Extract quarter scores using dynamic indices
+                            first_quarter = cells[q1_idx].get_text(strip=True)
+                            halftime = cells[ht_idx].get_text(strip=True)
+                            third_quarter = cells[q3_idx].get_text(strip=True)
                             
-                            # Only process if we have actual score data (not headers)
+                            # Only process if we have actual score data (not headers or empty)
                             if ':' in first_quarter or ':' in halftime or ':' in third_quarter:
                                 # Parse the score pairs (format: "home : away")
                                 quarter_scores = {
