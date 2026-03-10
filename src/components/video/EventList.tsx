@@ -1,4 +1,4 @@
-import { TaggedEvent, EVENT_TEMPLATES, formatTime } from '@/types/basketball';
+import { TaggedEvent, EVENT_TEMPLATES, formatTime, EventType } from '@/types/basketball';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -20,7 +20,7 @@ interface EventItemProps {
   event: TaggedEvent;
   showIndicator: boolean;
   currentTime: number;
-  onSeek: (timestamp: number) => void;
+  onSeek: (timestamp: number, type: EventType) => void;
   onDelete?: (id: string) => void;
   index: number;
 }
@@ -50,7 +50,7 @@ const EventItem = memo(({ event, showIndicator, currentTime, onSeek, onDelete, i
         data-event-index={index}
       >
         <button
-          onClick={() => onSeek(event.timestamp)}
+          onClick={() => onSeek(event.timestamp, event.type)}
           className="font-mono text-xs text-primary hover:underline cursor-pointer bg-primary/10 px-2 py-1 rounded flex-shrink-0"
         >
           {event.formattedTime}
@@ -114,34 +114,35 @@ export function EventList({ events, onDeleteEvent, onSeekTo, currentTime = 0, cl
 
         // Use requestAnimationFrame for smoother UI during playback
         requestAnimationFrame(() => {
-            const allEventElements = scrollAreaRef.current?.querySelectorAll('[data-event-index]');
-            if (!allEventElements) return;
+          const allEventElements = scrollAreaRef.current?.querySelectorAll('[data-event-index]');
+          if (!allEventElements) return;
 
-            const targetElement = allEventElements[targetIndex] as HTMLElement;
+          const targetElement = allEventElements[targetIndex] as HTMLElement;
 
-            if (targetElement && viewport instanceof HTMLElement) {
-              // Get the position of the target element relative to the viewport
-              const elementRect = targetElement.getBoundingClientRect();
-              const viewportRect = viewport.getBoundingClientRect();
-              const scrollTop = viewport.scrollTop;
+          if (targetElement && viewport instanceof HTMLElement) {
+            // Get the position of the target element relative to the viewport
+            const elementRect = targetElement.getBoundingClientRect();
+            const viewportRect = viewport.getBoundingClientRect();
+            const scrollTop = viewport.scrollTop;
 
-              // Calculate the desired scroll position: position the element at the top
-              const elementTopRelativeToViewport = elementRect.top - viewportRect.top + scrollTop;
+            // Calculate the desired scroll position: position the element at the top
+            const elementTopRelativeToViewport = elementRect.top - viewportRect.top + scrollTop;
 
-              // Scroll to position the target element at the top of the viewport
-              viewport.scrollTo({
-                top: elementTopRelativeToViewport,
-                behavior: 'smooth'
-              });
-            }
+            // Scroll to position the target element at the top of the viewport
+            viewport.scrollTo({
+              top: elementTopRelativeToViewport,
+              behavior: 'smooth'
+            });
+          }
         });
       }
     }
   }, [getCurrentTimePosition, sortedEvents.length]); // Dependencies: updates when time changes (via getCurrentTimePosition) or list length changes
 
-  const handleSeek = useCallback((timestamp: number) => {
+  const handleSeek = useCallback((timestamp: number, type: EventType) => {
     if (onSeekTo) {
-      const seekTime = startEarly ? Math.max(0, timestamp - 5) : timestamp;
+      const skipEarlyStart = type === 'action_start' || type === 'action_end';
+      const seekTime = (startEarly && !skipEarlyStart) ? Math.max(0, timestamp - 5) : timestamp;
       onSeekTo(seekTime);
     }
   }, [onSeekTo, startEarly]);
