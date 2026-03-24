@@ -145,15 +145,8 @@ const GameDetail: React.FC = () => {
   // Determine top performers, preferring box scores (live data) over logs (potentially cached/incomplete)
   const getTopPerformers = () => {
     if (boxScores.length > 0) {
-      // 1. Identify our team
-      const teamIds = Array.from(new Set(boxScores.map(bs => bs.team_id)));
-      if (teamIds.length === 0) return [];
+      if (!ourTeamId) return [];
 
-      const isTeam1 = boxScores.filter(bs => bs.team_id === teamIds[0]).some(p =>
-        players.some(pl => pl.id === p.player_slug)
-      );
-
-      const ourTeamId = isTeam1 ? teamIds[0] : (teamIds.length > 1 ? teamIds[1] : teamIds[0]);
       const ourStats = boxScores.filter(bs => bs.team_id === ourTeamId);
 
       // 2. Map to format expected by UI

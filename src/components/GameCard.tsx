@@ -107,13 +107,16 @@ const GameCard: React.FC<GameCardProps> = React.memo(({ game, topScorers, player
                   <div className="pt-2">
                     <div className="text-xs font-medium text-foreground mb-1">Topscorer</div>
                     <div className="flex justify-center gap-3">
-                      {topScorers.slice(0, 2).map((player) => {
+                      {topScorers.slice(0, 3).map((player, index) => {
                         const playerData = playerMap.get(player.playerId);
                         const playerName = playerData ? `${playerData.firstName} ${playerData.lastName}` : 'Unbekannt';
                         return (
-                          <div key={player.playerId} className="text-center">
-                            <div className="text-xs font-medium">{playerName.split(' ')[0]}</div>
-                            <div className="text-sm font-bold text-primary">{player.points}P</div>
+                          <div key={player.playerId} className="flex flex-col items-center">
+                            <div className="flex items-center gap-1">
+                              <span className={`text-[10px] font-bold ${index === 0 ? 'text-yellow-500' : 'text-muted-foreground'}`}>#{index + 1}</span>
+                              <div className="text-xs font-medium truncate max-w-[60px]">{playerName.split(' ')[0]}</div>
+                            </div>
+                            <div className="text-sm font-black text-primary leading-tight">{player.points}P</div>
                           </div>
                         );
                       })}
@@ -127,23 +130,37 @@ const GameCard: React.FC<GameCardProps> = React.memo(({ game, topScorers, player
             <div className="hidden md:block pt-2">
               <div className="text-sm font-medium text-foreground mb-2">Topscorer</div>
               <div className="grid grid-cols-3 gap-2">
-                {topScorers.slice(0, 3).map((player) => {
+                {topScorers.slice(0, 3).map((player, index) => {
                   const playerData = playerMap.get(player.playerId);
                   const playerName = playerData ? `${playerData.firstName} ${playerData.lastName}` : 'Unbekannt';
                   const avatarSrc = playerData?.imageUrl || '/players/placeholder-player.png';
+                  
+                  // Rank specific styling
+                  const rankColors = [
+                    'bg-yellow-500/10 border-yellow-500/50 text-yellow-600 dark:text-yellow-400', // Gold
+                    'bg-slate-400/10 border-slate-400/50 text-slate-600 dark:text-slate-400',     // Silver
+                    'bg-amber-600/10 border-amber-600/50 text-amber-700 dark:text-amber-500',   // Bronze
+                  ];
 
                   return (
-                    <div key={player.playerId} className="bg-muted p-2 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <Avatar className="h-10 w-10 border-2 border-primary">
+                    <div 
+                      key={player.playerId} 
+                      className={`relative overflow-hidden p-2 rounded-xl border transition-all hover:shadow-sm bg-card/50 ${rankColors[index] || 'bg-muted/50 border-border'}`}
+                    >
+                      <div className="absolute top-0 right-0 p-1 opacity-10">
+                        <span className="text-2xl font-black">{index + 1}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 relative z-10">
+                        <Avatar className={`h-10 w-10 border-2 ${index === 0 ? 'border-yellow-500' : 'border-primary/40'}`}>
                           <AvatarImage src={avatarSrc} alt={playerName} />
                           <AvatarFallback>
                             {playerName.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <div className="text-sm font-medium">{playerName.split(' ')[0]}</div>
-                          <div className="text-primary font-bold">{player.points} P</div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold uppercase tracking-wider opacity-70">#{index + 1} Player</div>
+                          <div className="text-sm font-bold truncate">{playerName.split(' ')[0]}</div>
+                          <div className="text-primary font-black text-lg leading-tight">{player.points} <span className="text-[10px] font-medium tracking-normal text-muted-foreground uppercase">Pkt</span></div>
                         </div>
                       </div>
                     </div>
