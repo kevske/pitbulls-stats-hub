@@ -40,12 +40,6 @@ const createMockTeamStats = (overrides: Partial<TeamGameStats> = {}): TeamGameSt
   teamFreeThrowPercentage: 0,
   totalFouls: 0,
   totalSubstitutions: 0,
-  fieldGoalsMade: 0,
-  fieldGoalsAttempted: 0,
-  threePointersMade: 0,
-  threePointersAttempted: 0,
-  freeThrowsMade: 0,
-  freeThrowsAttempted: 0,
   ...overrides
 });
 
@@ -273,8 +267,8 @@ describe('extractStatsFromVideoData', () => {
     // So FGA includes FTs? That seems like a bug in the implementation or a specific way they count.
     // Let's test the current behavior.
 
-    expect(p1Stats?.fieldGoalsMade).toBe(3); // 3 made shots (2pt, 3pt, 1pt)
-    expect(p1Stats?.fieldGoalsAttempted).toBe(4); // 4 attempted shots
+    expect(p1Stats?.fieldGoalsMade).toBe(2); // 2 made shots (2pt, 3pt)
+    expect(p1Stats?.fieldGoalsAttempted).toBe(3); // 3 attempted shots
 
     expect(p1Stats?.threePointersMade).toBe(1);
     expect(p1Stats?.threePointersAttempted).toBe(1);
