@@ -55,15 +55,6 @@ const Games: React.FC = () => {
       map.set(gameNumber, sorted);
     });
 
-    // DEBUG: Check which game numbers have top scorers mapped
-    console.log('[DEBUG Games.tsx] gamesTopScorersMap keys:', Array.from(map.keys()).sort((a, b) => a - b));
-    console.log('[DEBUG Games.tsx] gameLogs total count:', gameLogs.length);
-    console.log('[DEBUG Games.tsx] game 10 topScorers:', map.get(10)?.map(p => `${p.playerId}: ${p.points}pts`));
-    console.log('[DEBUG Games.tsx] game 11 topScorers:', map.get(11)?.map(p => `${p.playerId}: ${p.points}pts`));
-
-    // Also check: which game numbers exist in games list
-    console.log('[DEBUG Games.tsx] games gameNumbers:', games.map(g => g.gameNumber).sort((a, b) => a - b));
-
     return map;
   }, [gameLogs]);
 
