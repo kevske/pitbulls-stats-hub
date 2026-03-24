@@ -139,23 +139,26 @@ function extractPlayerStats(events: TaggedEvent[], players: Player[]): PlayerGam
 
       case 'shot':
         // Handle shooting stats
-        stats.fieldGoalsAttempted++;
-
-        if (event.points === 3) {
-          stats.threePointersAttempted++;
-        } else if (event.points === 1) {
+        if (event.points === 1) {
           stats.freeThrowsAttempted++;
+        } else {
+          stats.fieldGoalsAttempted++;
+          if (event.points === 3) {
+            stats.threePointersAttempted++;
+          }
         }
 
         if (!event.missed) {
           // Made shot
-          stats.fieldGoalsMade++;
           stats.totalPoints += event.points || 0;
 
-          if (event.points === 3) {
-            stats.threePointersMade++;
-          } else if (event.points === 1) {
+          if (event.points === 1) {
             stats.freeThrowsMade++;
+          } else {
+            stats.fieldGoalsMade++;
+            if (event.points === 3) {
+              stats.threePointersMade++;
+            }
           }
         }
         break;
