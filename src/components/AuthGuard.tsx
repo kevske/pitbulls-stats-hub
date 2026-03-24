@@ -39,7 +39,6 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     try {
       console.log('AuthGuard: Checking authentication...');
       const userData = await AuthService.getCurrentUser();
-      console.log('AuthGuard: User data received:', userData);
       if (userData) {
         setUser(userData.user);
         setPlayerInfo(userData.playerInfo);
