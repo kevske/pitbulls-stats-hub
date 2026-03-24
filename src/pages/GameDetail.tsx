@@ -7,14 +7,17 @@ import { formatGameDate } from '@/utils/spielplanUtils';
 import { BoxscoreService } from '@/services/boxscoreService';
 import { BoxScore } from '@/types/supabase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowUpDown, ArrowUp, ArrowDown, Video as VideoIcon } from 'lucide-react';
 
 const GameDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { games, gameLogs, players } = useStats();
+  const { games, gameLogs, players, videoStats } = useStats();
   const navigate = useNavigate();
   const [boxScores, setBoxScores] = useState<BoxScore[]>([]);
   const [boxScoresLoading, setBoxScoresLoading] = useState(false);
   const [boxScoresError, setBoxScoresError] = useState<string | null>(null);
+  const [videoSortField, setVideoSortField] = useState<string | null>(null);
+  const [videoSortDirection, setVideoSortDirection] = useState<'asc' | 'desc' | null>(null);
   // Store the actual team IDs from the games table
   const [gameTeamIds, setGameTeamIds] = useState<{ homeTeamId: string | null; awayTeamId: string | null }>({
     homeTeamId: null,
@@ -82,6 +85,53 @@ const GameDetail: React.FC = () => {
   };
 
   const { ourTeamId, opponentTeamId, ourTeamName, opponentName } = getTeamMapping();
+  const gameVideoStats = game ? videoStats.filter(vs => vs.gameNumber === game.gameNumber) : [];
+
+  const sortedVideoStats = React.useMemo(() => {
+    let stats = gameVideoStats.map(s => ({
+      ...s,
+      twoPct: s.twoPointersAttempted > 0 ? (s.twoPointersMade / s.twoPointersAttempted) : 0,
+      threePct: s.threePointersAttempted > 0 ? (s.threePointersMade / s.threePointersAttempted) : 0,
+      ftPct: s.freeThrowsAttempted > 0 ? (s.freeThrowsMade / s.freeThrowsAttempted) : 0,
+    }));
+
+    if (videoSortField && videoSortDirection) {
+      stats.sort((a, b) => {
+        let aVal = (a as any)[videoSortField] || 0;
+        let bVal = (b as any)[videoSortField] || 0;
+        
+        if (videoSortField === 'playerName') {
+          const nameA = getPlayerNameString(a.playerId).toLowerCase();
+          const nameB = getPlayerNameString(b.playerId).toLowerCase();
+          return videoSortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+        }
+        
+        return videoSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+      });
+    } else {
+      stats.sort((a, b) => b.totalPoints - a.totalPoints);
+    }
+    return stats;
+  }, [gameVideoStats, videoSortField, videoSortDirection, players]);
+
+  const handleVideoSort = (field: string) => {
+    if (videoSortField === field) {
+      if (videoSortDirection === 'asc') setVideoSortDirection('desc');
+      else if (videoSortDirection === 'desc') { setVideoSortField(null); setVideoSortDirection(null); }
+      else setVideoSortDirection('asc');
+    } else {
+      setVideoSortField(field);
+      setVideoSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: string) => {
+    if (videoSortField !== field) return <ArrowUpDown size={12} className="opacity-30 ml-1" />;
+    if (videoSortDirection === 'asc') return <ArrowUp size={12} className="text-orange-500 ml-1" />;
+    return <ArrowDown size={12} className="text-orange-500 ml-1" />;
+  };
+
+  const fmtPct = (pct: number, att: number) => att === 0 ? "-" : `${Math.round(pct * 100)}%`;
 
   // Load box scores for the game with team ID info
   useEffect(() => {
@@ -140,6 +190,11 @@ const GameDetail: React.FC = () => {
     }
 
     return playerName;
+  };
+
+  const getPlayerNameString = (playerId: string, fallbackName?: string) => {
+    const player = players.find(p => p.id === playerId);
+    return player ? `${player.firstName} ${player.lastName}` : (fallbackName || 'Unbekannter Spieler');
   };
 
   // Determine top performers, preferring box scores (live data) over logs (potentially cached/incomplete)
@@ -413,6 +468,91 @@ const GameDetail: React.FC = () => {
                       </tbody>
                     </table>
                   </div>
+
+                  {gameVideoStats.length > 0 && (
+                    <div className="mt-8 border-t pt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-md font-semibold flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-video text-orange-600"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+                          Video-Boxscore (Erweiterte Stats)
+                        </h4>
+                        <span className="text-xs text-muted-foreground bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded">
+                          Aus Video-Tagging berechnet
+                        </span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full bg-background">
+                          <thead>
+                            <tr className="bg-orange-50/50 dark:bg-orange-900/10">
+                              <th className="py-2 px-4 border text-left text-xs font-bold uppercase cursor-pointer hover:bg-orange-100/50" onClick={() => handleVideoSort('playerName')}>
+                                <div className="flex items-center">Spieler {getSortIcon('playerName')}</div>
+                              </th>
+                              <th className="py-2 px-4 border text-center text-xs font-bold uppercase cursor-pointer hover:bg-orange-100/50" onClick={() => handleVideoSort('totalPoints')}>
+                                <div className="flex items-center justify-center">Pkt {getSortIcon('totalPoints')}</div>
+                              </th>
+                              <th className="py-2 px-4 border text-center text-xs font-bold uppercase cursor-pointer hover:bg-orange-100/50" onClick={() => handleVideoSort('twoPct')}>
+                                <div className="flex items-center justify-center">2P% {getSortIcon('twoPct')}</div>
+                              </th>
+                              <th className="py-2 px-4 border text-center text-xs font-bold uppercase cursor-pointer hover:bg-orange-100/50" onClick={() => handleVideoSort('threePct')}>
+                                <div className="flex items-center justify-center">3P% {getSortIcon('threePct')}</div>
+                              </th>
+                              <th className="py-2 px-4 border text-center text-xs font-bold uppercase cursor-pointer hover:bg-orange-100/50" onClick={() => handleVideoSort('ftPct')}>
+                                <div className="flex items-center justify-center">FT% {getSortIcon('ftPct')}</div>
+                              </th>
+                              <th className="py-2 px-4 border text-center text-xs font-bold uppercase cursor-pointer hover:bg-orange-100/50" onClick={() => handleVideoSort('rebounds')}>
+                                <div className="flex items-center justify-center">Reb {getSortIcon('rebounds')}</div>
+                              </th>
+                              <th className="py-2 px-4 border text-center text-xs font-bold uppercase cursor-pointer hover:bg-orange-100/50" onClick={() => handleVideoSort('assists')}>
+                                <div className="flex items-center justify-center">Ast {getSortIcon('assists')}</div>
+                              </th>
+                              <th className="py-2 px-4 border text-center text-xs font-bold uppercase cursor-pointer hover:bg-orange-100/50" onClick={() => handleVideoSort('steals')}>
+                                <div className="flex items-center justify-center">Stl {getSortIcon('steals')}</div>
+                              </th>
+                              <th className="py-2 px-4 border text-center text-xs font-bold uppercase cursor-pointer hover:bg-orange-100/50" onClick={() => handleVideoSort('blocks')}>
+                                <div className="flex items-center justify-center">Blk {getSortIcon('blocks')}</div>
+                              </th>
+                              <th className="py-2 px-4 border text-center text-xs font-bold uppercase cursor-pointer hover:bg-orange-100/50" onClick={() => handleVideoSort('turnovers')}>
+                                <div className="flex items-center justify-center">TO {getSortIcon('turnovers')}</div>
+                              </th>
+                              <th className="py-2 px-4 border text-center text-xs font-bold uppercase cursor-pointer hover:bg-orange-100/50" onClick={() => handleVideoSort('fouls')}>
+                                <div className="flex items-center justify-center">F {getSortIcon('fouls')}</div>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sortedVideoStats.map((stat) => (
+                              <tr key={stat.id} className="hover:bg-orange-50/30 dark:hover:bg-orange-900/5">
+                                <td className="py-2 px-4 border text-nowrap">
+                                  <div className="font-medium">
+                                    {getPlayerName(stat.playerId, true)}
+                                  </div>
+                                </td>
+                                <td className="py-2 px-4 border text-center font-bold">{stat.totalPoints}</td>
+                                <td className="py-2 px-4 border text-center text-xs">
+                                  <div className="font-bold">{fmtPct(stat.twoPct, stat.twoPointersAttempted)}</div>
+                                  <div className="text-[10px] text-muted-foreground">({stat.twoPointersMade}/{stat.twoPointersAttempted})</div>
+                                </td>
+                                <td className="py-2 px-4 border text-center text-xs">
+                                  <div className="font-bold">{fmtPct(stat.threePct, stat.threePointersAttempted)}</div>
+                                  <div className="text-[10px] text-muted-foreground">({stat.threePointersMade}/{stat.threePointersAttempted})</div>
+                                </td>
+                                <td className="py-2 px-4 border text-center text-xs">
+                                  <div className="font-bold">{fmtPct(stat.ftPct, stat.freeThrowsAttempted)}</div>
+                                  <div className="text-[10px] text-muted-foreground">({stat.freeThrowsMade}/{stat.freeThrowsAttempted})</div>
+                                </td>
+                                <td className="py-2 px-4 border text-center text-purple-600 dark:text-purple-400 font-bold">{stat.rebounds}</td>
+                                <td className="py-2 px-4 border text-center text-yellow-600 dark:text-yellow-400 font-bold">{stat.assists}</td>
+                                <td className="py-2 px-4 border text-center text-green-600 dark:text-green-400 font-bold">{stat.steals}</td>
+                                <td className="py-2 px-4 border text-center text-blue-600 dark:text-blue-400 font-bold">{stat.blocks}</td>
+                                <td className="py-2 px-4 border text-center text-red-600 dark:text-red-400 font-bold">{stat.turnovers}</td>
+                                <td className="py-2 px-4 border text-center">{stat.fouls}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
