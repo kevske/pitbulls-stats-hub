@@ -173,7 +173,8 @@ const GameDetail: React.FC = () => {
   }
 
   const getPlayerName = (playerId: string, asLink: boolean = false, fallbackName?: string) => {
-    const player = players.find(p => p.id === playerId);
+    // Check both slug and internal UUID for matching
+    const player = players.find(p => p.id === playerId || (p as any).internalId === playerId);
     if (!player) return fallbackName || 'Unbekannter Spieler';
 
     const playerName = `${player.firstName} ${player.lastName}`;
@@ -193,7 +194,7 @@ const GameDetail: React.FC = () => {
   };
 
   const getPlayerNameString = (playerId: string, fallbackName?: string) => {
-    const player = players.find(p => p.id === playerId);
+    const player = players.find(p => p.id === playerId || (p as any).internalId === playerId);
     return player ? `${player.firstName} ${player.lastName}` : (fallbackName || 'Unbekannter Spieler');
   };
 

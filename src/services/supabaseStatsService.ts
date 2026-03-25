@@ -135,6 +135,7 @@ export class SupabaseStatsService {
 
             const playerStats: PlayerStats[] = (playersData || []).map((p: any) => ({
                 id: p.player_slug,
+                internalId: p.internal_id, // Added internal UUID for video stats matching
                 firstName: p.first_name,
                 lastName: p.last_name,
                 imageUrl: getPlayerImageUrl(p.first_name, p.last_name),
