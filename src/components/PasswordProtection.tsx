@@ -27,14 +27,12 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
 
       // Check if authentication is still valid (24 hours)
       if (now - authTimestamp < 24 * 60 * 60 * 1000) {
-        console.log('Videos page: Found valid authentication in localStorage');
         onSuccess();
         return;
       } else {
         // Clear expired authentication
         localStorage.removeItem('videos-authenticated');
         localStorage.removeItem('videos-auth-time');
-        console.log('Videos page: Authentication expired, cleared from localStorage');
       }
     }
   }, [onSuccess]);
@@ -68,7 +66,6 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
         // Store authentication in localStorage
         localStorage.setItem('videos-authenticated', 'true');
         localStorage.setItem('videos-auth-time', Date.now().toString());
-        console.log('Videos page: Authentication stored in localStorage');
 
         onSuccess(password);
       } else {
