@@ -730,14 +730,15 @@ class BasketballBundCrawler:
             if game_ids:
                 result = self.supabase.table('box_scores').select(
                     'game_id', 'team_id', 'player_first_name', 'player_last_name', 
-                    'minutes_played', 'player_slug'
-                ).in_('game_id', game_ids).execute()
+                    'minutes_played', 'seconds_played', 'player_slug'
+                ).in_('game_id', game_ids).limit(10000).execute()
                 
                 for row in result.data:
                     # Create a unique key for each player
                     key = f"{row['game_id']}_{row['team_id']}_{row['player_first_name']}_{row['player_last_name']}"
                     preserved_data[key] = {
                         'minutes_played': row.get('minutes_played'),
+                        'seconds_played': row.get('seconds_played'),
                         'player_slug': row.get('player_slug')
                     }
             
@@ -760,9 +761,11 @@ class BasketballBundCrawler:
             if key in preserved_data:
                 preserved = preserved_data[key]
                 box_score['minutes_played'] = preserved.get('minutes_played')
+                box_score['seconds_played'] = preserved.get('seconds_played')
                 box_score['player_slug'] = preserved.get('player_slug')
             else:
                 box_score['minutes_played'] = None
+                box_score['seconds_played'] = 0
                 box_score['player_slug'] = None
             
             merged_scores.append(box_score)
