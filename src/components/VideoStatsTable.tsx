@@ -32,7 +32,13 @@ const VideoStatsTable = memo(({ stats, players }: VideoStatsTableProps) => {
     // Build a player name lookup
     const playerNameMap = useMemo(() => {
         const map = new Map<string, string>();
-        players.forEach(p => map.set(p.id, `${p.firstName} ${p.lastName}`));
+        players.forEach(p => {
+            const name = `${p.firstName} ${p.lastName}`;
+            map.set(p.id, name);
+            if ((p as any).internalId) {
+                map.set((p as any).internalId, name);
+            }
+        });
         return map;
     }, [players]);
 
