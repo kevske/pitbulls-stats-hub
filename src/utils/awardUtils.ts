@@ -233,10 +233,42 @@ export const calculateAwards = (
   if (builderNominees.length > 0) {
     categories.push({
       id: 'builder',
-      title: 'Bob the Builder',
+      title: 'Freimaurer',
       description: 'Fleißig am Steine klopfen. Der Spieler mit der niedrigsten Freiwurfquote (mind. 5 Fehlwürfe).',
       winner: builderNominees[0],
       honorableMentions: builderNominees.slice(1, 3)
+    });
+  }
+
+  // --- Bob der Baumeister ---
+  const baumeisterNominees = activePlayers.map(p => {
+    const data = playerStatsMap.get(p.id)!;
+    const total2PM = data.vStats.reduce((sum, v) => sum + (v.twoPointersMade || 0), 0);
+    const total2PA = data.vStats.reduce((sum, v) => sum + (v.twoPointersAttempted || 0), 0);
+    const total3PM = data.vStats.reduce((sum, v) => sum + (v.threePointersMade || 0), 0);
+    const total3PA = data.vStats.reduce((sum, v) => sum + (v.threePointersAttempted || 0), 0);
+    const totalFGM = total2PM + total3PM;
+    const totalFGA = total2PA + total3PA;
+    const bricks = totalFGA - totalFGM;
+    const fgPct = totalFGA > 0 ? (totalFGM / totalFGA) * 100 : 100;
+    const score = bricks >= 10 ? (100 - fgPct) : -1;
+    return {
+      playerId: p.id,
+      firstName: p.firstName,
+      lastName: p.lastName,
+      imageUrl: p.imageUrl,
+      score,
+      stats: { 'Bricks': bricks, 'FG %': fgPct.toFixed(1) + '%', 'Spiele': p.gamesPlayed }
+    };
+  }).filter(n => n.score >= 0).sort((a, b) => b.score - a.score);
+
+  if (baumeisterNominees.length > 0) {
+    categories.push({
+      id: 'baumeister',
+      title: 'Bob der Baumeister',
+      description: 'Er baut das Fundament. Der Spieler mit der niedrigsten Feldwurfquote (mind. 10 Fehlwürfe).',
+      winner: baumeisterNominees[0],
+      honorableMentions: baumeisterNominees.slice(1, 3)
     });
   }
 
