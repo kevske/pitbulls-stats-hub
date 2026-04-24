@@ -31,6 +31,7 @@ const GamesMinutesManager = lazyLoad(() => import("./components/GamesMinutesMana
 const News = lazyLoad(() => import("./pages/News"));
 const Impressum = lazyLoad(() => import("./pages/Impressum"));
 const Playbook = lazyLoad(() => import("./pages/Playbook"));
+const Awards = lazyLoad(() => import("./pages/Awards"));
 
 const queryClient = new QueryClient();
 
@@ -138,6 +139,7 @@ const App = () => {
                     <Route path="/playbook" element={<Playbook />} />
                     <Route path="/impressum" element={<Impressum />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/awards" element={<Awards />} />
                     <Route path="/admin/player-info" element={<AdminPlayerInfo />} />
                     <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
                     <Route path="/games/minutes" element={<GamesMinutesManager />} />

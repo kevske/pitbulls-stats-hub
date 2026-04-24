@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Users, BarChart2, Film, X, Trophy, Calendar, BookOpen, Shield, Newspaper } from 'lucide-react';
+import { Home, Users, BarChart2, Film, X, Trophy, Calendar, BookOpen, Shield, Newspaper, Star } from 'lucide-react';
 import { useStats } from '@/contexts/StatsContext';
 import { useModernTheme } from '@/contexts/ModernThemeContext';
 
@@ -40,6 +40,7 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     { to: '/playbook', icon: BookOpen, label: 'Playbook' },
     { to: '/videos', icon: Film, label: 'Videos' },
     { to: '/news', icon: Newspaper, label: 'News' },
+    { to: '/awards', icon: Star, label: 'Awards' },
     { to: '/admin/player-info', icon: Shield, label: 'Admin' },
   ];
 
