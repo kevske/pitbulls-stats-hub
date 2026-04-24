@@ -57,11 +57,19 @@ export const calculateAwards = (
 
   activePlayers.forEach(p => {
     const pVideoStats = videoStats.filter(v => v.playerId === p.id);
+    const videoGp = pVideoStats.filter(stat => (
+      (stat.twoPointersMade || 0) + (stat.twoPointersAttempted || 0) +
+      (stat.threePointersMade || 0) + (stat.threePointersAttempted || 0) +
+      (stat.freeThrowsMade || 0) + (stat.freeThrowsAttempted || 0) +
+      (stat.steals || 0) + (stat.blocks || 0) + (stat.assists || 0) + (stat.rebounds || 0) +
+      (stat.turnovers || 0) + (stat.fouls || 0) > 0
+    )).length;
+    
     playerStatsMap.set(p.id, {
       logs: gameLogs.filter(l => l.playerId === p.id),
       vStats: pVideoStats,
       player: p,
-      videoGp: pVideoStats.length
+      videoGp: videoGp
     });
   });
 
@@ -153,7 +161,10 @@ export const calculateAwards = (
   // --- Sicherer Hafen (Least TO per Minute) ---
   const safetyNominees = activePlayers.map(p => {
     const data = playerStatsMap.get(p.id)!;
-    const totalMinutes = data.logs.reduce((sum, l) => sum + l.minutesPlayed, 0);
+    // Only count minutes from games where we have video stats for this player
+    const videoGameNumbers = new Set(data.vStats.map(v => v.gameNumber));
+    const videoLogs = data.logs.filter(l => videoGameNumbers.has(l.gameNumber));
+    const totalMinutes = videoLogs.reduce((sum, l) => sum + l.minutesPlayed, 0);
     const totalTO = data.vStats.reduce((sum, v) => sum + (v.turnovers || 0), 0);
     const toPerMin = totalMinutes > 0 ? totalTO / totalMinutes : 999;
     
@@ -258,7 +269,7 @@ export const calculateAwards = (
       lastName: p.lastName,
       imageUrl: p.imageUrl,
       score,
-      stats: { 'Bricks': bricks, 'FG %': fgPct.toFixed(1) + '%', 'Spiele': p.gamesPlayed }
+      stats: { 'Bricks': bricks, 'FG %': fgPct.toFixed(1) + '%', 'Spiele': data.videoGp }
     };
   }).filter(n => n.score >= 0).sort((a, b) => b.score - a.score);
 
