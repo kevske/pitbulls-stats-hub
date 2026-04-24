@@ -17,22 +17,8 @@ const Awards = () => {
   }, [players, gameLogs, videoStats, games, loading]);
 
   const isFinal = React.useMemo(() => {
-    if (loading || !games.length) return false;
-    
-    // 1. Identify games that were actually recorded (have video links)
-    const recordedGames = games.filter(g => 
-      (g.youtubeLink && g.youtubeLink.trim() !== '') || 
-      (g.youtubeLinks && g.youtubeLinks.length > 0)
-    );
-
-    if (recordedGames.length === 0) return false;
-
-    // 2. Identify games that have video stats pushed
-    const gamesWithStats = new Set(videoStats.map(v => v.gameNumber));
-
-    // 3. Selection is final only if ALL recorded games have stats pushed
-    return recordedGames.every(g => gamesWithStats.has(g.gameNumber));
-  }, [games, videoStats, loading]);
+    return true;
+  }, []);
 
   // Force Vision 2026 theme and dark mode when on this page
   React.useEffect(() => {
