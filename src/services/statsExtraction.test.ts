@@ -65,7 +65,7 @@ const createMockEvent = (
   player?: string,
   overrides: Partial<TaggedEvent> = {}
 ): TaggedEvent => ({
-  id: Math.random().toString(36).substring(7),
+  id: crypto.randomUUID(),
   timestamp,
   formattedTime: '00:00',
   type,

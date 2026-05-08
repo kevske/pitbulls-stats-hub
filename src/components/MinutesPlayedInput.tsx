@@ -257,7 +257,7 @@ const MinutesPlayedInput: React.FC<MinutesPlayedInputProps> = ({ gameNumber, onS
       <CardContent className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {playerMinutes.filter(pm => pm.playerId != null).map(({ playerId, seconds }) => (
-            <div key={playerId || `unknown-${Math.random()}`} className="space-y-2">
+            <div key={playerId || `unknown-${crypto.randomUUID()}`} className="space-y-2">
               <Label htmlFor={`minutes-${playerId}`} className="text-sm font-medium">
                 <div className="flex items-center gap-2">
                   <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold">

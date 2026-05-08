@@ -191,7 +191,7 @@ export function useYouTubePlayer({
     }
 
     // Generate a unique ID for this player instance to avoid DOM conflicts
-    const containerId = `youtube-player-${Math.random().toString(36).substr(2, 9)}`;
+    const containerId = `youtube-player-${crypto.randomUUID()}`;
     if (containerRef.current) {
       containerRef.current.id = containerId;
     }
