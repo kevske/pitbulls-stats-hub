@@ -4,16 +4,23 @@ import Layout from '@/components/Layout';
 import PlayerCard from '@/components/PlayerCard';
 import { Home, Plane } from 'lucide-react';
 import { useModernTheme } from '@/contexts/ModernThemeContext';
+import { useSeason } from '@/contexts/SeasonContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type GameFilter = 'all' | 'home' | 'away';
 
 const Players: React.FC = () => {
   const { players, gameLogs, loading, error, games } = useStats();
+  const { selectedSeason } = useSeason();
   const [gameFilter, setGameFilter] = useState<GameFilter | 'all'>('all'); // Initialize with 'all'
   const [searchQuery, setSearchQuery] = useState('');
   const [positionFilter, setPositionFilter] = useState<string>('all');
   const { isModernMode } = useModernTheme();
+
+  // Kurzlabel der Saison, z. B. '2025/26' -> '25/26'
+  const seasonShort = selectedSeason
+    ? selectedSeason.name.replace(/^20/, '').replace('/20', '/')
+    : '25/26';
 
   // Get the latest game number
   const latestGameNumber = useMemo(() => {
@@ -105,7 +112,7 @@ const Players: React.FC = () => {
               <h1 className="text-5xl font-black italic text-white uppercase tracking-tighter mb-2">
                 Der <span className="text-primary">Kader</span>
               </h1>
-              <p className="text-[10px] font-bold tracking-[0.4em] text-white/30 uppercase">Spielerdatenbank // Saison 26</p>
+              <p className="text-[10px] font-bold tracking-[0.4em] text-white/30 uppercase">Spielerdatenbank // Saison {seasonShort}</p>
             </motion.div>
 
             <div className="mt-12 flex flex-col md:flex-row gap-6">

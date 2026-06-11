@@ -3,6 +3,20 @@ import { supabase } from '@/lib/supabase';
 import { Game, DangerousPlayer, GameWithDangerousPlayers, BoxScore } from '@/types/supabase';
 import { addDays } from 'date-fns';
 import { selectTop3DangerousPlayers } from '@/utils/spielplanUtils';
+import { getOpponent } from '@/utils/teamUtils';
+
+/** Box-Score-Zeile inkl. der per select('*, games(*)') gejointen Spieldaten */
+type BoxScoreWithGame = BoxScore & { games?: { game_date?: string } | null };
+
+/**
+ * Spieldatum eines Box-Scores. scraped_at ist dafür ungeeignet: Der Crawler
+ * schreibt bei jedem Lauf alle Zeilen mit frischem scraped_at, dadurch wären
+ * "letzte 2 Wochen"-Filter und "letzte 2 Spiele"-Sortierung bedeutungslos.
+ */
+const getGameDate = (bs: BoxScoreWithGame): Date => {
+    const raw = bs.games?.game_date ?? bs.scraped_at;
+    return new Date(raw);
+};
 
 type TeamStats = {
     pointsFor: number;
@@ -145,11 +159,11 @@ const getLeagueComparisonInfo = (
     }
 };
 
-const calculateDangerousPlayers = (teamName: string, teamId: string, teamBoxScores: BoxScore[]): DangerousPlayer[] => {
+const calculateDangerousPlayers = (teamName: string, teamId: string, teamBoxScores: BoxScoreWithGame[]): DangerousPlayer[] => {
     try {
-        // Sort box scores by scraped_at descending to handle recent stats
+        // Nach Spieldatum absteigend sortieren (neuestes Spiel zuerst)
         const sortedBoxScores = [...teamBoxScores].sort((a, b) =>
-            new Date(b.scraped_at).getTime() - new Date(a.scraped_at).getTime()
+            getGameDate(b).getTime() - getGameDate(a).getTime()
         );
 
         // Group box scores by player
@@ -160,7 +174,7 @@ const calculateDangerousPlayers = (teamName: string, teamId: string, teamBoxScor
             }
             acc[playerKey].push(boxScore);
             return acc;
-        }, {} as Record<string, BoxScore[]>);
+        }, {} as Record<string, BoxScoreWithGame[]>);
 
         const twoWeeksAgo = addDays(new Date(), -14);
 
@@ -168,9 +182,9 @@ const calculateDangerousPlayers = (teamName: string, teamId: string, teamBoxScor
         const playerStats = Object.entries(playerGroups).map(([playerKey, scores]) => {
             const [firstName, lastName] = playerKey.split('_');
 
-            // Recent stats (last 2 weeks) from the already fetched and sorted data
+            // Recent stats: Spiele der letzten 2 Wochen (nach Spieldatum)
             const playerRecentStats = scores.filter(stat =>
-                new Date(stat.scraped_at) >= twoWeeksAgo
+                getGameDate(stat) >= twoWeeksAgo
             );
 
             const seasonTotals = scores.reduce(
@@ -282,17 +296,19 @@ export const useSpielplanData = () => {
                 // Calculate league stats from game data
                 const leagueStats = !historyError && allGames ? calculateLeagueStats(allGames) : null;
 
-                // Collect all opponent team IDs
+                // Collect all opponent team IDs (zentrale Team-Erkennung statt
+                // exaktem Stringvergleich, der bei Namenszusätzen wie
+                // "TSV Neuenstadt 2" das eigene Team als Gegner analysierte)
                 const opponentTeamIds = new Set<string>();
                 gamesData.forEach((game: Game) => {
-                    const opponentTeamId = game.home_team_name === 'TSV Neuenstadt' ? game.away_team_id : game.home_team_id;
-                    if (opponentTeamId) {
-                        opponentTeamIds.add(opponentTeamId);
+                    const { teamId } = getOpponent(game);
+                    if (teamId) {
+                        opponentTeamIds.add(teamId);
                     }
                 });
 
                 // Fetch all box scores for these teams in one batch
-                let allBoxScores: BoxScore[] = [];
+                let allBoxScores: BoxScoreWithGame[] = [];
                 if (opponentTeamIds.size > 0) {
                     const { data: boxScoresData, error: boxScoresError } = await supabase
                         .from('box_scores')
@@ -303,16 +319,16 @@ export const useSpielplanData = () => {
                     allBoxScores = boxScoresData || [];
                 }
 
+                const newComparisons = new Map<string, string>();
                 const gamesWithDangerousPlayers: GameWithDangerousPlayers[] = gamesData.map((game: Game) => {
-                    const opponentTeamName = game.home_team_name === 'TSV Neuenstadt' ? game.away_team_name : game.home_team_name;
-                    const opponentTeamId = game.home_team_name === 'TSV Neuenstadt' ? game.away_team_id : game.home_team_id;
+                    const { teamId: opponentTeamId, teamName: opponentTeamName } = getOpponent(game);
 
                     const teamBoxScores = allBoxScores.filter(bs => bs.team_id === opponentTeamId);
                     const allPlayerStats = calculateDangerousPlayers(opponentTeamName, opponentTeamId, teamBoxScores);
 
                     const leagueComparison = getLeagueComparisonInfo(opponentTeamId, opponentTeamName, leagueStats);
                     if (leagueComparison) {
-                        setLeagueComparisons(prev => new Map(prev.set(game.id, leagueComparison)));
+                        newComparisons.set(game.id, leagueComparison);
                     }
 
                     const top3Players = selectTop3DangerousPlayers(allPlayerStats);
@@ -324,6 +340,7 @@ export const useSpielplanData = () => {
                     };
                 });
 
+                setLeagueComparisons(newComparisons);
                 setGames(gamesWithDangerousPlayers);
             } catch (err) {
                 console.error('Error fetching games:', err);

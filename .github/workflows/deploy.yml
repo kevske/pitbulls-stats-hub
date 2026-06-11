@@ -29,7 +29,20 @@ jobs:
       
       - name: Install dependencies
         run: npm ci
-      
+
+      # Quality gates: vite build prüft keine Typen — ohne diese Steps
+      # wurden Typfehler unbemerkt deployt.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      - name: Lint (advisory)
+        # Noch 50+ Bestandsfehler — vorerst nicht blockierend.
+        # TODO: nach Lint-Bereinigung auf blockierend stellen.
+        run: npm run lint || echo "::warning::ESLint reported issues (non-blocking)"
+
       - name: Build
         env:
           # Note: VITE_ADMIN_PASSWORD removed - now validated server-side via Edge Function

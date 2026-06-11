@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { Game } from '@/types/supabase';
 import { addDays, isAfter, subDays } from 'date-fns';
 import { getPlayerImageUrl } from '@/utils/playerUtils';
+import { SeasonService } from '@/services/seasonService';
 
 export interface LeagueNewsItem {
     id: string;
@@ -125,10 +126,17 @@ export class NewsService {
      */
     static async getPlayerNews(): Promise<PlayerNewsItem[]> {
         try {
-            // 1. Fetch season stats (averages) from view or calculation
-            const { data: seasonStats, error: seasonError } = await supabase
+            // 1. Fetch season stats (averages) — News beziehen sich immer auf
+            // die aktuelle Saison, sonst verfälschen Vorjahres-Schnitte die
+            // "über dem Durchschnitt"-Vergleiche
+            const currentSeason = await SeasonService.getCurrentSeason();
+            let seasonStatsQuery = supabase
                 .from('player_season_totals')
                 .select('*');
+            if (currentSeason) {
+                seasonStatsQuery = seasonStatsQuery.eq('season_id', currentSeason.id);
+            }
+            const { data: seasonStats, error: seasonError } = await seasonStatsQuery;
 
             if (seasonError) throw seasonError;
 

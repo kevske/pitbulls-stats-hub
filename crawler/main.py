@@ -29,16 +29,33 @@ class BasketballBundCrawler:
     def __init__(self):
         self.supabase_url = os.getenv('SUPABASE_URL')
         self.supabase_key = os.getenv('SUPABASE_KEY')
-        self.league_id = os.getenv('LEAGUE_ID')
-        
-        if not all([self.supabase_url, self.supabase_key, self.league_id]):
+
+        if not all([self.supabase_url, self.supabase_key]):
             raise ValueError("Missing required environment variables")
-        
+
         # Clean and validate the Supabase URL
         self.supabase_url = self.clean_url(self.supabase_url)
-        
+
         # Initialize Supabase client
         self.supabase: Client = create_client(self.supabase_url, self.supabase_key)
+
+        # League/season configuration comes from the seasons table so a new
+        # season only needs a DB row instead of a GitHub Secret change.
+        # LEAGUE_ID env stays as fallback for databases without seasons table.
+        self.season_id = None
+        self.our_team_id = None
+        self.league_id = os.getenv('LEAGUE_ID')
+        season = self.fetch_current_season()
+        if season:
+            self.season_id = season.get('id')
+            self.our_team_id = season.get('our_team_id')
+            self.league_id = str(season.get('league_id'))
+            logger.info(f"Using season '{season.get('name')}' (id={self.season_id}, league_id={self.league_id})")
+        else:
+            logger.warning("No current season found in seasons table, falling back to LEAGUE_ID env variable")
+
+        if not self.league_id:
+            raise ValueError("No league id available: insert an is_current row into seasons or set LEAGUE_ID")
         
         # BasketballBund API base URL
         self.api_base_url = "https://www.basketball-bund.net/rest"
@@ -53,6 +70,16 @@ class BasketballBundCrawler:
             'User-Agent': 'BasketballBund-Crawler/1.0'
         })
     
+    def fetch_current_season(self):
+        """Fetch the current season row from the seasons table"""
+        try:
+            result = self.supabase.table('seasons').select('*').eq('is_current', True).limit(1).execute()
+            if isinstance(result.data, list) and result.data:
+                return result.data[0]
+        except Exception as e:
+            logger.warning(f"Could not fetch current season: {e}")
+        return None
+
     def clean_url(self, url):
         """Clean and validate URL by removing non-printable characters"""
         if not url:
@@ -164,7 +191,6 @@ class BasketballBundCrawler:
         try:
             logger.info("Fetching box scores for games synchronously...")
             box_scores = []
-            quarter_score_updates = []
             
             # Filter games
             games_to_fetch = []
@@ -189,20 +215,15 @@ class BasketballBundCrawler:
                     if entries:
                         box_scores.extend(entries)
                     if qs_update:
-                        quarter_score_updates.append(qs_update)
-                        # Attach to the game object so transform_games_data can persist it
+                        # Attach to the game object; persisted together with the
+                        # full game row in store_data. (The previous standalone
+                        # upsert here could insert partial game rows without
+                        # team names before the games were stored.)
                         game['quarter_scores'] = qs_update[1]
-                        
+
                 except Exception as e:
                     logger.error(f"Error processing game {game_id}: {e}")
                     continue
-
-            # Batch update quarter scores
-            if quarter_score_updates:
-                logger.info(f"Triggering batch update for {len(quarter_score_updates)} quarter score records...")
-                self.batch_update_quarter_scores(quarter_score_updates)
-            else:
-                logger.warning("No quarter score updates were extracted.")
 
             logger.info(f"Fetched box scores for {len(box_scores)} player entries")
             return box_scores
@@ -445,32 +466,6 @@ class BasketballBundCrawler:
             logger.warning(f"Error parsing score pair '{score_text}': {e}")
             return None
     
-    def batch_update_quarter_scores(self, updates):
-        """Batch update the games table with quarter scores"""
-        try:
-            if not updates:
-                return
-
-            update_data = []
-            current_time = datetime.now(timezone.utc).isoformat()
-            
-            for game_id, quarter_scores in updates:
-                update_data.append({
-                    'game_id': game_id,
-                    'quarter_scores': quarter_scores,
-                    'updated_at': current_time
-                })
-
-            result = self.supabase.table('games').upsert(update_data, on_conflict='game_id').execute()
-            
-            if result.data:
-                logger.info(f"Successfully updated/merged quarter scores for {len(result.data)} games in Supabase")
-            else:
-                logger.warning("Batch update quarter scores returned no rows. This might be due to RLS policies preventing updates with the current key.")
-
-        except Exception as e:
-            logger.error(f"Error in batch_update_quarter_scores: {e}")
-    
     def extract_teams_from_data(self, standings, games):
         """Extract unique teams from standings and games"""
         teams = {}
@@ -539,31 +534,34 @@ class BasketballBundCrawler:
                     games_data = self.transform_games_data(data['games'])
                     games_result = self.supabase.table('games').upsert(games_data, on_conflict='game_id').execute()
                     logger.info(f"Stored {len(games_data)} games")
-                
+
+                    # Assign sequential tsv_game_number to any new Pitbulls games
+                    self.assign_tsv_game_numbers()
+
                 # Store standings (transform API data to database format)
                 if data['standings']:
                     standings_data = self.transform_standings_data(data['standings'])
-                    standings_result = self.supabase.table('standings').upsert(standings_data).execute()
+                    if self.season_id is not None:
+                        standings_result = self.supabase.table('standings').upsert(
+                            standings_data, on_conflict='season_id,team_id'
+                        ).execute()
+                    else:
+                        standings_result = self.supabase.table('standings').upsert(standings_data).execute()
                     logger.info(f"Stored {len(standings_data)} standings entries")
-                
+
                 # Store box scores (transform and store player statistics)
                 if data.get('box_scores'):
                     box_scores_data = self.transform_box_scores_data(data['box_scores'], data['games'])
                     if box_scores_data:
-                        # Preserve existing minutes_played and player_slug data before deletion
-                        preserved_data = self.preserve_minutes_data(box_scores_data)
-                        
-                        # Delete existing box scores for these games to avoid duplicates
-                        game_ids = list(set([bs['game_id'] for bs in box_scores_data]))
-                        if game_ids:
-                            self.supabase.table('box_scores').delete().in_('game_id', game_ids).execute()
-                        
-                        # Merge preserved data back into new box scores
-                        final_box_scores = self.merge_preserved_data(box_scores_data, preserved_data)
-                        
-                        # Insert new box scores with preserved minutes
-                        box_scores_result = self.supabase.table('box_scores').upsert(final_box_scores).execute()
-                        logger.info(f"Stored {len(final_box_scores)} box score entries")
+                        # Upsert on the per-player-per-game unique constraint.
+                        # minutes_played/seconds_played/player_slug are not part
+                        # of the payload, so manually maintained values survive
+                        # automatically — no delete+insert data-loss window.
+                        box_scores_result = self.supabase.table('box_scores').upsert(
+                            box_scores_data,
+                            on_conflict='game_id,team_id,player_first_name,player_last_name'
+                        ).execute()
+                        logger.info(f"Stored {len(box_scores_data)} box score entries")
                 
                 # Store scrape metadata
                 metadata = {
@@ -624,10 +622,11 @@ class BasketballBundCrawler:
                 except ValueError:
                     pass
             
+            # Cancellation wins over any result state. (The previous extra
+            # branch here overrode 'provisional' with 'live', leaving games
+            # stuck on 'live' until the league confirmed the result.)
             if game.get('abgesagt', False):
                 status = 'cancelled'
-            elif result and not game.get('ergebnisbestaetigt', False):
-                status = 'live'
             
             # Combine date and time
             game_datetime = None
@@ -656,6 +655,8 @@ class BasketballBundCrawler:
                 'box_score_url': box_score_url,
                 'quarter_scores': game.get('quarter_scores')
             }
+            if self.season_id is not None:
+                transformed_game['season_id'] = self.season_id
             
             transformed_games.append(transformed_game)
         
@@ -682,7 +683,9 @@ class BasketballBundCrawler:
                 'scoring_difference': entry.get('korbdiff', 0),
                 'scraped_at': datetime.now(timezone.utc).isoformat()
             }
-            
+            if self.season_id is not None:
+                transformed_standing['season_id'] = self.season_id
+
             transformed_standings.append(transformed_standing)
         
         return transformed_standings
@@ -713,65 +716,23 @@ class BasketballBundCrawler:
                 'league_id': self.league_id,
                 'scraped_at': datetime.now(timezone.utc).isoformat()
             }
-            
+            if self.season_id is not None:
+                transformed_box_score['season_id'] = self.season_id
+
             transformed_box_scores.append(transformed_box_score)
-        
+
         return transformed_box_scores
-    
-    def preserve_minutes_data(self, new_box_scores):
-        """Preserve minutes_played and player_slug data from existing box scores"""
-        preserved_data = {}
-        
+
+    def assign_tsv_game_numbers(self):
+        """Assign tsv_game_number to new Pitbulls games via DB function"""
         try:
-            # Get game_ids from new box scores
-            game_ids = list(set([bs['game_id'] for bs in new_box_scores]))
-            
-            # Fetch existing box scores for these games
-            if game_ids:
-                result = self.supabase.table('box_scores').select(
-                    'game_id', 'team_id', 'player_first_name', 'player_last_name', 
-                    'minutes_played', 'seconds_played', 'player_slug'
-                ).in_('game_id', game_ids).limit(10000).execute()
-                
-                for row in result.data:
-                    # Create a unique key for each player
-                    key = f"{row['game_id']}_{row['team_id']}_{row['player_first_name']}_{row['player_last_name']}"
-                    preserved_data[key] = {
-                        'minutes_played': row.get('minutes_played'),
-                        'seconds_played': row.get('seconds_played'),
-                        'player_slug': row.get('player_slug')
-                    }
-            
-            logger.info(f"Preserved minutes data for {len(preserved_data)} player entries")
-            
+            result = self.supabase.rpc('assign_tsv_game_numbers').execute()
+            assigned = result.data if isinstance(result.data, int) else 0
+            if assigned:
+                logger.info(f"Assigned tsv_game_number to {assigned} new games")
         except Exception as e:
-            logger.warning(f"Error preserving minutes data: {e}")
-        
-        return preserved_data
-    
-    def merge_preserved_data(self, new_box_scores, preserved_data):
-        """Merge preserved minutes data into new box scores"""
-        merged_scores = []
-        
-        for box_score in new_box_scores:
-            # Create the same key to find preserved data
-            key = f"{box_score['game_id']}_{box_score['team_id']}_{box_score['player_first_name']}_{box_score['player_last_name']}"
-            
-            # Add preserved data if available
-            if key in preserved_data:
-                preserved = preserved_data[key]
-                box_score['minutes_played'] = preserved.get('minutes_played')
-                box_score['seconds_played'] = preserved.get('seconds_played')
-                box_score['player_slug'] = preserved.get('player_slug')
-            else:
-                box_score['minutes_played'] = None
-                box_score['seconds_played'] = 0
-                box_score['player_slug'] = None
-            
-            merged_scores.append(box_score)
-        
-        return merged_scores
-    
+            logger.warning(f"Could not assign tsv game numbers (DB function missing?): {e}")
+
     def run(self):
         """Main execution method"""
         logger.info("Starting BasketballBund crawler")

@@ -13,6 +13,7 @@ import BirthdayNotification from "@/components/BirthdayNotification";
 import { BASE_PATH } from "@/config";
 
 import { useModernTheme } from "@/contexts/ModernThemeContext";
+import { useSeason } from "@/contexts/SeasonContext";
 import { motion } from "framer-motion";
 
 // Custom CSS for scrolling animation moved to index.css
@@ -20,6 +21,7 @@ import { motion } from "framer-motion";
 const Home = () => {
   const navigate = useNavigate();
   const { games, players, gameLogs, loading, error } = useStats();
+  const { selectedSeason } = useSeason();
   const { isModernMode } = useModernTheme();
 
   // Filter relevant games once (TSV Neuenstadt/Pitbulls games with valid results in the past)
@@ -393,7 +395,7 @@ const Home = () => {
 
                 <div className="mt-8 pt-8 border-t border-white/5">
                   <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-white/30">
-                    <span>Saison 2026</span>
+                    <span>Saison {selectedSeason?.name ?? "2025/26"}</span>
                     <span className="text-primary">TSV 1892</span>
                   </div>
                 </div>

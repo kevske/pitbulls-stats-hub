@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { StatsProvider } from "@/contexts/StatsContext";
+import { SeasonProvider } from "@/contexts/SeasonContext";
 import { ModernThemeProvider } from "@/contexts/ModernThemeContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -119,8 +120,9 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
         <TooltipProvider>
-          <StatsProvider>
-            <ModernThemeProvider>
+          <SeasonProvider>
+            <StatsProvider>
+              <ModernThemeProvider>
               <BrowserRouter basename={import.meta.env.PROD ? "/pitbulls-stats-hub" : "/"}>
                 <ScrollToTop />
                 <Suspense fallback={<LoadingSpinner />}>
@@ -151,8 +153,9 @@ const App = () => {
               </BrowserRouter>
               <Toaster />
               <Sonner />
-            </ModernThemeProvider>
-          </StatsProvider>
+              </ModernThemeProvider>
+            </StatsProvider>
+          </SeasonProvider>
         </TooltipProvider>
       </ErrorBoundary>
     </QueryClientProvider>

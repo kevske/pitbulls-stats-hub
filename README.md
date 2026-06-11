@@ -65,3 +65,30 @@ Ensure your database RLS policies are up to date:
 ```bash
 npx supabase db push
 ```
+
+## Saisons
+
+Das Datenmodell ist saisonfähig: Die Tabelle `seasons` definiert pro
+Spielzeit die basketball-bund.net-Liga-ID und die Pitbulls-Team-ID. Der
+Crawler liest seine Konfiguration von dort, alle Statistiken sind pro
+Saison getrennt, und das Frontend bietet einen Saison-Switcher in der
+Sidebar.
+
+**Saisonwechsel:** siehe [docs/SEASON_HANDOVER.md](docs/SEASON_HANDOVER.md)
+— eine neue Zeile in `seasons` genügt.
+
+## Monitoring
+
+Der Crawler läuft jede zweite Nacht per GitHub Actions. Bei Fehlschlägen
+oder wenn 72h keine Daten ankommen, wird ein Webhook benachrichtigt —
+dafür das Repo-Secret `ALERT_WEBHOOK_URL` auf einen Discord-/Slack-
+kompatiblen Webhook setzen.
+
+## Entwicklung
+
+```bash
+npm run dev        # Dev-Server
+npm run typecheck  # TypeScript prüfen (läuft auch im Deploy als Gate)
+npm run test       # Vitest (läuft auch im Deploy als Gate)
+npm run lint       # ESLint
+```
