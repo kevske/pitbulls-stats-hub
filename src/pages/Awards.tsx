@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useStats } from '@/contexts/StatsContext';
+import { useSeason } from '@/contexts/SeasonContext';
 import { calculateAwards } from '@/utils/awardUtils';
 import { AwardCarousel } from '@/components/awards/AwardCarousel';
 import { motion } from 'framer-motion';
@@ -10,15 +11,23 @@ import { cn } from '@/lib/utils';
 
 const Awards = () => {
   const { players, gameLogs, videoStats, games, loading, error } = useStats();
+  const { selectedSeason } = useSeason();
 
   const categories = useMemo(() => {
     if (loading || players.length === 0) return [];
     return calculateAwards(players, gameLogs, videoStats, games);
   }, [players, gameLogs, videoStats, games, loading]);
 
+  // Final, wenn alle Spiele der Saison ein Ergebnis haben oder das
+  // Saisonende überschritten ist — vorher ist es eine Prognose.
   const isFinal = React.useMemo(() => {
-    return true;
-  }, []);
+    if (games.length === 0) return false;
+    if (games.every(g => g.finalScore !== '-:-')) return true;
+    if (selectedSeason && new Date(selectedSeason.end_date) < new Date()) return true;
+    return false;
+  }, [games, selectedSeason]);
+
+  const seasonLabel = selectedSeason?.name ?? '2025/26';
 
   // Force Vision 2026 theme and dark mode when on this page
   React.useEffect(() => {
@@ -81,7 +90,7 @@ const Awards = () => {
                 <AlertCircle className="w-4 h-4" />
               )}
               <span className="text-xs font-bold uppercase tracking-widest">
-                Saison 2025/26 {isFinal ? "Finale Ergebnisse" : "Prognose"}
+                Saison {seasonLabel} {isFinal ? "Finale Ergebnisse" : "Prognose"}
               </span>
             </motion.div>
             
@@ -132,7 +141,7 @@ const Awards = () => {
 
           {/* Footer Decoration */}
           <div className="mt-20 text-center text-white/20 text-sm uppercase tracking-widest font-medium">
-            Stats Hub &copy; 2026 • TSV Neuenstadt Pitbulls
+            Stats Hub &copy; {new Date().getFullYear()} • TSV Neuenstadt Pitbulls
           </div>
         </div>
       </div>

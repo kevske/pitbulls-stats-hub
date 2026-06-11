@@ -1,12 +1,16 @@
 import { supabase } from '@/lib/supabase';
 import { GameStats, PlayerStats, PlayerGameLog, VideoStats, VideoGameStats } from '@/types/stats';
 import { getPlayerImageUrl } from '@/utils/playerUtils';
+import { isHomeGame } from '@/utils/teamUtils';
 
 export class SupabaseStatsService {
     /**
-     * Fetch all stats data from Supabase including games, player stats, and game logs
+     * Fetch all stats data from Supabase including games, player stats, and game logs.
+     * Mit seasonId werden alle Quellen auf diese Saison gefiltert; ohne
+     * seasonId (z. B. solange die Saison-Migration fehlt) wird ungefiltert
+     * geladen — das entspricht dem bisherigen Verhalten.
      */
-    static async fetchAllStatsData(): Promise<{
+    static async fetchAllStatsData(seasonId?: number | null): Promise<{
         games: GameStats[];
         playerStats: PlayerStats[];
         gameLogs: PlayerGameLog[];
@@ -14,10 +18,14 @@ export class SupabaseStatsService {
     }> {
         try {
             // 1. Fetch Games
-            const { data: gamesData, error: gamesError } = await supabase
+            let gamesQuery = supabase
                 .from('games')
                 .select('*')
                 .order('game_date', { ascending: false });
+            if (seasonId != null) {
+                gamesQuery = gamesQuery.eq('season_id', seasonId);
+            }
+            const { data: gamesData, error: gamesError } = await gamesQuery;
 
             if (gamesError) throw gamesError;
 
@@ -50,9 +58,13 @@ export class SupabaseStatsService {
             }));
 
             // 1.5 Fetch Video Projects to populate video fields
-            const { data: videoProjects, error: videoError } = await supabase
+            let videoProjectsQuery = supabase
                 .from('video_projects')
                 .select('*');
+            if (seasonId != null) {
+                videoProjectsQuery = videoProjectsQuery.eq('season_id', seasonId);
+            }
+            const { data: videoProjects, error: videoError } = await videoProjectsQuery;
 
             if (videoError) {
                 console.warn('Error fetching video_projects:', videoError);
@@ -124,9 +136,13 @@ export class SupabaseStatsService {
 
             // 2. Fetch Player Stats (Season Totals)
             // Using the view created in migration
-            const { data: playersData, error: playersError } = await supabase
+            let playersQuery = supabase
                 .from('player_season_totals')
                 .select('*');
+            if (seasonId != null) {
+                playersQuery = playersQuery.eq('season_id', seasonId);
+            }
+            const { data: playersData, error: playersError } = await playersQuery;
 
             if (playersError) {
                 // Fallback for when views might not exist yet or error out
@@ -158,9 +174,13 @@ export class SupabaseStatsService {
             }));
 
             // 3. Fetch Game Logs
-            const { data: logsData, error: logsError } = await supabase
+            let logsQuery = supabase
                 .from('player_game_logs')
                 .select('*');
+            if (seasonId != null) {
+                logsQuery = logsQuery.eq('season_id', seasonId);
+            }
+            const { data: logsData, error: logsError } = await logsQuery;
 
             if (logsError) {
                 console.warn('Error fetching player_game_logs', logsError);
@@ -174,23 +194,13 @@ export class SupabaseStatsService {
                 });
             }
 
-            // We need to determine game type (Heim/Auswärts) which might be missing in view or needs join
-            // For now we map what we have
             const gameLogs: PlayerGameLog[] = (logsData || []).map((log: any) => {
-                // Try to find the game to determine home/away using the map
                 const game = gamesById.get(log.game_id);
-                const isHome = game?.home_team_name?.toLowerCase().includes('neuenstadt') ||
-                    game?.home_team_name?.toLowerCase().includes('pitbulls');
+                // game_type kommt aus der View; Fallback über den Spiel-Datensatz
+                const gameType = log.game_type
+                    ?? (isHomeGame(game ?? {}) ? 'Heim' : 'Auswärts');
 
                 const gameNumber = game?.tsv_game_number ? parseInt(game.tsv_game_number) : parseInt(log.game_id);
-
-                // Debug: log any unmapped or problematic logs
-                if (!game) {
-                    console.warn(`[DEBUG] Game log with game_id="${log.game_id}" has no matching game entry. Player: ${log.player_slug}`);
-                }
-                if (isNaN(gameNumber)) {
-                    console.warn(`[DEBUG] Game log with game_id="${log.game_id}" resolved to NaN gameNumber. tsv_game_number: ${game?.tsv_game_number}`);
-                }
 
                 return {
                     playerId: log.player_slug,
@@ -207,22 +217,9 @@ export class SupabaseStatsService {
                     freeThrowAttemptsPer40: Number(log.free_throw_attempts_per_40) || 0,
                     foulsPer40: Number(log.fouls_per_40) || 0,
                     threePointersPer40: Number(log.three_pointers_per_40) || 0,
-                    gameType: isHome ? 'Heim' : 'Auswärts'
+                    gameType
                 };
             });
-
-            // Debug: Show game number distribution
-            const gameNumberCounts = new Map<number, number>();
-            gameLogs.forEach(log => {
-                gameNumberCounts.set(log.gameNumber, (gameNumberCounts.get(log.gameNumber) || 0) + 1);
-            });
-            console.log('[DEBUG] gameLogs gameNumber distribution:', Object.fromEntries(gameNumberCounts));
-
-            // Debug: Show which games exist and their gameNumbers
-            console.log('[DEBUG] games with gameNumber:', games.map(g => ({ gameNumber: g.gameNumber, gameId: g.gameId })));
-
-            // Debug: Show gamesById keys
-            console.log('[DEBUG] gamesById keys:', Array.from(gamesById.keys()));
 
             // 4. Fetch Video Stats (New)
             const { data: videoData, error: videoStatsError } = await supabase

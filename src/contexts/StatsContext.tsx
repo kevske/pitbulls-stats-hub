@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { SupabaseStatsService } from '@/services/supabaseStatsService';
 import { GameStats, PlayerGameLog, PlayerStats, VideoStats } from '@/types/stats';
+import { useSeason } from '@/contexts/SeasonContext';
 
 
 interface StatsContextType {
@@ -16,6 +17,7 @@ interface StatsContextType {
 const StatsContext = createContext<StatsContextType | undefined>(undefined);
 
 export const StatsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { selectedSeason, loading: seasonLoading } = useSeason();
   const [games, setGames] = useState<GameStats[]>([]);
   const [players, setPlayers] = useState<PlayerStats[]>([]);
   const [gameLogs, setGameLogs] = useState<PlayerGameLog[]>([]);
@@ -23,13 +25,12 @@ export const StatsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = useCallback(async (forceRefresh = false) => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // Supabase fetch doesn't need forceRefresh as it's not using the same local storage caching strategy yet
-      // or if it implements caching, it would be internal.
-      const { games, playerStats, gameLogs, videoStats } = await SupabaseStatsService.fetchAllStatsData();
+      const { games, playerStats, gameLogs, videoStats } =
+        await SupabaseStatsService.fetchAllStatsData(selectedSeason?.id ?? null);
       setGames(games);
       setPlayers(playerStats);
       setGameLogs(gameLogs);
@@ -40,11 +41,15 @@ export const StatsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedSeason?.id]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    // Erst laden, wenn die Saison aufgelöst ist; ohne seasons-Tabelle
+    // (selectedSeason null) wird wie bisher ungefiltert geladen.
+    if (!seasonLoading) {
+      loadData();
+    }
+  }, [loadData, seasonLoading]);
 
   const value = useMemo(() => ({
     games,

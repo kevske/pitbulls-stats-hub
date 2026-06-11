@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Users, BarChart2, Film, X, Trophy, Calendar, BookOpen, Shield, Newspaper, Star } from 'lucide-react';
+import { Home, Users, BarChart2, Film, X, Trophy, Calendar, BookOpen, Shield, Newspaper, Star, History } from 'lucide-react';
 import { useStats } from '@/contexts/StatsContext';
 import { useModernTheme } from '@/contexts/ModernThemeContext';
+import { useSeason } from '@/contexts/SeasonContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const location = useLocation();
   const { isModernMode, toggleModernMode } = useModernTheme();
+  const { seasons, selectedSeason, setSelectedSeasonId } = useSeason();
 
 
   // Update mobile state on window resize
@@ -97,6 +99,27 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
               );
             })}
           </nav>
+
+          {/* Saison-Auswahl (nur sichtbar, wenn mehrere Saisons existieren) */}
+          {seasons.length > 1 && (
+            <div className="pt-4 border-t border-border/50">
+              <label className="flex items-center gap-2 px-4 text-[10px] font-bold tracking-wider uppercase opacity-60 mb-1">
+                <History className="w-3 h-3" />
+                Saison
+              </label>
+              <select
+                value={selectedSeason?.id ?? ''}
+                onChange={(e) => setSelectedSeasonId(Number(e.target.value))}
+                className="w-full mx-0 px-4 py-2 rounded-lg bg-accent/50 text-sm text-foreground border border-border/50 focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {seasons.map(season => (
+                  <option key={season.id} value={season.id}>
+                    {season.name}{season.is_current ? ' (aktuell)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Special Toggle for Vision 2026 */}
           <div className="mt-auto pt-6 border-t border-border/50">
