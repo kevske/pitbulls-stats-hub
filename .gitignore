@@ -40,3 +40,5 @@ supabase/.temp/
 # Debug/scratch output
 *_output.txt
 lint_log.txt
+# Local database backups
+backup/
