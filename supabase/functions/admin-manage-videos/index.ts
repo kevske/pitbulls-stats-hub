@@ -3,6 +3,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getClientIp, isRateLimited, recordFailedAttempt, clearFailedAttempts } from '../_shared/rateLimiter.ts'
 
 const ALLOWED_ORIGINS = [
     'https://kevske.github.io',
@@ -90,13 +91,26 @@ serve(async (req: Request) => {
             )
         }
 
+        // Brute-Force-Schutz: nach 5 Fehlversuchen in 15 Minuten blocken
+        const clientIp = getClientIp(req)
+        if (isRateLimited(clientIp)) {
+            return new Response(
+                JSON.stringify({ error: 'Too Many Requests', message: 'Too many failed attempts, try again later' }),
+                { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
         if (!adminPassword || !await secureCompare(adminPassword, expectedPassword)) {
+            recordFailedAttempt(clientIp)
             console.log('Auth failed: password mismatch')
             return new Response(
                 JSON.stringify({ error: 'Unauthorized', message: 'Invalid admin password' }),
                 { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
+
+        // Erfolgreiche Authentifizierung setzt den Fehlversuchszähler zurück
+        clearFailedAttempts(clientIp)
 
         // Create admin client with service role key (server-side only)
         const supabaseUrl = Deno.env.get('SUPABASE_URL')

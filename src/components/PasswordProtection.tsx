@@ -16,26 +16,15 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
   const [isLocked, setIsLocked] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Check for existing authentication on mount
+  // Innerhalb der Tab-Session nicht erneut fragen. Das Passwort selbst muss
+  // mitgegeben werden, weil die Edge Functions es bei jeder Admin-Aktion
+  // serverseitig prüfen — der frühere localStorage-Flag ohne Passwort führte
+  // zu einer "eingeloggten" UI, deren Aktionen mit 401 fehlschlugen.
+  // sessionStorage ist auf den Tab beschränkt und wird beim Schließen geleert.
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('videos-authenticated');
-    const authTime = localStorage.getItem('videos-auth-time');
-
-    if (isAuthenticated === 'true' && authTime) {
-      const authTimestamp = parseInt(authTime);
-      const now = Date.now();
-
-      // Check if authentication is still valid (24 hours)
-      if (now - authTimestamp < 24 * 60 * 60 * 1000) {
-        console.log('Videos page: Found valid authentication in localStorage');
-        onSuccess();
-        return;
-      } else {
-        // Clear expired authentication
-        localStorage.removeItem('videos-authenticated');
-        localStorage.removeItem('videos-auth-time');
-        console.log('Videos page: Authentication expired, cleared from localStorage');
-      }
+    const storedPassword = sessionStorage.getItem('admin-password');
+    if (storedPassword) {
+      onSuccess(storedPassword);
     }
   }, [onSuccess]);
 
@@ -64,12 +53,7 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
     if (correctPassword !== undefined) {
       if (password === correctPassword) {
         toast.success("Zugriff gewährt!");
-
-        // Store authentication in localStorage
-        localStorage.setItem('videos-authenticated', 'true');
-        localStorage.setItem('videos-auth-time', Date.now().toString());
-        console.log('Videos page: Authentication stored in localStorage');
-
+        sessionStorage.setItem('admin-password', password);
         onSuccess(password);
       } else {
         const newAttempts = attempts + 1;
@@ -87,9 +71,10 @@ const PasswordProtection = ({ onSuccess, correctPassword }: PasswordProtectionPr
         setPassword("");
       }
     } else {
-      // Server-side validation mode - pass password to callback
-      // Do NOT store the password in localStorage to prevent security risks
+      // Server-side validation mode — die Edge Function prüft das Passwort
+      // bei jeder Aktion; hier nur für die Tab-Session vorhalten.
       toast.success("Zugriff gewährt!");
+      sessionStorage.setItem('admin-password', password);
       onSuccess(password);
     }
   };
