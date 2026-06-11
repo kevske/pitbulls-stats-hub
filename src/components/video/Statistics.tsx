@@ -39,7 +39,7 @@ export function Statistics({ events, players = DEFAULT_PLAYERS }: StatisticsProp
     // Whole game stats - fetch all videos from playlist
     setIsLoadingWholeGame(true);
     try {
-      const projects = await VideoProjectService.getProjectsForGame(gameNumber);
+      const projects = await VideoProjectService.getProjectsForGame(parseInt(gameNumber, 10));
 
       if (projects && projects.length > 0) {
         let allEvents: TaggedEvent[] = [];

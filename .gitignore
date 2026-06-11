@@ -33,3 +33,10 @@ __pycache__/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Supabase CLI temp files
+supabase/.temp/
+
+# Debug/scratch output
+*_output.txt
+lint_log.txt

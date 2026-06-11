@@ -9,7 +9,7 @@ export interface VideoProjectData {
     items: {
         events: TaggedEvent[];
         players: Player[];
-        metadata?: unknown;
+        metadata?: SaveDataMetadata;
     }
 }
 
