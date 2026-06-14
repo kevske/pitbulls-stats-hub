@@ -1,6 +1,8 @@
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+// PROTOTYPE Vision 2026 v2 — Wegwerf-Import, löschen nach Design-Entscheid
+import Vision2026Prototype from "@/prototype-vision2026";
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStats } from "@/contexts/StatsContext";
@@ -20,6 +22,8 @@ import { motion } from "framer-motion";
 
 const Home = () => {
   const navigate = useNavigate();
+  // PROTOTYPE Vision 2026 v2 — nur für ?variant=-Umschaltung, löschen nach Entscheid
+  const [searchParams] = useSearchParams();
   const { games, players, gameLogs, loading, error } = useStats();
   const { selectedSeason } = useSeason();
   const { isModernMode } = useModernTheme();
@@ -290,6 +294,31 @@ const Home = () => {
         <div className="container mx-auto p-4">
           <div className="text-center py-8">Keine Spieldaten verfügbar.</div>
         </div>
+      </Layout>
+    );
+  }
+
+  // PROTOTYPE Vision 2026 v2 — ?variant=A|B|C zeigt die Design-Varianten,
+  // nur im Dev-Build. Block samt src/prototype-vision2026/ löschen nach Entscheid.
+  const protoVariant = searchParams.get('variant');
+  if (import.meta.env.DEV && protoVariant) {
+    return (
+      <Layout>
+        <Vision2026Prototype
+          variant={protoVariant}
+          data={{
+            gameNumber: lastGame.gameNumber,
+            date: lastGame.date,
+            homeTeam,
+            awayTeam,
+            homeScore,
+            awayScore,
+            streak,
+            topPerformers,
+            recentGames: relevantGames.slice(0, 8),
+            seasonName: selectedSeason?.name ?? '2025/26',
+          }}
+        />
       </Layout>
     );
   }

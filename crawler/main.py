@@ -692,8 +692,8 @@ class BasketballBundCrawler:
     
     def transform_box_scores_data(self, box_scores, games):
         """Transform box scores data to database format"""
-        transformed_box_scores = []
-        
+        dedup = {}
+
         for box_score in box_scores:
             # game_id is already correctly set during parsing
             game_id = box_score.get('game_id', '')
@@ -719,9 +719,15 @@ class BasketballBundCrawler:
             if self.season_id is not None:
                 transformed_box_score['season_id'] = self.season_id
 
-            transformed_box_scores.append(transformed_box_score)
+            # Use a dict keyed by the unique constraint to drop intra-batch duplicates.
+            # ON CONFLICT DO UPDATE fails if the same constraint key appears twice in
+            # one batch, so we deduplicate here before the upsert.
+            key = (game_id, transformed_box_score['team_id'],
+                   transformed_box_score['player_first_name'],
+                   transformed_box_score['player_last_name'])
+            dedup[key] = transformed_box_score
 
-        return transformed_box_scores
+        return list(dedup.values())
 
     def assign_tsv_game_numbers(self):
         """Assign tsv_game_number to new Pitbulls games via DB function"""
