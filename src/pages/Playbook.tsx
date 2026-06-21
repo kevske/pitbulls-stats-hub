@@ -3,6 +3,7 @@ import Layout from '@/components/Layout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { X, BookOpen } from 'lucide-react';
+import PageHeader from '@/components/vision/PageHeader';
 
 const Playbook = () => {
   const [showPasswordAlert, setShowPasswordAlert] = useState(true);
@@ -39,10 +40,13 @@ const Playbook = () => {
       )}
 
       {/* Page Content */}
-      <div className="w-full h-[calc(100vh-120px)]">
+      <div className="w-full px-4 pt-10 pb-6">
+        <PageHeader title="Playbook" subtitle="Spielzüge & Konzepte" right="CoachCanvas" />
+      </div>
+      <div className="w-full h-[calc(100vh-220px)] px-4">
         <iframe
           src="https://share.coachcanvas.app/5vazd-isn06"
-          className="w-full h-full border-0 rounded-lg shadow-lg"
+          className="w-full h-full border border-border"
           title="Playbook"
           allowFullScreen
           loading="eager"

@@ -9,8 +9,8 @@ const VariantC = ({ data }: { data: ProtoData }) => {
     const navigate = useNavigate();
     const { homeTeam, awayTeam, homeScore, awayScore, streak, topPerformers, gameNumber, date, seasonName, recentGames } = data;
 
-    const lastWin = recentGames.length > 0 && isWin(recentGames[0]);
-    const opponent = isPitbulls(homeTeam) ? awayTeam : homeTeam;
+    const homeIsPitbulls = isPitbulls(homeTeam);
+    const opponent = homeIsPitbulls ? awayTeam : homeTeam;
 
     return (
         <div className="relative">
@@ -33,52 +33,41 @@ const VariantC = ({ data }: { data: ProtoData }) => {
                     <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/40">Ausgabe · Spieltag {gameNumber}</span>
                 </div>
 
-                {/* Headline-Block */}
+                {/* Hero: der Endstand selbst ist die Riesen-Typografie */}
                 <div className="pt-14 pb-10">
-                    <p className="text-[11px] font-black uppercase tracking-[0.4em] text-[#FF8C2E] mb-5">
+                    <p className="text-[11px] font-black uppercase tracking-[0.4em] text-[#FF8C2E] mb-6">
                         {date} — gegen {opponent}
                     </p>
-                    <h1 className="text-[clamp(4rem,14vw,11rem)] font-black uppercase leading-[0.85] tracking-tighter">
-                        <span className={lastWin ? 'text-white' : 'text-white/80'}>
-                            {lastWin ? 'Sieg' : 'Niederlage'}
-                        </span>
-                        <span className="text-[#E87722]">.</span>
-                    </h1>
-                    <p className="mt-6 max-w-xl text-sm leading-relaxed text-white/50">
-                        {homeTeam} gegen {awayTeam} — alle Zahlen, Trends und Leistungsträger des Spieltags.
-                        Mehr als nur Zahlen: die Geschichte der Saison {seasonName}, erzählt in Daten.
-                    </p>
-                </div>
-
-                {/* Ergebnis als reine Typografie */}
-                <div className="border-y border-white/15 py-10 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 items-center">
-                    <div>
-                        <div className="flex items-baseline gap-6">
-                            <span className="text-7xl md:text-8xl font-black tabular-nums tracking-tighter text-[#FF8C2E]">{homeScore}</span>
-                            <span className="text-3xl font-light text-white/25">/</span>
-                            <span className="text-7xl md:text-8xl font-black tabular-nums tracking-tighter text-white">{awayScore}</span>
-                        </div>
-                        <div className="mt-4 flex flex-wrap gap-x-8 gap-y-1 text-[10px] font-bold uppercase tracking-[0.3em] text-white/40">
-                            <span><span className="text-[#FF8C2E]">●</span> {homeTeam}</span>
-                            <span><span className="text-white">●</span> {awayTeam}</span>
-                        </div>
+                    <div className="flex items-baseline gap-3 md:gap-8 leading-[0.8]">
+                        <span className={`text-[clamp(4.5rem,15vw,12rem)] font-black tabular-nums tracking-tighter ${homeIsPitbulls ? 'text-[#FF8C2E]' : 'text-white'}`}>{homeScore}</span>
+                        <span className="text-[clamp(2rem,6vw,5rem)] font-light text-white/20">:</span>
+                        <span className={`text-[clamp(4.5rem,15vw,12rem)] font-black tabular-nums tracking-tighter ${homeIsPitbulls ? 'text-white' : 'text-[#FF8C2E]'}`}>{awayScore}</span>
                     </div>
-                    <div className="flex md:flex-col items-center md:items-end gap-4">
+
+                    <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-white/15 pt-5">
+                        <span className="text-sm font-black uppercase tracking-[0.2em] text-white/70">
+                            <span className={homeIsPitbulls ? 'text-[#FF8C2E]' : 'text-white'}>●</span> {homeTeam}
+                        </span>
+                        <span className="text-sm font-black uppercase tracking-[0.2em] text-white/70">
+                            <span className={homeIsPitbulls ? 'text-white' : 'text-[#FF8C2E]'}>●</span> {awayTeam}
+                        </span>
                         {streak && (
-                            <p className="text-right text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
-                                Serie<br />
-                                <span className={`text-4xl tracking-tight ${streak.type === 'win' ? 'text-[#2E63D4]' : 'text-red-400'}`}>
-                                    {streak.count} {streak.type === 'win' ? 'W' : 'L'}
-                                </span>
-                            </p>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 md:ml-auto">
+                                Serie <span className={`text-lg tracking-tight ${streak.type === 'win' ? 'text-[#2E63D4]' : 'text-red-400'}`}>{streak.count}{streak.type === 'win' ? 'W' : 'L'}</span>
+                            </span>
                         )}
                         <button
                             onClick={() => navigate(`/games/${gameNumber}`)}
                             className="text-[10px] font-black uppercase tracking-[0.3em] text-white border-b-2 border-[#E87722] pb-1 hover:text-[#FF8C2E] transition-colors"
                         >
-                            Spielbericht lesen
+                            Spielbericht lesen →
                         </button>
                     </div>
+
+                    <p className="mt-8 max-w-xl text-sm leading-relaxed text-white/50">
+                        {homeTeam} gegen {awayTeam} — alle Zahlen, Trends und Leistungsträger des Spieltags.
+                        Mehr als nur Zahlen: die Geschichte der Saison {seasonName}, erzählt in Daten.
+                    </p>
                 </div>
 
                 {/* Zwei Spalten: Performer-Liste + Team-Foto */}

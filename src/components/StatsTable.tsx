@@ -128,7 +128,7 @@ const StatsTable = memo(({ players }: StatsTableProps) => {
       <Button
         variant="ghost"
         onClick={() => handleSort(field)}
-        className={`w-full h-full rounded-none font-bold text-primary hover:bg-transparent hover:text-primary p-4 ${alignCenter ? 'justify-center' : 'justify-start'}`}
+        className={`w-full h-full rounded-none text-[11px] font-black uppercase tracking-[0.15em] text-foreground hover:bg-transparent hover:text-brand-orange p-4 ${alignCenter ? 'justify-center' : 'justify-start'}`}
       >
         <div className="flex items-center gap-2">
           {label}
@@ -146,13 +146,13 @@ const StatsTable = memo(({ players }: StatsTableProps) => {
         placeholder="Spieler suchen..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm border-primary/30 focus:border-primary"
+        className="max-w-sm border-border focus:border-brand-orange"
         aria-label="Nach Spielern suchen"
       />
-      <div className="rounded-lg border border-primary/20 overflow-hidden overflow-x-auto">
+      <div className="border border-border overflow-hidden overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow className="bg-secondary hover:bg-secondary">
+            <TableRow className="bg-muted hover:bg-muted border-b-2 border-b-brand-orange">
               {renderHeader("Name", "name", false)}
               {renderHeader("Spiele", "games")}
               {renderHeader("Punkte", "points")}
@@ -173,7 +173,7 @@ const StatsTable = memo(({ players }: StatsTableProps) => {
                     <div className="flex flex-col">
                       <Link
                         to={`/players/${player.id}`}
-                        className="text-blue-600 hover:underline hover:text-blue-800 transition-colors"
+                        className="font-bold text-brand-blue hover:underline hover:text-brand-orange transition-colors"
                       >
                         {player.firstName} {player.lastName}
                       </Link>

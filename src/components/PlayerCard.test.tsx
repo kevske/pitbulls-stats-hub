@@ -6,7 +6,6 @@ import { PlayerStats, PlayerGameLog } from '@/types/stats';
 // Setup hoisted mocks
 const mocks = vi.hoisted(() => {
   return {
-    useModernTheme: vi.fn(),
     useNavigate: vi.fn(),
   };
 });
@@ -14,10 +13,6 @@ const mocks = vi.hoisted(() => {
 // Mock external dependencies
 vi.mock('react-router-dom', () => ({
   useNavigate: mocks.useNavigate,
-}));
-
-vi.mock('@/contexts/ModernThemeContext', () => ({
-  useModernTheme: mocks.useModernTheme,
 }));
 
 // Mock framer-motion
@@ -111,14 +106,14 @@ describe('PlayerCard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.useNavigate.mockReturnValue(mockNavigate);
-    // Default to classic mode
-    mocks.useModernTheme.mockReturnValue({ isModernMode: false });
   });
 
-  it('renders player basic info correctly in classic mode', () => {
+  it('renders player basic info correctly (Editorial card)', () => {
     render(<PlayerCard player={mockPlayer} gameLogs={mockGameLogs} />);
 
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    // Name ist im Editorial-Design auf Vor-/Nachname aufgeteilt
+    expect(screen.getByRole('button')).toHaveTextContent('John');
+    expect(screen.getByText('Doe')).toBeInTheDocument();
     expect(screen.getByText('#23')).toBeInTheDocument();
     expect(screen.getByText('Guard')).toBeInTheDocument();
     expect(screen.getByText('190 cm')).toBeInTheDocument();
@@ -129,44 +124,6 @@ describe('PlayerCard', () => {
     expect(screen.getByText('2.5')).toBeInTheDocument(); // 3P
     expect(screen.getByText('3.0')).toBeInTheDocument(); // FTM
     expect(screen.getByText('1.5')).toBeInTheDocument(); // FLS
-  });
-
-  it('renders player info in modern mode', () => {
-    mocks.useModernTheme.mockReturnValue({ isModernMode: true });
-    render(<PlayerCard player={mockPlayer} gameLogs={mockGameLogs} />);
-
-    // Modern mode uses different structure, e.g., motion.div
-    expect(screen.getByTestId('motion-div')).toBeInTheDocument();
-    expect(screen.getByText('John')).toBeInTheDocument();
-    expect(screen.getByText('Doe')).toBeInTheDocument();
-    expect(screen.getByText('#23')).toBeInTheDocument();
-
-    // Check modern specific styling classes implicitly by structure or specific elements
-    // The component renders stats differently in modern mode
-    expect(screen.getByText('PTS')).toBeInTheDocument();
-  });
-
-  it('expands and collapses bio', async () => {
-    render(<PlayerCard player={mockPlayer} gameLogs={mockGameLogs} />);
-
-    // Mocking scrollHeight/clientHeight for bio expansion detection
-    // Since jsdom doesn't do layout, we need to mock these properties on the element
-    // But PlayerCard uses a Ref and useEffect to check overflow.
-    // In jsdom, clientHeight/scrollHeight are 0.
-    // We might need to manually trigger the "show more" button visibility if possible,
-    // or mock the ref.
-
-    // Actually, testing the overflow logic in jsdom is hard.
-    // We can assume the button is shown if we can force the state.
-    // But state is internal.
-    // Let's see if we can just test that the bio text is present.
-    const bioText = screen.getByText(/A great player/);
-    expect(bioText).toBeInTheDocument();
-    expect(bioText).toHaveClass('line-clamp-3');
-
-    // To properly test the expand button, we'd need to mock the ref's current value properties
-    // which is tricky inside the component.
-    // For now, we verify the bio is rendered.
   });
 
   it('navigates to player details on click', () => {

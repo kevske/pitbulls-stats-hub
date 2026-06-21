@@ -13,24 +13,25 @@ const PlayerProfile = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto max-w-4xl p-4">
-        <h1 className="text-4xl font-bold text-primary mb-2">{playerData.name}</h1>
-        <div className="w-20 h-1 bg-primary mb-8"></div>
-        
+      <div className="container mx-auto max-w-4xl px-4 pb-20 pt-10">
+        <h1 className="font-display text-4xl md:text-6xl font-black uppercase tracking-tighter text-foreground mb-3">
+          {playerData.name}<span className="text-brand-orange">.</span>
+        </h1>
+        <div className="w-16 h-1 bg-brand-orange mb-8"></div>
+
         {/* Player Info Section */}
-        <div className="bg-secondary p-6 rounded-lg shadow-md mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Spielerinformationen</h2>
+        <div className="bg-card border border-border p-6 mb-8">
+          <h2 className="font-display text-xl font-black uppercase tracking-tight mb-4">Spielerinformationen</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p><span className="font-semibold">Name:</span> {playerData.name}</p>
-              {/* Add more player details here */}
+              <p className="text-sm"><span className="font-black uppercase tracking-wider text-muted-foreground text-[10px]">Name:</span> {playerData.name}</p>
             </div>
             <div>
               {/* Add player stats or other information */}
             </div>
           </div>
         </div>
-        
+
         {/* Gallery Section */}
         <PlayerGallery playerName={playerData.name} />
       </div>

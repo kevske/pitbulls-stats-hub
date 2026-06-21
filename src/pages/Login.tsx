@@ -61,7 +61,7 @@ const Login: React.FC = () => {
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Link gesendet!</h2>
+            <h2 className="font-display text-xl font-black uppercase tracking-tight mb-2">Link gesendet!</h2>
             <p className="text-muted-foreground mb-4">
               Prüfe deine E-Mails für den Anmelde-Link. Klicke auf den Link, um zum Admin-Bereich zu gelangen.
             </p>
@@ -85,8 +85,8 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 font-display font-black uppercase tracking-tight">
+            <Mail className="h-5 w-5 text-brand-orange" />
             Spieler Admin Login
           </CardTitle>
           <CardDescription>

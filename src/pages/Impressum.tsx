@@ -1,15 +1,16 @@
 import React from 'react';
 import Layout from '../components/Layout';
+import PageHeader from '@/components/vision/PageHeader';
 
 const Impressum = () => {
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-8 text-foreground">Impressum</h1>
-        
+      <div className="container mx-auto px-4 pb-20 max-w-4xl">
+        <PageHeader title="Impressum" subtitle="Rechtliche Angaben" right="§ 5 TMG" />
+
         <div className="space-y-8 text-foreground">
           <section>
-            <h2 className="text-xl font-semibold mb-4">Angaben gemäß § 5 TMG</h2>
+            <h2 className="font-display text-xl font-black uppercase tracking-tight mb-4">Angaben gemäß § 5 TMG</h2>
             <div className="space-y-4 text-foreground/80">
               <p>
                 <strong>Kevin Rassner</strong><br />
@@ -24,7 +25,7 @@ const Impressum = () => {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold mb-4">Kontakt</h2>
+            <h2 className="font-display text-xl font-black uppercase tracking-tight mb-4">Kontakt</h2>
             <div className="space-y-4 text-foreground/80">
               <p>
                 <strong>E-Mail:</strong><br />
@@ -37,7 +38,7 @@ const Impressum = () => {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold mb-4">Haftungsausschluss</h2>
+            <h2 className="font-display text-xl font-black uppercase tracking-tight mb-4">Haftungsausschluss</h2>
             <div className="space-y-4 text-foreground/80">
               <p>
                 <strong>Haftung für Inhalte:</strong><br />
@@ -70,7 +71,7 @@ const Impressum = () => {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold mb-4">Online-Streitbeilegung</h2>
+            <h2 className="font-display text-xl font-black uppercase tracking-tight mb-4">Online-Streitbeilegung</h2>
             <div className="space-y-4 text-foreground/80">
               <p>
                 Die EU-Kommission hat eine Online-Plattform zur außergerichtlichen Beilegung von Streitigkeiten 

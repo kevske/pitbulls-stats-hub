@@ -95,13 +95,13 @@ const PlayerDetail: React.FC = () => {
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
-          className="mb-6 px-0"
+          className="mb-6 px-0 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-brand-orange"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Zurück zur Übersicht
         </Button>
 
-        <div className="bg-card rounded-lg shadow-elegant overflow-hidden">
+        <div className="bg-card border border-border overflow-hidden">
           <PlayerHeader
             player={player}
             randomImageStream={randomImageStream}

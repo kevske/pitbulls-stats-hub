@@ -1,32 +1,34 @@
 import Layout from "@/components/Layout";
-import { Button } from "@/components/ui/button";
-import { useNavigate, useSearchParams } from "react-router-dom";
-// PROTOTYPE Vision 2026 v2 — Wegwerf-Import, löschen nach Design-Entscheid
-import Vision2026Prototype from "@/prototype-vision2026";
+import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { useStats } from "@/contexts/StatsContext";
 import { PlayerTrendInfo, getPlayerImprovements } from "@/utils/statsTrends";
-import { PlayerGameLog } from "@/types/stats";
+import { PlayerGameLog, GameStats } from "@/types/stats";
 import { Flame } from "lucide-react";
-import TeamBanner from "@/components/TeamBanner";
 import TeamGallery from "@/components/TeamGallery";
 import BirthdayNotification from "@/components/BirthdayNotification";
 import { BASE_PATH } from "@/config";
-
-import { useModernTheme } from "@/contexts/ModernThemeContext";
 import { useSeason } from "@/contexts/SeasonContext";
 import { motion } from "framer-motion";
 
-// Custom CSS for scrolling animation moved to index.css
+// Vision 2026 v2 — "Editorial Court". Ein einziges, theme-aware Design
+// (Light + Dark über CSS-Tokens), kein isModernMode-Fork mehr.
+
+const teamIsPitbulls = (team?: string) => {
+  const t = (team ?? '').toLowerCase();
+  return t.includes('neuenstadt') || t.includes('pitbull');
+};
+
+const gameIsWin = (g: GameStats) => {
+  const [h, a] = (g.finalScore ?? '').split(/[-:]/).map(s => parseInt(s.trim(), 10));
+  if (isNaN(h) || isNaN(a)) return false;
+  return teamIsPitbulls(g.homeTeam) ? h > a : a > h;
+};
 
 const Home = () => {
   const navigate = useNavigate();
-  // PROTOTYPE Vision 2026 v2 — nur für ?variant=-Umschaltung, löschen nach Entscheid
-  const [searchParams] = useSearchParams();
   const { games, players, gameLogs, loading, error } = useStats();
   const { selectedSeason } = useSeason();
-  const { isModernMode } = useModernTheme();
 
   // Filter relevant games once (TSV Neuenstadt/Pitbulls games with valid results in the past)
   const relevantGames = useMemo(() => {
@@ -76,11 +78,9 @@ const Home = () => {
       awayTeam: 'Gegner'
     };
 
-    // Get the team names
     const homeTeam = lastGame.homeTeam || 'Heimmannschaft';
     const awayTeam = lastGame.awayTeam || 'Gastmannschaft';
 
-    // Handle the score format (it might be like '81:75' or '81-75')
     let homeScore = '0';
     let awayScore = '0';
 
@@ -107,8 +107,6 @@ const Home = () => {
       map.get(log.playerId)!.push(log);
     });
 
-    // Sort logs for each player by game number descending once
-    // This optimization prevents re-sorting in child components or trends calculation
     map.forEach((logs: PlayerGameLog[]) => {
       logs.sort((a, b) => b.gameNumber - a.gameNumber);
     });
@@ -180,19 +178,13 @@ const Home = () => {
   const topPerformers = useMemo(() => {
     if (!players.length || !gameLogs.length) return [];
 
-    // Calculate stats for each player
     const playerStats = players.map(player => {
-      // Skip non-player entries
       if (player.firstName === 'Gesamtsumme' || !player.firstName) return null;
 
       const playerGames = logsByPlayer.get(player.id) || [];
       const totalPoints = playerGames.reduce((sum, game) => sum + (game.points || 0), 0);
       const gamesPlayed = playerGames.length;
 
-      // Use the player's average minutes directly from the player data
-      const averageMinutes = player.minutesPerGame || 0;
-
-      // Calculate other stats
       const totalThreePointers = playerGames.reduce((sum, game) => sum + (game.threePointers || 0), 0);
       const threePointersPerGame = gamesPlayed > 0 ? totalThreePointers / gamesPlayed : 0;
 
@@ -207,69 +199,34 @@ const Home = () => {
         pointsPerGame: gamesPlayed > 0 ? totalPoints / gamesPlayed : 0,
         threePointersPerGame,
         freeThrowPercentage,
-        averageMinutes: averageMinutes,
         totalPoints,
         gamesPlayed
       };
-    }).filter(Boolean); // Remove null entries
+    }).filter(Boolean);
 
-    // Sort by points per game and get top 3
     return [...playerStats]
       .sort((a, b) => b.pointsPerGame - a.pointsPerGame)
       .slice(0, 3);
   }, [players, logsByPlayer, gameLogs.length]);
 
+  // ---- Editorial-spezifische Ableitungen ----
+  const homeIsPitbulls = teamIsPitbulls(homeTeam);
+  const opponent = homeIsPitbulls ? awayTeam : homeTeam;
+  const seasonName = selectedSeason?.name ?? '2025/26';
+  const form = relevantGames.slice(0, 5);
+
   if (loading) {
     return (
       <Layout>
-        <div className="container mx-auto max-w-6xl space-y-12 animate-fade-in">
-          {/* Hero Section Skeleton */}
-          <div className="text-center space-y-4">
-            <div className="h-14 bg-muted/60 rounded-lg w-3/4 mx-auto skeleton-pulse" />
-            <div className="h-6 bg-muted/60 rounded w-1/2 mx-auto skeleton-pulse" />
-          </div>
-
-          {/* Last Game Skeleton */}
-          <div className="space-y-4">
-            <div className="h-8 bg-muted/60 rounded w-48 mx-auto skeleton-pulse" />
-            <Card className="border-border">
-              <CardContent className="pt-6">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="h-8 w-32 bg-muted/60 rounded skeleton-pulse" />
-                  <div className="h-6 w-24 bg-muted/60 rounded skeleton-pulse" />
-                  <div className="flex items-center justify-center gap-8 my-4">
-                    <div className="text-center space-y-2">
-                      <div className="h-8 w-32 bg-muted/60 rounded skeleton-pulse" />
-                      <div className="h-12 w-20 bg-muted/60 rounded skeleton-pulse" />
-                    </div>
-                    <div className="h-8 w-12 bg-muted/60 rounded skeleton-pulse" />
-                    <div className="text-center space-y-2">
-                      <div className="h-8 w-32 bg-muted/60 rounded skeleton-pulse" />
-                      <div className="h-12 w-20 bg-muted/60 rounded skeleton-pulse" />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Top Performers Skeleton */}
-          <div className="grid md:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="border-border">
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="h-10 w-10 bg-muted/60 rounded-full mx-auto skeleton-pulse" />
-                    <div className="h-6 bg-muted/60 rounded w-3/4 mx-auto skeleton-pulse" />
-                    <div className="grid grid-cols-2 gap-2">
-                      {[1, 2, 3, 4].map((j) => (
-                        <div key={j} className="h-16 bg-muted/60 rounded skeleton-pulse" />
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        <div className="container mx-auto max-w-5xl px-4 pt-10 space-y-10 animate-fade-in">
+          <div className="h-3 w-48 bg-muted rounded skeleton-pulse" />
+          <div className="h-32 md:h-48 w-3/4 bg-muted rounded-lg skeleton-pulse" />
+          <div className="h-24 w-full bg-muted rounded-lg skeleton-pulse" />
+          <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-10">
+            <div className="space-y-6">
+              {[1, 2, 3].map(i => <div key={i} className="h-16 w-full bg-muted rounded skeleton-pulse" />)}
+            </div>
+            <div className="aspect-[4/5] w-full bg-muted rounded-lg skeleton-pulse" />
           </div>
         </div>
       </Layout>
@@ -280,7 +237,7 @@ const Home = () => {
     return (
       <Layout>
         <div className="container mx-auto p-4">
-          <div className="text-red-500 text-center py-8">
+          <div className="text-destructive text-center py-8">
             Fehler beim Laden der Daten: {error}
           </div>
         </div>
@@ -292,254 +249,7 @@ const Home = () => {
     return (
       <Layout>
         <div className="container mx-auto p-4">
-          <div className="text-center py-8">Keine Spieldaten verfügbar.</div>
-        </div>
-      </Layout>
-    );
-  }
-
-  // PROTOTYPE Vision 2026 v2 — ?variant=A|B|C zeigt die Design-Varianten,
-  // nur im Dev-Build. Block samt src/prototype-vision2026/ löschen nach Entscheid.
-  const protoVariant = searchParams.get('variant');
-  if (import.meta.env.DEV && protoVariant) {
-    return (
-      <Layout>
-        <Vision2026Prototype
-          variant={protoVariant}
-          data={{
-            gameNumber: lastGame.gameNumber,
-            date: lastGame.date,
-            homeTeam,
-            awayTeam,
-            homeScore,
-            awayScore,
-            streak,
-            topPerformers,
-            recentGames: relevantGames.slice(0, 8),
-            seasonName: selectedSeason?.name ?? '2025/26',
-          }}
-        />
-      </Layout>
-    );
-  }
-
-  if (isModernMode) {
-    return (
-      <Layout>
-        <BirthdayNotification players={players} />
-
-        <div className="container mx-auto max-w-7xl px-4 space-y-12 pb-20">
-          {/* Vision 2026 Hero */}
-          <div className="relative pt-10 pb-6 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter text-white uppercase leading-none">
-                Pitbulls <span className="text-primary block md:inline">Stats</span> Hub
-              </h1>
-              <div className="mt-4 flex items-center justify-center gap-4">
-                <div className="h-[2px] w-12 bg-primary/50" />
-                <span className="text-[10px] font-bold tracking-[0.5em] text-white/40 uppercase">Mehr als nur Zahlen</span>
-                <div className="h-[2px] w-12 bg-primary/50" />
-              </div>
-            </motion.div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-            {/* Last Game Result - Modern Bento */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="md:col-span-8 group"
-            >
-              <div className="glass-card rounded-[2.5rem] p-8 relative overflow-hidden h-full bento-item">
-                <div className="absolute top-0 right-0 p-8 text-[8rem] font-black text-white/[0.03] leading-none select-none">
-                  {lastGame.gameNumber}
-                </div>
-
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-8">
-                    <span className="px-4 py-1.5 bg-primary rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-primary/20">
-                      Letztes Ergebnis
-                    </span>
-                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{lastGame.date}</span>
-                  </div>
-
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-12">
-                    <div className="flex-1 text-center md:text-left">
-                      <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em] mb-2">Heim</h4>
-                      <h2 className="text-4xl font-black text-white tracking-tight">{homeTeam}</h2>
-                      <div className="text-7xl font-black text-primary mt-4 select-none">{homeScore}</div>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-12 h-[2px] bg-white/10" />
-                      <div className="text-2xl font-black text-white/20 italic">VS</div>
-                      <div className="w-12 h-[2px] bg-white/10" />
-                    </div>
-
-                    <div className="flex-1 text-center md:text-right">
-                      <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em] mb-2">Gast</h4>
-                      <h2 className="text-4xl font-black text-white tracking-tight">{awayTeam}</h2>
-                      <div className="text-7xl font-black text-white mt-4 select-none">{awayScore}</div>
-                    </div>
-                  </div>
-
-                  <div className="mt-12 flex justify-center">
-                    <button
-                      onClick={() => navigate(`/games/${lastGame.gameNumber}`)}
-                      className="group/btn relative px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-[0.2em] text-white hover:bg-primary hover:border-primary transition-all duration-500 overflow-hidden"
-                    >
-                      <span className="relative z-10 flex items-center gap-2">
-                        Zum Spielbericht
-                        <span className="translate-x-0 group-hover/btn:translate-x-1 transition-transform">→</span>
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Streak Bento */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-              className="md:col-span-4"
-            >
-              <div className="glass-card rounded-[2.5rem] p-8 h-full bento-item bg-gradient-to-br from-primary/20 via-transparent to-transparent">
-                <h4 className="text-[10px] font-black uppercase text-white/50 tracking-[0.3em] mb-8">Aktuelle Serie</h4>
-
-                <div className="flex flex-col items-center justify-center py-6">
-                  <div className={`text-8xl font-black italic ${streak?.type === 'win' ? 'text-green-400' : 'text-red-400'}`}>
-                    {streak?.count}
-                  </div>
-                  <div className="text-xs font-black uppercase tracking-[0.5em] text-white/60 mt-2">
-                    {streak?.type === 'win' ? 'Siegesserie' : 'Niederlagenserie'}
-                  </div>
-                </div>
-
-                <div className="mt-8 pt-8 border-t border-white/5">
-                  <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-white/30">
-                    <span>Saison {selectedSeason?.name ?? "2025/26"}</span>
-                    <span className="text-primary">TSV 1892</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Top Performers Bento Section */}
-            <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-3 flex items-center justify-between mb-2">
-                <h3 className="text-2xl font-black italic text-white uppercase">Top-Leistungsträger</h3>
-                <button onClick={() => navigate("/players")} className="text-[10px] font-black uppercase tracking-widest text-primary/80 hover:text-primary">Zur Datenbank →</button>
-              </div>
-
-              {topPerformers.map((performer, idx) => (
-                <motion.div
-                  key={performer.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + (idx * 0.1) }}
-                  className="glass-card rounded-[2rem] p-6 bento-item group"
-                  onClick={() => navigate(`/players/${performer.id}`)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-xl font-black text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                      {idx + 1}
-                    </div>
-                    <div className="text-right">
-                      <div className="text-[10px] font-black text-white/30 uppercase tracking-widest">Efficiency</div>
-                      <div className="text-lg font-black text-primary">{performer.pointsPerGame.toFixed(1)} <span className="text-[10px] text-white/40">PPG</span></div>
-                    </div>
-                  </div>
-
-                  <h3 className="text-xl font-black text-white mb-6 group-hover:translate-x-1 transition-transform">
-                    {performer.firstName} <span className="text-primary">{performer.lastName}</span>
-                  </h3>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-white/5 rounded-xl border border-white/5">
-                      <div className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-1">Total Pts</div>
-                      <div className="text-md font-bold text-white">{performer.totalPoints}</div>
-                    </div>
-                    <div className="p-3 bg-white/5 rounded-xl border border-white/5">
-                      <div className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-1">FT %</div>
-                      <div className="text-md font-bold text-white">{performer.freeThrowPercentage}</div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Rising Stars - Dynamic Scroll */}
-            {risingStars.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="md:col-span-12 glass-card rounded-[2.5rem] p-8 overflow-hidden bento-item"
-              >
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="p-2 bg-orange-500 rounded-lg shadow-lg shadow-orange-500/20">
-                    <Flame className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black text-white uppercase tracking-tight">Aufsteiger</h3>
-                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Momentum-Spieler der Woche</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  {risingStars.map((player, idx) => (
-                    <div key={player.playerId} className="flex flex-col gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full border-2 border-orange-500/30 overflow-hidden">
-                          <img src={player.image} className="w-full h-full object-cover" alt="" />
-                        </div>
-                        <div>
-                          <div className="text-md font-black text-white">{player.firstName} {player.lastName}</div>
-                          <div className="text-[10px] font-bold text-orange-400">+{player.improvementCount} MILIESTONES</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {/* Videos Quick Link */}
-            <motion.div
-              className="md:col-span-12"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-            >
-              <button
-                onClick={() => navigate("/videos")}
-                className="w-full h-32 glass-card rounded-[2.5rem] flex items-center justify-center gap-8 group hover:bg-primary/10 transition-all border-white/5 hover:border-primary/30"
-              >
-                <div className="text-4xl group-hover:rotate-12 transition-transform">🎥</div>
-                <div className="text-center md:text-left">
-                  <div className="text-2xl font-black text-white uppercase tracking-tighter">Medienzentrum</div>
-                  <div className="text-[10px] font-bold text-white/40 tracking-[0.3em] uppercase">Access Video Database</div>
-                </div>
-                <div className="hidden md:block w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-white/50 group-hover:text-white group-hover:translate-x-2 transition-all">→</div>
-              </button>
-            </motion.div>
-          </div>
-
-          {/* Team Gallery - Modern Integration */}
-          <div id="team-gallery" className="pt-12">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="h-[1px] flex-1 bg-white/5" />
-              <h3 className="text-xl font-black text-white/20 uppercase tracking-[1em] italic">Mannschafts-Archiv</h3>
-              <div className="h-[1px] flex-1 bg-white/5" />
-            </div>
-            <TeamGallery />
-          </div>
+          <div className="text-center py-8 text-muted-foreground">Keine Spieldaten verfügbar.</div>
         </div>
       </Layout>
     );
@@ -547,261 +257,205 @@ const Home = () => {
 
   return (
     <Layout>
-      {/* Birthday Notification Popup */}
       <BirthdayNotification players={players} />
 
-      <div className="container mx-auto max-w-6xl space-y-12 animate-fade-in">
-        {/* Hero Section */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400">
-            Pitbulls Stats Hub
-          </h1>
+      <div className="relative">
+        {/* Dezenter blauer Verlauf oben — in beiden Themes zurückhaltend */}
+        <div className="absolute inset-0 z-0 pointer-events-none bg-[radial-gradient(ellipse_80%_55%_at_70%_-10%,hsl(var(--brand-blue)/0.12),transparent_60%)]" />
 
-        </div>
-
-        {/* Team Banner */}
-        <TeamBanner
-          streak={streak}
-          onBannerClick={() => {
-            const galleryElement = document.getElementById('team-gallery');
-            if (galleryElement) {
-              galleryElement.scrollIntoView({ behavior: 'smooth' });
-            }
-          }}
-        />
-
-        {/* Last Game Result */}
-        <div className="space-y-4">
-          <h3 className="text-2xl font-bold text-center">Letztes Spiel</h3>
-          <Card className="border-border shadow-elegant hover:shadow-elegant-lg transition-elegant">
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center gap-4">
-                <div className="text-2xl font-bold">Spieltag {lastGame.gameNumber}</div>
-                <div className="text-lg">{lastGame.date}</div>
-                <div className="w-full">
-                  {/* Team names row - only on mobile */}
-                  <div className="md:hidden flex items-center justify-center gap-2 mb-2">
-                    <div className="text-sm font-medium text-center flex-1 line-clamp-2 min-h-[2.5rem] flex items-center justify-center">
-                      {homeTeam}
-                    </div>
-                    <div className="px-2 text-sm font-medium">vs</div>
-                    <div className="text-sm font-medium text-center flex-1 line-clamp-2 min-h-[2.5rem] flex items-center justify-center">
-                      {awayTeam}
-                    </div>
-                  </div>
-
-                  {/* Score row */}
-                  <div className="flex items-center justify-center gap-4 md:gap-8 my-2">
-                    {/* Hidden on mobile - team name is shown in the row above */}
-                    <div className="hidden md:block text-center flex-1">
-                      <div className="text-2xl font-bold line-clamp-2">{homeTeam}</div>
-                    </div>
-
-                    <div className="text-center">
-                      <div className="text-4xl md:text-5xl font-black text-primary">
-                        {homeScore}
-                      </div>
-                    </div>
-
-                    <div className="text-2xl font-bold">:</div>
-
-                    <div className="text-center">
-                      <div className="text-4xl md:text-5xl font-black">
-                        {awayScore}
-                      </div>
-                    </div>
-
-                    {/* Hidden on mobile - team name is shown in the row above */}
-                    <div className="hidden md:block text-center flex-1">
-                      <div className="text-2xl font-bold line-clamp-2">{awayTeam}</div>
-                    </div>
-                  </div>
-                </div>
-                {lastGame.finalScore && (lastGame.finalScore.includes('-') || lastGame.finalScore.includes(':')) ? (
-                  <div className="text-xl font-bold">
-                    {homeTeam === 'TSV Neuenstadt'
-                      ? (Number(homeScore) > Number(awayScore) ? '🏆 Sieg' : '😞 Niederlage')
-                      : (Number(awayScore) > Number(homeScore) ? '🏆 Sieg' : '😞 Niederlage')}
-                  </div>
-                ) : (
-                  <div className="text-xl font-bold text-yellow-600">
-                    ⏳ Spiel steht noch aus
-                  </div>
-                )}
-                <Button
-                  variant="outline"
-                  onClick={() => navigate(`/games/${lastGame.gameNumber}`)}
-                  className="mt-4"
-                >
-                  Spielbericht ansehen
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="text-center mt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('games')}
-              className="text-muted-foreground hover:text-primary p-0 h-auto"
-            >
-              Alle Spiele →
-            </Button>
+        <div className="relative z-10 container mx-auto max-w-5xl px-4 pb-20">
+          {/* Vertikale Randspalte */}
+          <div className="hidden xl:block fixed left-6 top-1/2 -translate-y-1/2 origin-center -rotate-90 z-10">
+            <span className="text-[10px] font-black uppercase tracking-[0.6em] text-muted-foreground/40 whitespace-nowrap">
+              TSV Neuenstadt · Pitbulls · Saison {seasonName}
+            </span>
           </div>
 
-          {/* Top 3 Performers */}
-          <div className="space-y-4 mt-12">
-            <h3 className="text-2xl font-bold text-center">Top 3 Performer</h3>
-            <div className="grid md:grid-cols-3 gap-4">
-              {topPerformers.map((performer, index) => (
-                <Card
-                  key={performer.id}
-                  className="border-border shadow-elegant hover:shadow-elegant-lg transition-elegant cursor-pointer group"
-                  onClick={() => navigate(`/players/${performer.id}`)}
-                >
-                  <CardContent className="pt-6">
-                    <div className="text-center space-y-3">
-                      <div className="text-3xl font-bold text-primary group-hover:scale-110 transition-elegant">#{index + 1}</div>
-                      <div className="text-center">
-                        <div className="text-lg font-semibold">
-                          {performer.firstName} {performer.lastName || ''}
-                        </div>
-                        {performer.averageMinutes > 0 && (
-                          <div className="text-sm text-muted-foreground">
-                            ⏱️ {performer.averageMinutes.toFixed(1)} Min/Spiel
-                          </div>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm w-full">
-                        <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
-                          <div className="text-muted-foreground text-xs">Punkte/Spiel</div>
-                          <div className="text-lg font-bold text-primary">{performer.pointsPerGame.toFixed(1)}</div>
-                        </div>
-                        <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
-                          <div className="text-muted-foreground text-xs">Gesamtpunkte</div>
-                          <div className="text-lg font-bold">{performer.totalPoints}</div>
-                        </div>
-                        <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
-                          <div className="text-muted-foreground text-xs">3-Punkte/Spiel</div>
-                          <div className="text-lg font-bold">{performer.threePointersPerGame.toFixed(1)}</div>
-                        </div>
-                        <div className="bg-accent p-2 rounded transition-elegant group-hover:bg-accent/70">
-                          <div className="text-muted-foreground text-xs">FW-Quote</div>
-                          <div className="text-lg font-bold">{performer.freeThrowPercentage}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+          {/* Kopfzeile */}
+          <div className="pt-10 flex items-baseline justify-between border-b-2 border-border pb-3">
+            <span className="text-xs font-black uppercase tracking-[0.3em] text-foreground">Pitbulls Stats Hub</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">Ausgabe · Spieltag {lastGame.gameNumber}</span>
+          </div>
+
+          {/* Eyebrow */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <div className="pt-12 pb-5">
+              <span className="inline-block bg-brand-orange px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.4em] text-white">
+                {lastGame.date} — gegen {opponent}
+              </span>
             </div>
-            <div className="text-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/players")}
-                className="text-muted-foreground hover:text-primary"
+
+            {/* Hero: der Endstand selbst ist die Riesen-Typografie */}
+            <div className="font-display flex items-baseline gap-3 md:gap-8 leading-[0.8]">
+              <span className={`text-[clamp(4.5rem,15vw,12rem)] font-black tabular-nums tracking-tighter ${homeIsPitbulls ? 'text-brand-orange' : 'text-foreground'}`}>{homeScore}</span>
+              <span className="text-[clamp(2rem,6vw,5rem)] font-light text-muted-foreground/40">:</span>
+              <span className={`text-[clamp(4.5rem,15vw,12rem)] font-black tabular-nums tracking-tighter ${homeIsPitbulls ? 'text-foreground' : 'text-brand-orange'}`}>{awayScore}</span>
+            </div>
+
+            {/* Meta-Leiste: Teams + Serie + Button */}
+            <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-3 border-y border-border py-4">
+              <span className="text-sm font-black uppercase tracking-[0.2em] text-foreground/80">
+                <span className={homeIsPitbulls ? 'text-brand-orange' : 'text-muted-foreground'}>●</span> {homeTeam}
+              </span>
+              <span className="text-sm font-black uppercase tracking-[0.2em] text-foreground/80">
+                <span className={homeIsPitbulls ? 'text-muted-foreground' : 'text-brand-orange'}>●</span> {awayTeam}
+              </span>
+              {streak && (
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground md:ml-auto">
+                  Serie <span className={`text-lg tracking-tight ${streak.type === 'win' ? 'text-brand-blue-bright' : 'text-destructive'}`}>{streak.count}{streak.type === 'win' ? 'W' : 'L'}</span>
+                </span>
+              )}
+              <button
+                onClick={() => navigate(`/games/${lastGame.gameNumber}`)}
+                className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground border-b-2 border-brand-orange pb-1 hover:text-brand-orange transition-colors"
               >
-                Alle Spieler →
-              </Button>
+                Spielbericht lesen →
+              </button>
             </div>
-          </div>
 
-          {/* Rising Stars Section */}
-          {risingStars.length > 0 && (
-            <div className="space-y-4 mt-12">
-              <div className="w-full text-center">
-                <h3 className="text-2xl font-bold">Aufsteiger der Woche</h3>
-                <div className="flex justify-center items-center text-sm text-muted-foreground mt-1">
-                  <Flame className="w-4 h-4 mr-1 text-orange-500" />
-                  <span>Verbesserungen im Vergleich zum letzten Spiel</span>
-                </div>
-              </div>
+            <p className="mt-8 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              {homeTeam} gegen {awayTeam} — alle Zahlen, Trends und Leistungsträger des Spieltags.
+              Mehr als nur Zahlen: die Geschichte der Saison {seasonName}, erzählt in Daten.
+            </p>
+          </motion.div>
 
-              <div className="grid md:grid-cols-3 gap-4">
-                {risingStars.map((player, index) => (
-                  <Card
-                    key={player.playerId}
-                    className="border-orange-100 shadow-elegant hover:shadow-elegant-lg transition-elegant cursor-pointer group"
-                    onClick={() => navigate(`/players/${player.playerId}`)}
+          {/* Zwei Spalten: Performer-Liste + Team-Foto */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-14 pt-14">
+            {/* Nummerierte Editorial-Liste */}
+            <div>
+              <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-muted-foreground mb-8">
+                Leistungsträger <span className="text-brand-orange">/ Punkte pro Spiel</span>
+              </h3>
+              <ol>
+                {topPerformers.map((p, idx) => (
+                  <li
+                    key={p.id}
+                    onClick={() => navigate(`/players/${p.id}`)}
+                    className="group cursor-pointer border-b border-border py-6 first:pt-0 flex items-baseline gap-6 hover:border-brand-orange/60 transition-colors"
                   >
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="relative group-hover:scale-105 transition-elegant">
-                          <img
-                            src={player.image}
-                            alt={`${player.firstName} ${player.lastName}`}
-                            className="w-16 h-16 rounded-full object-cover border-2 border-orange-200"
-                          />
-                          <div className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                            {index + 1}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="font-semibold text-lg">
+                    <span className="text-sm font-black tabular-nums text-brand-blue w-8">0{idx + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-display text-2xl md:text-3xl font-black uppercase tracking-tight text-foreground group-hover:translate-x-2 transition-transform duration-300 truncate">
+                        {p.firstName} <span className="text-muted-foreground group-hover:text-brand-orange transition-colors">{p.lastName}</span>
+                      </div>
+                      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground/70">
+                        {p.totalPoints} Pkt · {p.gamesPlayed} Spiele · FW {p.freeThrowPercentage}
+                      </div>
+                    </div>
+                    <span className="font-display text-3xl font-black tabular-nums text-brand-orange">{p.pointsPerGame.toFixed(1)}</span>
+                  </li>
+                ))}
+              </ol>
+              <button
+                onClick={() => navigate('/players')}
+                className="mt-8 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                → Alle Spieler ansehen
+              </button>
+
+              {/* Aufsteiger der Woche */}
+              {risingStars.length > 0 && (
+                <div className="mt-14">
+                  <h3 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.4em] text-muted-foreground mb-6">
+                    <Flame className="w-3.5 h-3.5 text-brand-orange" />
+                    Aufsteiger <span className="text-brand-orange">/ der Woche</span>
+                  </h3>
+                  <div className="space-y-3">
+                    {risingStars.map((player) => (
+                      <div
+                        key={player.playerId}
+                        onClick={() => navigate(`/players/${player.playerId}`)}
+                        className="group cursor-pointer flex items-center gap-4 border-l-2 border-brand-orange/40 pl-4 py-2 hover:border-brand-orange transition-colors"
+                      >
+                        <img src={player.image} alt="" className="w-10 h-10 rounded-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-black uppercase tracking-tight text-foreground truncate">
                             {player.firstName} {player.lastName}
                           </div>
-                          <div className="flex items-center text-sm text-orange-600">
-                            <Flame className="w-4 h-4 mr-1" />
-                            <span>{player.improvementCount} Verbesserungen</span>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-orange">
+                            +{player.improvementCount} Verbesserungen
                           </div>
                         </div>
                       </div>
-
-                      <div className="space-y-2 text-sm">
-                        {player.improvements.slice(0, 3).map((improvement, i) => (
-                          <div key={i} className="flex justify-between">
-                            <span className="text-muted-foreground">{improvement.category}:</span>
-                            <span className="font-medium">
-                              {improvement.previousValue} →{' '}
-                              <span className="text-green-600">{improvement.currentValue}</span>
-                              <span className="ml-1 text-xs text-green-600">
-                                (+{improvement.improvement}%)
-                              </span>
-                            </span>
-                          </div>
-                        ))}
-                        {player.improvements.length > 3 && (
-                          <div className="text-xs text-muted-foreground text-right">
-                            +{player.improvements.length - 3} weitere Verbesserungen
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              <div className="text-center mt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/players')}
-                  className="text-muted-foreground hover:text-primary"
-                >
-                  Alle Spieler →
-                </Button>
-              </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Quick Links */}
-          <div className="grid md:grid-cols-1 gap-4 pt-8">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => navigate("/videos")}
-              className="h-20 shadow-elegant hover:shadow-elegant-lg transition-elegant group"
-            >
-              <div className="text-center">
-                <div className="text-2xl mb-1 group-hover:scale-110 transition-elegant">🎥</div>
-                <div className="font-semibold">Videos</div>
+            {/* Team-Foto mit Blau-Overlay + Orange-Kante */}
+            <div>
+              <div className="relative border-l-4 border-brand-orange overflow-hidden">
+                <img
+                  src={`${BASE_PATH}/photos/Team-01.jpeg`}
+                  alt="Team TSV Neuenstadt Pitbulls"
+                  className="w-full aspect-[4/5] object-cover grayscale contrast-110"
+                />
+                {/* Festes dunkles TSV-Blau — als Foto-Overlay in beiden Themes gewollt dunkel */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#16306b]/90 via-[#16306b]/30 to-transparent mix-blend-multiply" />
+                <div className="absolute bottom-0 inset-x-0 p-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-orange-bright">Das Team</p>
+                  <p className="font-display text-2xl font-black uppercase tracking-tight text-white">Pitbulls {seasonName}</p>
+                </div>
               </div>
-            </Button>
+              {/* Form als Textzeile */}
+              <div className="mt-6 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
+                <span>Form</span>
+                <span className="tracking-[0.5em] text-sm">
+                  {form.map(g => (
+                    <span key={g.gameNumber} className={gameIsWin(g) ? 'text-brand-orange' : 'text-muted-foreground/40'}>
+                      {gameIsWin(g) ? 'W' : 'L'}
+                    </span>
+                  ))}
+                </span>
+              </div>
+
+              {/* Schnellzugriff */}
+              <nav className="mt-8 grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Spielplan', to: '/spielplan' },
+                  { label: 'Statistiken', to: '/stats' },
+                  { label: 'Ergebnisse', to: '/games' },
+                  { label: 'Videos', to: '/videos' },
+                ].map(l => (
+                  <button
+                    key={l.to}
+                    onClick={() => navigate(l.to)}
+                    className="border border-border px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground hover:border-brand-orange/60 transition-colors text-left"
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
           </div>
 
-          {/* Team Gallery */}
-          <div id="team-gallery">
+          {/* Editorial-Schlusszeile */}
+          <div className="mt-20 border-t-2 border-border pt-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <p className="font-display text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none">
+              <span className="text-muted-foreground">Mehr als</span><br />
+              <span className="text-foreground">nur Zahlen<span className="text-brand-orange">.</span></span>
+            </p>
+            <nav className="flex gap-6 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
+              {[
+                { label: 'News', to: '/news' },
+                { label: 'Awards', to: '/awards' },
+                { label: 'Playbook', to: '/playbook' },
+              ].map(l => (
+                <button key={l.to} onClick={() => navigate(l.to)} className="hover:text-brand-orange transition-colors">
+                  {l.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          {/* Mannschafts-Archiv */}
+          <div id="team-gallery" className="pt-16">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="h-px flex-1 bg-border" />
+              <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-muted-foreground">Mannschafts-Archiv</h3>
+              <div className="h-px flex-1 bg-border" />
+            </div>
             <TeamGallery />
           </div>
         </div>

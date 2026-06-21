@@ -1,10 +1,16 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
 import { GameStats, PlayerGameLog, PlayerStats } from '@/types/stats';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatGameDate } from '@/utils/spielplanUtils';
+import { useModernTheme } from '@/contexts/ModernThemeContext';
+
+// Vision 2026 v2 — "Editorial Court": theme-aware, Vereinsfarben.
+const teamIsPitbulls = (team?: string) => {
+  const t = (team ?? '').toLowerCase();
+  return t.includes('neuenstadt') || t.includes('pitbull');
+};
 
 interface GameCardProps {
   game: GameStats;
@@ -16,168 +22,118 @@ const GameCard: React.FC<GameCardProps> = React.memo(({ game, topScorers, player
   const navigate = useNavigate();
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Stop propagation if the event target is not the card itself (e.g. inner buttons)
     if (e.target !== e.currentTarget) return;
-
     if (e.key === 'Enter' || e.key === ' ') {
-      // Prevent scrolling for Space
-      if (e.key === ' ') {
-        e.preventDefault();
-      }
+      if (e.key === ' ') e.preventDefault();
       navigate(`/games/${game.gameNumber}`);
     }
   };
 
+  // Score + Win/Loss aus Pitbulls-Sicht
+  const { homeScore, awayScore, homeIsPb, pbWin, hasScore } = useMemo(() => {
+    const parts = (game.finalScore ?? '').split(/[-:]/).map(s => s.trim());
+    const h = parseInt(parts[0], 10);
+    const a = parseInt(parts[1], 10);
+    const homeIsPb = teamIsPitbulls(game.homeTeam);
+    const valid = !isNaN(h) && !isNaN(a);
+    return {
+      homeScore: parts[0] ?? '',
+      awayScore: parts[1] ?? '',
+      homeIsPb,
+      pbWin: valid ? (homeIsPb ? h > a : a > h) : false,
+      hasScore: valid,
+    };
+  }, [game.finalScore, game.homeTeam]);
+
+  // Akzentkante: Sieg = Orange, Niederlage = gedämpft
+  const accent = !hasScore ? 'border-l-border' : pbWin ? 'border-l-brand-orange' : 'border-l-muted-foreground/30';
+
   return (
-    <Card
-      className="hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    <div
+      className={`group glass-card border-l-4 ${accent} cursor-pointer transition-all duration-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
       onClick={() => navigate(`/games/${game.gameNumber}`)}
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
     >
-      <CardContent className="p-4 md:p-6">
+      <div className="p-4 md:p-6">
         <div className="flex flex-col md:flex-row md:gap-8">
-          {/* Left side - Game details, teams, and top scorers */}
+          {/* Left: Spieldetails, Teams, Topscorer */}
           <div className="flex-1 space-y-4">
-            {/* Game details */}
-            <div className="space-y-1">
-              <div className="text-lg font-semibold text-foreground">
+            <div className="flex items-baseline justify-between">
+              <span className="font-display text-sm font-black uppercase tracking-[0.2em] text-foreground">
                 Spieltag {game.gameNumber}
-              </div>
-              <div className="text-sm text-muted-foreground">
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                 {formatGameDate(game.date)}
-              </div>
+              </span>
             </div>
 
-            {/* Teams and score */}
-            <div className="py-2">
-              <div className="hidden md:grid grid-cols-12 items-center gap-4">
-                <div className="col-span-5 text-right">
-                  <div className="font-medium text-base">{game.homeTeam || 'Pitbulls'}</div>
-                  <div className="text-sm text-muted-foreground">Heim</div>
+            {/* Teams + Score */}
+            <div className="border-y border-border py-3">
+              <div className="grid grid-cols-12 items-center gap-3">
+                <div className="col-span-5 text-right min-w-0">
+                  <div className="font-black uppercase tracking-tight text-sm md:text-base truncate text-foreground">{game.homeTeam || 'Pitbulls'}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Heim</div>
                 </div>
-
                 <div className="col-span-2">
-                  {game.finalScore ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-3xl font-bold">
-                        {game.finalScore.split(/[-:]/)[0].trim()}
-                      </span>
-                      <span className="text-xl">:</span>
-                      <span className="text-3xl font-bold">
-                        {game.finalScore.split(/[-:]/)[1]?.trim()}
-                      </span>
+                  {hasScore ? (
+                    <div className="flex items-center justify-center gap-1.5 font-display">
+                      <span className={`text-2xl md:text-3xl font-black tabular-nums ${homeIsPb ? 'text-brand-orange' : 'text-foreground'}`}>{homeScore}</span>
+                      <span className="text-base text-muted-foreground/40">:</span>
+                      <span className={`text-2xl md:text-3xl font-black tabular-nums ${homeIsPb ? 'text-foreground' : 'text-brand-orange'}`}>{awayScore}</span>
                     </div>
                   ) : (
-                    <div className="text-2xl text-muted-foreground text-center">vs</div>
+                    <div className="text-lg text-muted-foreground/50 text-center italic font-black">vs</div>
                   )}
                 </div>
-
-                <div className="col-span-5">
-                  <div className="font-medium text-base">{game.awayTeam || 'Gegner'}</div>
-                  <div className="text-sm text-muted-foreground">Gast</div>
+                <div className="col-span-5 min-w-0">
+                  <div className="font-black uppercase tracking-tight text-sm md:text-base truncate text-foreground">{game.awayTeam || 'Gegner'}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Gast</div>
                 </div>
-              </div>
-
-              {/* Mobile view */}
-              <div className="md:hidden space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">{game.homeTeam || 'Pitbulls'}</div>
-                  <div className="text-sm text-muted-foreground">Heim</div>
-                </div>
-
-                <div className="text-center py-1">
-                  {game.finalScore ? (
-                    <div className="text-2xl font-bold">
-                      {game.finalScore}
-                    </div>
-                  ) : (
-                    <div className="text-xl text-muted-foreground">vs</div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">{game.awayTeam || 'Gegner'}</div>
-                  <div className="text-sm text-muted-foreground">Gast</div>
-                </div>
-
-                {/* Mobile Top Scorers */}
-                {topScorers.length > 0 && (
-                  <div className="pt-2">
-                    <div className="text-xs font-medium text-foreground mb-1">Topscorer</div>
-                    <div className="flex justify-center gap-3">
-                      {topScorers.slice(0, 3).map((player, index) => {
-                        const playerData = playerMap.get(player.playerId);
-                        const playerName = playerData ? `${playerData.firstName} ${playerData.lastName}` : 'Unbekannt';
-                        return (
-                          <div key={player.playerId} className="flex flex-col items-center">
-                            <div className="flex items-center gap-1">
-                              <span className={`text-[10px] font-bold ${index === 0 ? 'text-yellow-500' : 'text-muted-foreground'}`}>#{index + 1}</span>
-                              <div className="text-xs font-medium truncate max-w-[60px]">{playerName.split(' ')[0]}</div>
-                            </div>
-                            <div className="text-sm font-black text-primary leading-tight">{player.points}P</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Top scorers - Desktop only */}
-            <div className="hidden md:block pt-2">
-              <div className="text-sm font-medium text-foreground mb-2">Topscorer</div>
-              <div className="grid grid-cols-3 gap-2">
-                {topScorers.slice(0, 3).map((player, index) => {
-                  const playerData = playerMap.get(player.playerId);
-                  const playerName = playerData ? `${playerData.firstName} ${playerData.lastName}` : 'Unbekannt';
-                  const avatarSrc = playerData?.imageUrl || '/players/placeholder-player.png';
-                  
-                  // Rank specific styling
-                  const rankColors = [
-                    'bg-yellow-500/10 border-yellow-500/50 text-yellow-600 dark:text-yellow-400', // Gold
-                    'bg-slate-400/10 border-slate-400/50 text-slate-600 dark:text-slate-400',     // Silver
-                    'bg-amber-600/10 border-amber-600/50 text-amber-700 dark:text-amber-500',   // Bronze
-                  ];
-
-                  return (
-                    <div 
-                      key={player.playerId} 
-                      className={`relative overflow-hidden p-2 rounded-xl border transition-all hover:shadow-sm bg-card/50 ${rankColors[index] || 'bg-muted/50 border-border'}`}
-                    >
-                      <div className="absolute top-0 right-0 p-1 opacity-10">
-                        <span className="text-2xl font-black">{index + 1}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 relative z-10">
-                        <Avatar className={`h-10 w-10 border-2 ${index === 0 ? 'border-yellow-500' : 'border-primary/40'}`}>
-                          <AvatarImage src={avatarSrc} alt={playerName} />
-                          <AvatarFallback>
+            {/* Topscorer */}
+            {topScorers.length > 0 && (
+              <div className="pt-1">
+                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-3">
+                  Topscorer
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {topScorers.slice(0, 3).map((player, index) => {
+                    const playerData = playerMap.get(player.playerId);
+                    const playerName = playerData ? `${playerData.firstName} ${playerData.lastName}` : 'Unbekannt';
+                    const avatarSrc = playerData?.imageUrl || '/players/placeholder-player.png';
+                    return (
+                      <div key={player.playerId} className="flex items-center gap-2 min-w-0">
+                        <Avatar className={`h-9 w-9 border-2 ${index === 0 ? 'border-brand-orange' : 'border-border'}`}>
+                          <AvatarImage src={avatarSrc} alt={playerName} className="grayscale" />
+                          <AvatarFallback className="text-[10px] font-black">
                             {playerName.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                          <div className="text-xs font-semibold uppercase tracking-wider opacity-70">#{index + 1} Player</div>
-                          <div className="text-sm font-bold truncate">{playerName.split(' ')[0]}</div>
-                          <div className="text-primary font-black text-lg leading-tight">{player.points} <span className="text-[10px] font-medium tracking-normal text-muted-foreground uppercase">Pkt</span></div>
+                          <div className="text-[11px] font-black uppercase tracking-tight truncate text-foreground">{playerName.split(' ')[0]}</div>
+                          <div className="font-display font-black text-base leading-none text-brand-orange">
+                            {player.points}<span className="text-[9px] font-bold tracking-normal text-muted-foreground uppercase ml-0.5">Pkt</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Video Link - if available */}
             {(game.youtubeLink || (game.videoData && game.videoData.length > 0)) && (
-              <div className="pt-3">
+              <div className="pt-2">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/video-editor?game=${game.gameNumber}`);
                   }}
-                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                  className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-blue hover:text-brand-orange transition-colors flex items-center gap-1.5"
                 >
                   🎥 Video ansehen
                 </button>
@@ -185,15 +141,15 @@ const GameCard: React.FC<GameCardProps> = React.memo(({ game, topScorers, player
             )}
           </div>
 
-          {/* Right side - Chart */}
+          {/* Right: Verlaufs-Chart */}
           <div className="mt-4 md:mt-0 md:w-2/5 lg:w-1/3">
             <div className="h-48 md:h-full">
               <ScoreProgressionChart game={game} />
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 });
 
@@ -204,16 +160,13 @@ interface ScoreProgressionChartProps {
 }
 
 const ScoreProgressionChart: React.FC<ScoreProgressionChartProps> = ({ game }) => {
-  // Hide chart if no score data is available
-  if (!game.q1Score && !game.halfTimeScore && !game.q3Score && !game.finalScore) {
-    return null;
-  }
+  const { theme } = useModernTheme();
+  const isDark = theme === 'dark';
 
   const chartData = useMemo(() => {
     const parseScore = (score: string) => {
       if (!score) return { home: 0, away: 0 };
-      // Handle both '14:14' and '14 - 14' formats
-      const [home, away] = score.split(/[:\-]/).map(s => parseInt(s.trim()));
+      const [home, away] = score.split(/[:-]/).map(s => parseInt(s.trim()));
       return { home: isNaN(home) ? 0 : home, away: isNaN(away) ? 0 : away };
     };
 
@@ -226,53 +179,38 @@ const ScoreProgressionChart: React.FC<ScoreProgressionChartProps> = ({ game }) =
     const ft = parseScore(game.finalScore);
 
     return [
-      {
-        period: 'Q1',
-        'TSV Neuenstadt': isHomeGame ? q1.home : q1.away,
-        'Gegner': isHomeGame ? q1.away : q1.home
-      },
-      {
-        period: 'HT',
-        'TSV Neuenstadt': isHomeGame ? ht.home : ht.away,
-        'Gegner': isHomeGame ? ht.away : ht.home
-      },
-      {
-        period: 'Q3',
-        'TSV Neuenstadt': isHomeGame ? q3.home : q3.away,
-        'Gegner': isHomeGame ? q3.away : q3.home
-      },
-      {
-        period: 'FT',
-        'TSV Neuenstadt': isHomeGame ? ft.home : ft.away,
-        'Gegner': isHomeGame ? ft.away : ft.home
-      }
+      { period: 'Q1', 'TSV Neuenstadt': isHomeGame ? q1.home : q1.away, 'Gegner': isHomeGame ? q1.away : q1.home },
+      { period: 'HT', 'TSV Neuenstadt': isHomeGame ? ht.home : ht.away, 'Gegner': isHomeGame ? ht.away : ht.home },
+      { period: 'Q3', 'TSV Neuenstadt': isHomeGame ? q3.home : q3.away, 'Gegner': isHomeGame ? q3.away : q3.home },
+      { period: 'FT', 'TSV Neuenstadt': isHomeGame ? ft.home : ft.away, 'Gegner': isHomeGame ? ft.away : ft.home }
     ];
   }, [game]);
 
-  // Add starting point at 0
+  // Hide chart if no score data is available
+  if (!game.q1Score && !game.halfTimeScore && !game.q3Score && !game.finalScore) {
+    return null;
+  }
+
   const chartDataWithStart = [
     { period: 'Start', 'TSV Neuenstadt': 0, 'Gegner': 0 },
     ...chartData
   ];
 
+  // Theme-aware Chart-Farben (Vereinsfarben: TSV = Orange, Gegner = gedämpft)
+  const gridStroke = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+  const tickFill = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.5)';
+  const tsvColor = '#E87722';
+  const oppColor = isDark ? 'rgba(255,255,255,0.45)' : '#94a3b8';
+
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={chartDataWithStart}
-          margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-          <XAxis
-            dataKey="period"
-            tick={{ fill: '#666', fontSize: 12 }}
-            tickLine={false}
-            axisLine={false}
-            padding={{ left: 10, right: 10 }}
-          />
+        <LineChart data={chartDataWithStart} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
+          <XAxis dataKey="period" tick={{ fill: tickFill, fontSize: 12 }} tickLine={false} axisLine={false} padding={{ left: 10, right: 10 }} />
           <YAxis
             domain={[0, (dataMax: number) => Math.max(50, dataMax + 5)]}
-            tick={{ fill: '#666', fontSize: 11 }}
+            tick={{ fill: tickFill, fontSize: 11 }}
             tickLine={false}
             axisLine={false}
             width={25}
@@ -281,31 +219,19 @@ const ScoreProgressionChart: React.FC<ScoreProgressionChartProps> = ({ game }) =
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: 'white',
-              borderRadius: '4px',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              backgroundColor: isDark ? '#0A1428' : '#ffffff',
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+              borderRadius: '8px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
               padding: '8px 12px',
-              fontSize: '13px'
+              fontSize: '13px',
+              color: isDark ? '#fff' : '#0A1428',
             }}
-            labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
+            labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: isDark ? '#fff' : '#0A1428' }}
             formatter={(value: number) => [value, 'Punkte']}
           />
-          <Line
-            type="monotone"
-            dataKey="TSV Neuenstadt"
-            stroke="#3b82f6"
-            strokeWidth={2}
-            dot={{ r: 4 }}
-            activeDot={{ r: 6 }}
-          />
-          <Line
-            type="monotone"
-            dataKey="Gegner"
-            stroke="#ef4444"
-            strokeWidth={2}
-            dot={{ r: 4 }}
-            activeDot={{ r: 6 }}
-          />
+          <Line type="monotone" dataKey="TSV Neuenstadt" stroke={tsvColor} strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+          <Line type="monotone" dataKey="Gegner" stroke={oppColor} strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
         </LineChart>
       </ResponsiveContainer>
     </div>

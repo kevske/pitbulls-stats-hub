@@ -241,47 +241,48 @@ const GameDetail: React.FC = () => {
       <div className="container mx-auto p-4">
         <button
           onClick={() => navigate(-1)}
-          className="mb-4 text-blue-600 hover:underline flex items-center"
+          className="mb-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-brand-orange transition-colors flex items-center"
         >
           ← Zurück zur Übersicht
         </button>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-2xl">
-              Spieltag {game.gameNumber} • {formatGameDate(game.date, undefined, "EEEE, dd.MM.yyyy 'um' HH:mm 'Uhr'")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 items-center text-center mb-6">
-              <div>
-                <div className="text-xl font-bold">{game.homeTeam}</div>
-                <div className="text-sm text-muted-foreground">Heim</div>
-              </div>
-              <div className="text-4xl font-bold">{game.finalScore}</div>
-              <div>
-                <div className="text-xl font-bold">{game.awayTeam}</div>
-                <div className="text-sm text-muted-foreground">Gast</div>
-              </div>
-            </div>
+        <Card className="mb-8 border-border">
+          <CardContent className="p-6">
+            {/* Editorial-Hero: Endstand als Held */}
+            {(() => {
+              const parts = (game.finalScore ?? '').split(/[-:]/).map(s => s.trim());
+              const homeIsPb = /neuenstadt|pitbull/.test((game.homeTeam ?? '').toLowerCase());
+              return (
+                <div className="border-b-2 border-border pb-6 mb-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-orange mb-5">
+                    Spieltag {game.gameNumber} — {formatGameDate(game.date, undefined, "EEEE, dd.MM.yyyy 'um' HH:mm 'Uhr'")}
+                  </p>
+                  <div className="font-display flex items-baseline gap-3 md:gap-6 leading-[0.85]">
+                    <span className={`text-6xl md:text-8xl font-black tabular-nums tracking-tighter ${homeIsPb ? 'text-brand-orange' : 'text-foreground'}`}>{parts[0]}</span>
+                    <span className="text-3xl md:text-5xl font-light text-muted-foreground/40">:</span>
+                    <span className={`text-6xl md:text-8xl font-black tabular-nums tracking-tighter ${homeIsPb ? 'text-foreground' : 'text-brand-orange'}`}>{parts[1]}</span>
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-1 text-sm font-black uppercase tracking-[0.15em] text-foreground/80">
+                    <span><span className={homeIsPb ? 'text-brand-orange' : 'text-muted-foreground'}>●</span> {game.homeTeam} <span className="text-muted-foreground font-bold">Heim</span></span>
+                    <span><span className={homeIsPb ? 'text-muted-foreground' : 'text-brand-orange'}>●</span> {game.awayTeam} <span className="text-muted-foreground font-bold">Gast</span></span>
+                  </div>
+                </div>
+              );
+            })()}
 
-            <div className="grid grid-cols-4 gap-4 text-center mb-6">
-              <div>
-                <div className="text-sm text-muted-foreground">1. Viertel</div>
-                <div className="font-medium">{game.q1Score}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Halbzeit</div>
-                <div className="font-medium">{game.halfTimeScore}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">3. Viertel</div>
-                <div className="font-medium">{game.q3Score}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Endstand</div>
-                <div className="font-bold text-lg">{game.finalScore}</div>
-              </div>
+            {/* Viertel-Verlauf */}
+            <div className="grid grid-cols-4 gap-px bg-border border border-border mb-6">
+              {[
+                { label: '1. Viertel', val: game.q1Score },
+                { label: 'Halbzeit', val: game.halfTimeScore },
+                { label: '3. Viertel', val: game.q3Score },
+                { label: 'Endstand', val: game.finalScore },
+              ].map((q, i) => (
+                <div key={i} className="bg-card p-3 text-center">
+                  <div className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground mb-1">{q.label}</div>
+                  <div className={`font-display font-black tabular-nums ${i === 3 ? 'text-brand-orange text-lg' : 'text-foreground'}`}>{q.val || '–'}</div>
+                </div>
+              ))}
             </div>
 
             {/* Minutes Editor Link - if no minute data available or manually requested */}
@@ -312,23 +313,23 @@ const GameDetail: React.FC = () => {
             )}
 
             <div className="mt-8">
-              <h3 className="text-lg font-semibold mb-4">Top-Scorer</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-4">Top-Scorer</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {topPerformers.map((player, index) => (
-                  <div key={player.playerId} className="bg-muted p-4 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="text-2xl font-bold text-muted-foreground">#{index + 1}</div>
-                      <div>
-                        <div className="font-medium">
+                  <div key={player.playerId} className="bg-muted/60 border-l-2 border-brand-orange/50 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="font-display text-2xl font-black tabular-nums text-brand-blue">0{index + 1}</div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-black uppercase tracking-tight truncate text-foreground">
                           {(() => {
                             const p = player as any;
                             const fallback = p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : undefined;
                             return getPlayerName(player.playerId, true, fallback);
                           })()}
                         </div>
-                        <div className="text-2xl font-bold">{player.points} Punkte</div>
-                        <div className="text-sm text-muted-foreground">
-                          {player.threePointers} 3P • {player.twoPointers} 2P • {player.freeThrowsMade}/{player.freeThrowAttempts} FT
+                        <div className="font-display text-xl font-black text-brand-orange">{player.points} <span className="text-[10px] font-bold text-muted-foreground uppercase">Pkt</span></div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">
+                          {player.threePointers} 3P · {player.twoPointers} 2P · {player.freeThrowsMade}/{player.freeThrowAttempts} FT
                         </div>
                       </div>
                     </div>

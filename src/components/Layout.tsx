@@ -1,7 +1,5 @@
-import React, { ReactNode, useState } from "react";
+import { ReactNode, useState } from "react";
 import Sidebar from "./Sidebar";
-import { useModernTheme } from "@/contexts/ModernThemeContext";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,90 +7,51 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { isModernMode } = useModernTheme();
 
   return (
-    <div className={`min-h-screen relative overflow-hidden transition-colors duration-1000 ${isModernMode ? 'bg-[#05070a]' : 'bg-background'}`}>
-      {/* Vision 2026 Background Elements */}
-      <AnimatePresence>
-        {isModernMode && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-0 pointer-events-none"
-            >
-              <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
-              <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
-              <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-purple-500/10 rounded-full blur-[100px] animate-pulse [animation-delay:4s]" />
-
-              {/* Grid Overlay */}
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
+    <div className="min-h-screen relative bg-background">
       <Sidebar isOpen={isSidebarOpen} onToggle={setIsSidebarOpen} />
 
       <div className={`transition-all duration-300 min-h-screen flex flex-col ${isSidebarOpen ? 'md:pl-64' : 'md:pl-0'}`}>
-        {/* Decorative X marks commented out as requested
-        <div className="fixed top-8 right-8 z-0 flex flex-col gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={`top-${i}`} className="text-primary/30 text-5xl font-bold select-none">×</div>
-          ))}
-        </div>
-
-        <div className="fixed bottom-8 right-8 z-0 flex flex-col gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={`bottom-${i}`} className="text-primary/50 text-5xl font-bold select-none">×</div>
-          ))}
-        </div>
-        */}
-
         <main className="flex-grow p-3 md:p-6 pt-20 md:pt-6 pb-24">
           {children}
         </main>
 
-        {/* Footer with links */}
-        <footer className="bg-card/95 backdrop-blur-md border-t border-border py-3 shadow-elegant">
+        {/* Footer — Editorial */}
+        <footer className="border-t-2 border-border py-5 mt-8">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 text-[10px] font-black uppercase tracking-[0.2em]">
               <a
                 href="https://www.instagram.com/tsv.neuenstadtbasketball/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-foreground/70 hover:text-primary transition-elegant group"
+                className="inline-flex items-center gap-2 text-muted-foreground hover:text-brand-orange transition-colors group"
               >
-                <svg className="w-5 h-5 transition-elegant group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <svg className="w-4 h-4 transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path fillRule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.415-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clipRule="evenodd" />
                 </svg>
-                <span className="transition-elegant">@tsv.neuenstadtbasketball</span>
+                <span>@tsv.neuenstadtbasketball</span>
               </a>
 
-              <div className="h-px w-8 bg-border/50 sm:h-4 sm:w-px"></div>
+              <div className="hidden sm:block h-4 w-px bg-border"></div>
 
               <a
                 href="https://www.basketball-bund.net/index.jsp?Action=102&liga_id=49400"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-foreground/70 hover:text-primary transition-elegant group"
+                className="inline-flex items-center gap-2 text-muted-foreground hover:text-brand-orange transition-colors"
               >
-                <span className="font-medium">Ligaübersicht</span>
-                <span className="text-sm">@DBB</span>
+                <span>Ligaübersicht</span>
+                <span className="text-brand-blue">@DBB</span>
               </a>
 
-              <div className="h-px w-8 bg-border/50 sm:h-4 sm:w-px"></div>
+              <div className="hidden sm:block h-4 w-px bg-border"></div>
 
               <a
                 href={import.meta.env.PROD ? "/pitbulls-stats-hub/impressum" : "/impressum"}
-                className="inline-flex items-center gap-2 text-foreground/70 hover:text-primary transition-elegant group"
+                className="inline-flex items-center gap-2 text-muted-foreground hover:text-brand-orange transition-colors"
               >
-                <svg className="w-4 h-4 transition-elegant group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fillRule="evenodd" d="M4 4h16v16H4V4zm2 2v12h12V6H6zm2 2h8v2H8V8zm0 4h8v2H8v-2zm0 4h6v2H8v-2z" clipRule="evenodd" />
-                </svg>
-                <span className="text-sm">Impressum</span>
+                <span>Impressum</span>
               </a>
             </div>
           </div>

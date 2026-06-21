@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Newspaper, Trophy, Flame } from 'lucide-react';
-import { useModernTheme } from '@/contexts/ModernThemeContext';
 import { NewsService, LeagueNewsItem, PlayerNewsItem } from '@/services/newsService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +8,11 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Layout from '@/components/Layout';
+import PageHeader from '@/components/vision/PageHeader';
 
 type NewsItem = (LeagueNewsItem | PlayerNewsItem) & { kind: 'league' | 'player' };
 
 const News = () => {
-    const { isModernMode } = useModernTheme();
     const [loading, setLoading] = useState(true);
     const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
     const [onlyPitbulls, setOnlyPitbulls] = useState(true);
@@ -82,48 +81,28 @@ const News = () => {
 
     return (
         <Layout>
-            <div className="container mx-auto max-w-4xl space-y-8 animate-fade-in">
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4"
-                >
-                    <div className="flex items-center gap-3">
-                        <div className={`p-3 rounded-xl ${isModernMode ? 'bg-primary/20 text-primary' : 'bg-primary/10 text-primary'}`}>
-                            <Newspaper className="w-8 h-8" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight">News Feed</h1>
-                            <p className="text-muted-foreground">Highlights & Überraschungen (Letzte 90 Tage)</p>
-                        </div>
-                    </div>
+            <div className="container mx-auto max-w-4xl pb-20">
+                <PageHeader title="News Feed" subtitle="Highlights & Überraschungen — letzte 90 Tage" right="Liga & Spieler" />
 
-                    <div className="flex items-center gap-6">
-                        {/* Filter Toggle */}
-                        <div className="flex items-center space-x-2">
-                            <Switch
-                                id="pitbulls-only"
-                                checked={onlyPitbulls}
-                                onCheckedChange={setOnlyPitbulls}
-                            />
-                            <Label htmlFor="pitbulls-only">Nur Pitbulls-Spieler</Label>
-                        </div>
-
-                        {/* Legend */}
-                        <div className="flex gap-4 text-sm bg-muted/50 p-3 rounded-lg hidden md:flex">
-                            <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-200">
-                                    <Trophy className="w-3 h-3 mr-1" /> Liga
-                                </Badge>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-200">
-                                    <Flame className="w-3 h-3 mr-1" /> Spieler
-                                </Badge>
-                            </div>
-                        </div>
+                {/* Filter + Legende */}
+                <div className="flex flex-wrap items-center gap-4 border-y border-border py-4 mb-10">
+                    <div className="flex items-center space-x-2">
+                        <Switch
+                            id="pitbulls-only"
+                            checked={onlyPitbulls}
+                            onCheckedChange={setOnlyPitbulls}
+                        />
+                        <Label htmlFor="pitbulls-only" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Nur Pitbulls-Spieler</Label>
                     </div>
-                </motion.div>
+                    <div className="hidden md:flex gap-3 md:ml-auto">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-brand-orange">
+                            <Trophy className="w-3 h-3" /> Liga
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-brand-blue">
+                            <Flame className="w-3 h-3" /> Spieler
+                        </span>
+                    </div>
+                </div>
 
                 {filteredItems.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-xl">
@@ -142,12 +121,12 @@ const News = () => {
                                     const leagueItem = item as LeagueNewsItem & { kind: 'league' };
                                     return (
                                         <motion.div key={`league-${leagueItem.id}`} variants={itemVariants} className="mb-4 relative pl-8 md:pl-12">
-                                            <div className="absolute -left-[5px] top-5 w-3 h-3 rounded-full border-2 border-background bg-orange-500" />
-                                            <div className="text-xs text-muted-foreground font-medium mb-1">{formatDate(leagueItem.date)}</div>
-                                            <Card className="hover:shadow-md transition-shadow transition-colors duration-300 hover:border-orange-200">
+                                            <div className="absolute -left-[5px] top-5 w-3 h-3 rounded-full border-2 border-background bg-brand-orange" />
+                                            <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">{formatDate(leagueItem.date)}</div>
+                                            <Card className="transition-all duration-300 hover:border-brand-orange/40 hover:shadow-md">
                                                 <CardHeader className="p-4 pb-2">
                                                     <div className="space-y-1 w-full">
-                                                        <Badge variant="secondary" className="bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-200 mb-1">
+                                                        <Badge variant="outline" className="bg-brand-orange/10 text-brand-orange border-brand-orange/30 mb-1 text-[10px] font-black uppercase tracking-wider">
                                                             <Trophy className="w-3 h-3 mr-1" /> Liga Überraschung
                                                         </Badge>
                                                         <CardTitle className="text-lg leading-tight">{leagueItem.title}</CardTitle>
@@ -174,9 +153,9 @@ const News = () => {
 
                                     return (
                                         <motion.div key={`player-${playerItem.id}`} variants={itemVariants} className="mb-4 relative pl-8 md:pl-12">
-                                            <div className="absolute -left-[5px] top-5 w-3 h-3 rounded-full border-2 border-background bg-blue-500" />
-                                            <div className="text-xs text-muted-foreground font-medium mb-1">{formatDate(playerItem.date)}</div>
-                                            <Card className="hover:shadow-md transition-shadow transition-colors duration-300 hover:border-blue-200 overflow-hidden">
+                                            <div className="absolute -left-[5px] top-5 w-3 h-3 rounded-full border-2 border-background bg-brand-blue" />
+                                            <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">{formatDate(playerItem.date)}</div>
+                                            <Card className="transition-all duration-300 hover:border-brand-blue/40 hover:shadow-md overflow-hidden">
                                                 <div className="flex flex-row h-full">
                                                     {playerItem.playerImage && (
                                                         <div className="w-24 md:w-28 shrink-0 relative bg-muted/30">
@@ -194,7 +173,7 @@ const News = () => {
                                                         <div className="space-y-1 w-full">
                                                             <div className="flex justify-between items-start w-full">
                                                                 <div className="space-y-1">
-                                                                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200">
+                                                                    <Badge variant="outline" className="bg-brand-blue/10 text-brand-blue border-brand-blue/30 text-[10px] font-black uppercase tracking-wider">
                                                                         <Flame className="w-3 h-3 mr-1" /> Spieler
                                                                     </Badge>
                                                                     <CardTitle className="text-lg font-bold leading-tight">

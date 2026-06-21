@@ -9,6 +9,7 @@ import { parse } from 'date-fns';
 import Layout from '@/components/Layout';
 import { Clock, Settings, Loader2, CalendarX } from 'lucide-react';
 import GameCard from '@/components/GameCard';
+import PageHeader from '@/components/vision/PageHeader';
 
 const Games: React.FC = () => {
   const { games, gameLogs, players, loading, error } = useStats();
@@ -133,46 +134,47 @@ const Games: React.FC = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Spiele</h1>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="hide-upcoming"
-                checked={hideUpcoming}
-                onCheckedChange={(checked) => setHideUpcoming(checked as boolean)}
-              />
-              <label
-                htmlFor="hide-upcoming"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-              >
-                Zukünftige Spiele ausblenden
-              </label>
-            </div>
-            <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Team auswählen" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableTeams.map((team) => (
-                  <SelectItem key={team} value={team}>
-                    {team}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/games/minutes')}
-              className="flex items-center gap-2"
+      <div className="container mx-auto max-w-5xl px-4 pb-20">
+        <PageHeader title="Ergebnisse" subtitle="Alle Spiele der Saison" right="Spielberichte & Verlauf" />
+
+        {/* Filter-Leiste */}
+        <div className="flex flex-wrap items-center gap-4 border-y border-border py-4 mb-8">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="hide-upcoming"
+              checked={hideUpcoming}
+              onCheckedChange={(checked) => setHideUpcoming(checked as boolean)}
+            />
+            <label
+              htmlFor="hide-upcoming"
+              className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground cursor-pointer"
             >
-              <Settings className="h-4 w-4" />
-              <Clock className="h-4 w-4" />
-              Minuten verwalten
-            </Button>
+              Zukünftige ausblenden
+            </label>
           </div>
+          <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+            <SelectTrigger className="w-48 h-9 text-xs font-bold">
+              <SelectValue placeholder="Team auswählen" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableTeams.map((team) => (
+                <SelectItem key={team} value={team}>
+                  {team}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/games/minutes')}
+            className="h-9 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] md:ml-auto"
+          >
+            <Settings className="h-4 w-4" />
+            <Clock className="h-4 w-4" />
+            Minuten verwalten
+          </Button>
         </div>
+
         <div className="space-y-4">
           {filteredGames.length > 0 ? (
             filteredGames.map((game) => (
@@ -184,10 +186,10 @@ const Games: React.FC = () => {
               />
             ))
           ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center bg-muted/30 rounded-lg border border-dashed border-muted-foreground/25">
+            <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border">
               <CalendarX className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-              <h3 className="text-lg font-medium text-foreground">Keine Spiele gefunden</h3>
-              <p className="text-sm text-muted-foreground mt-2 max-w-xs">
+              <h3 className="font-display text-lg font-black uppercase tracking-tight text-foreground">Keine Spiele gefunden</h3>
+              <p className="text-xs text-muted-foreground mt-2 max-w-xs">
                 Versuche die Filter anzupassen oder "Zukünftige Spiele ausblenden" zu deaktivieren.
               </p>
             </div>

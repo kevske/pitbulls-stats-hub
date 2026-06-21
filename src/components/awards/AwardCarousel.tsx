@@ -56,7 +56,7 @@ export const AwardCarousel: React.FC<AwardCarouselProps> = ({ categories }) => {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={scrollPrev}
-          className="p-3 md:p-4 rounded-full bg-white/10 border border-white/20 hover:bg-white/20 text-white transition-colors shadow-lg"
+          className="p-3 md:p-4 rounded-full bg-muted border border-border hover:bg-accent text-foreground transition-colors shadow-lg"
           aria-label="Vorheriger Award"
         >
           <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
@@ -69,7 +69,7 @@ export const AwardCarousel: React.FC<AwardCarouselProps> = ({ categories }) => {
               initial={false}
               animate={{
                 width: index === selectedIndex ? (window.innerWidth < 768 ? 16 : 24) : 8,
-                backgroundColor: index === selectedIndex ? "rgb(251, 191, 36)" : "rgba(255, 255, 255, 0.3)"
+                backgroundColor: index === selectedIndex ? "rgb(232, 119, 34)" : "rgba(130, 140, 160, 0.4)"
               }}
               className="h-1.5 md:h-2 rounded-full cursor-pointer"
               onClick={() => emblaApi?.scrollTo(index)}
@@ -81,7 +81,7 @@ export const AwardCarousel: React.FC<AwardCarouselProps> = ({ categories }) => {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={scrollNext}
-          className="p-3 md:p-4 rounded-full bg-white/10 border border-white/20 hover:bg-white/20 text-white transition-colors shadow-lg"
+          className="p-3 md:p-4 rounded-full bg-muted border border-border hover:bg-accent text-foreground transition-colors shadow-lg"
           aria-label="Nächster Award"
         >
           <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
@@ -89,8 +89,8 @@ export const AwardCarousel: React.FC<AwardCarouselProps> = ({ categories }) => {
       </div>
 
       {/* Background Glows */}
-      <div className="absolute top-1/2 left-0 -translate-y-1/2 -ml-32 w-64 h-64 bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 -mr-32 w-64 h-64 bg-secondary/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-0 -translate-y-1/2 -ml-32 w-64 h-64 bg-brand-blue/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 right-0 -translate-y-1/2 -mr-32 w-64 h-64 bg-brand-orange/20 rounded-full blur-[120px] pointer-events-none" />
     </div>
   );
 };

@@ -5,7 +5,6 @@ import { X, Cake, Gift, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlayerStats } from '@/types/stats';
-import { useModernTheme } from '@/contexts/ModernThemeContext';
 import { BASE_PATH } from '@/config';
 
 interface BirthdayInfo {
@@ -19,7 +18,6 @@ interface BirthdayNotificationProps {
 }
 
 const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) => {
-  const { isModernMode } = useModernTheme();
   const [isVisible, setIsVisible] = useState(false);
 
   // Calculate birthdays within ±10 days
@@ -62,7 +60,7 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
         });
 
         const daysUntil = differenceInCalendarDays(closestBirthday, today);
-        let age = closestBirthday.getFullYear() - birthDate.getFullYear();
+        const age = closestBirthday.getFullYear() - birthDate.getFullYear();
 
         return {
           player,
@@ -87,7 +85,7 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
     const playerLink = (
       <Link
         to={`/players/${player.id}`}
-        className="font-semibold text-primary hover:underline"
+        className="font-black uppercase tracking-tight text-brand-orange hover:underline"
       >
         {player.firstName} {player.lastName || ''}
       </Link>
@@ -112,21 +110,16 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
   };
 
   const getBirthdayIcon = (daysUntil: number) => {
-    if (daysUntil === 0) return <Cake className="w-5 h-5 text-pink-500" aria-hidden="true" />;
-    if (daysUntil > 0) return <Calendar className="w-5 h-5 text-blue-500" aria-hidden="true" />;
-    return <Gift className="w-5 h-5 text-green-500" aria-hidden="true" />;
+    if (daysUntil === 0) return <Cake className="w-5 h-5 text-brand-orange" aria-hidden="true" />;
+    if (daysUntil > 0) return <Calendar className="w-5 h-5 text-brand-blue" aria-hidden="true" />;
+    return <Gift className="w-5 h-5 text-muted-foreground" aria-hidden="true" />;
   };
 
-  const getCardClass = (daysUntil: number) => {
-    if (isModernMode) {
-      if (daysUntil === 0) return 'border-pink-500 bg-gray-900 text-white shadow-xl shadow-pink-500/10';
-      if (daysUntil > 0) return 'border-blue-500 bg-gray-900 text-white shadow-xl shadow-blue-500/10';
-      return 'border-green-500 bg-gray-900 text-white shadow-xl shadow-green-500/10';
-    }
-
-    if (daysUntil === 0) return 'border-pink-200 bg-pink-50 !dark:bg-gray-900 dark:border-pink-500';
-    if (daysUntil > 0) return 'border-blue-200 bg-blue-50 !dark:bg-gray-900 dark:border-blue-500';
-    return 'border-green-200 bg-green-50 !dark:bg-gray-900 dark:border-green-500';
+  // Editorial: einheitliche Glass-Card, nur die linke Akzentkante variiert
+  const getAccentBorder = (daysUntil: number) => {
+    if (daysUntil === 0) return 'border-l-brand-orange';
+    if (daysUntil > 0) return 'border-l-brand-blue';
+    return 'border-l-muted-foreground/40';
   };
 
   if (!isVisible || birthdayInfos.length === 0) {
@@ -139,13 +132,13 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
       role="status"
       aria-live="polite"
     >
-      <Card className={`${getCardClass(birthdayInfos[0].daysUntil)} shadow-lg border-2`}>
+      <Card className={`glass-card border-l-4 ${getAccentBorder(birthdayInfos[0].daysUntil)} shadow-xl`}>
         <CardContent className="p-4">
           <div className="flex justify-between items-start mb-3">
             <div className="flex items-center gap-2">
               {getBirthdayIcon(birthdayInfos[0].daysUntil)}
-              <h3 className="font-bold text-lg">
-                {birthdayInfos.some(info => info.daysUntil === 0) ? 'Geburtstage heute!' : 'Geburtstage'}
+              <h3 className="font-display font-black text-sm uppercase tracking-[0.2em] text-foreground">
+                {birthdayInfos.some(info => info.daysUntil === 0) ? 'Geburtstag heute!' : 'Geburtstage'}
               </h3>
             </div>
             <Button
@@ -182,7 +175,7 @@ const BirthdayNotification: React.FC<BirthdayNotificationProps> = ({ players }) 
                     {getBirthdayMessage(info)}
                   </p>
                   {info.player.position && (
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-1">
                       {info.player.position} {info.player.jerseyNumber && `#${info.player.jerseyNumber}`}
                     </p>
                   )}

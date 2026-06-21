@@ -34,7 +34,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                                     key={`${image.src}-${index}`}
                                     src={image.src}
                                     alt={image.alt}
-                                    className="h-full w-auto max-w-none object-cover flex-shrink-0"
+                                    className="h-full w-auto max-w-none object-cover flex-shrink-0 grayscale contrast-110"
                                     onError={(e) => {
                                         console.error('Failed to load banner image:', image.src);
                                         const target = e.target as HTMLImageElement;
@@ -44,7 +44,8 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                             ))}
                         </div>
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                    {/* Festes dunkles TSV-Blau als Foto-Overlay — wie auf der Home-Page */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#16306b]/90 via-[#16306b]/30 to-transparent mix-blend-multiply" />
                     <div className="absolute bottom-3 left-3 bg-white/20 backdrop-blur-sm text-white rounded-full p-2 text-sm font-medium">
                         Zur Galerie
                     </div>
@@ -68,30 +69,18 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                             }}
                         />
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                        {player.firstName} <span className="text-primary">{player.lastName}</span>
+                    <h1 className="font-display text-3xl md:text-5xl font-black uppercase tracking-tighter mb-3">
+                        {player.firstName} <span className="text-brand-orange">{player.lastName}</span>
                     </h1>
-                    <div className="flex flex-wrap justify-center gap-4 text-white/90">
+                    <div className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">
                         {player.jerseyNumber && (
-                            <span>
-                                <span className="font-medium">#</span>{player.jerseyNumber}
-                            </span>
+                            <span><span className="text-brand-orange-bright">#</span>{player.jerseyNumber}</span>
                         )}
-                        {player.position && (
-                            <span>
-                                <span className="font-medium">Position:</span> {player.position}
-                            </span>
-                        )}
+                        {player.position && <span>{player.position}</span>}
                         {(player.age || calculateAge(player.birthDate)) && (
-                            <span>
-                                <span className="font-medium">Alter:</span> {player.age || calculateAge(player.birthDate)}
-                            </span>
+                            <span>{player.age || calculateAge(player.birthDate)} Jahre</span>
                         )}
-                        {player.height && (
-                            <span>
-                                <span className="font-medium">Größe:</span> {player.height}
-                            </span>
-                        )}
+                        {player.height && <span>{player.height} cm</span>}
                     </div>
                 </div>
             </div>

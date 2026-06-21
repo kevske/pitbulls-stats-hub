@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit, Plus, Loader2, Tag, CheckCircle } from "lucide-react";
 import { GameVideoPlayer } from "@/components/video/GameVideoPlayer";
+import PageHeader from "@/components/vision/PageHeader";
 import { VideoProjectService } from '@/services/videoProjectService';
 import { toast } from "sonner";
 import { getEmbedUrl, extractVideoId } from "@/utils/videoUtils";
@@ -91,15 +92,12 @@ const Videos = () => {
   return (
     <Layout>
       <div className="container mx-auto max-w-[98vw] px-2 py-4">
-        <div className="mb-6">
-          <div>
-            <h1 className="text-4xl font-bold text-primary mb-2">Letzte Spiele</h1>
-            <div className="w-20 h-1 bg-primary"></div>
-          </div>
+        <div className="px-2">
+          <PageHeader title="Videos" subtitle="Spielaufzeichnungen & Tagging" right="Letzte Spiele" />
         </div>
 
         {loading ? (
-          <div className="text-center py-8">Lade Videos...</div>
+          <div className="text-center py-8 text-muted-foreground">Lade Videos...</div>
         ) : gamesWithVideos.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             Keine Videos verfügbar.
@@ -114,8 +112,8 @@ const Videos = () => {
 
               return (
                 <div key={game.gameNumber}>
-                  <h2 className="text-2xl font-semibold mb-4 flex items-center gap-3">
-                    <span>Spieltag {game.gameNumber}: {game.homeTeam} vs {game.awayTeam}</span>
+                  <h2 className="font-display text-xl font-black uppercase tracking-tight mb-4 flex flex-wrap items-center gap-3">
+                    <span>Spieltag {game.gameNumber}: {game.homeTeam} <span className="text-muted-foreground">vs</span> {game.awayTeam}</span>
                     {/* Tagging Status Badge */}
                     {/* Tagging Status Badge - Aggregated from all videos */}
                     {(() => {
@@ -175,7 +173,7 @@ const Videos = () => {
                     })()}
                     {/* Stats Pushed Badge */}
                     {gamesWithStatsPushed.has(game.gameNumber) && (
-                      <span className="text-xs px-2 py-0.5 rounded-full border bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800 flex items-center gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border bg-brand-blue/10 text-brand-blue border-brand-blue/30 flex items-center gap-1">
                         <CheckCircle className="h-3 w-3" />
                         Stats
                       </span>
@@ -207,9 +205,9 @@ const Videos = () => {
         )}
 
         {/* Add Video Section */}
-        <div className="mt-16 pt-8 border-t border-border">
-          <h2 className="text-2xl font-bold mb-6">Neues Video hinzufügen</h2>
-          <div className="bg-card rounded-lg border border-border p-6 max-w-md">
+        <div className="mt-16 pt-8 border-t-2 border-border">
+          <h2 className="font-display text-2xl font-black uppercase tracking-tight mb-6">Neues Video hinzufügen</h2>
+          <div className="bg-card border border-border p-6 max-w-md">
             <form onSubmit={handleAddVideo} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="gameSelect">Spiel auswählen</Label>
