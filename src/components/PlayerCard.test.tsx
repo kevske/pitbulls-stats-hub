@@ -19,13 +19,14 @@ vi.mock('react-router-dom', () => ({
 vi.mock('framer-motion', () => ({
   motion: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    div: ({ children, onClick, onKeyDown, role, tabIndex, className }: any) => (
+    div: ({ children, onClick, onKeyDown, role, tabIndex, className, 'aria-label': ariaLabel }: any) => (
       <div
         onClick={onClick}
         onKeyDown={onKeyDown}
         role={role}
         tabIndex={tabIndex}
         className={className}
+        aria-label={ariaLabel}
         data-testid="motion-div"
       >
         {children}
@@ -112,7 +113,7 @@ describe('PlayerCard', () => {
     render(<PlayerCard player={mockPlayer} gameLogs={mockGameLogs} />);
 
     // Name ist im Editorial-Design auf Vor-/Nachname aufgeteilt
-    expect(screen.getByRole('button')).toHaveTextContent('John');
+    expect(screen.getByRole('button', { name: /Details ansehen/i })).toHaveTextContent('John');
     expect(screen.getByText('Doe')).toBeInTheDocument();
     expect(screen.getByText('#23')).toBeInTheDocument();
     expect(screen.getByText('Guard')).toBeInTheDocument();
@@ -129,7 +130,7 @@ describe('PlayerCard', () => {
   it('navigates to player details on click', () => {
     render(<PlayerCard player={mockPlayer} gameLogs={mockGameLogs} />);
 
-    const card = screen.getByRole('button');
+    const card = screen.getByRole('button', { name: /Details ansehen/i });
     fireEvent.click(card);
 
     expect(mockNavigate).toHaveBeenCalledWith('/players/player-1');
@@ -138,7 +139,7 @@ describe('PlayerCard', () => {
   it('navigates on Enter key', () => {
     render(<PlayerCard player={mockPlayer} gameLogs={mockGameLogs} />);
 
-    const card = screen.getByRole('button');
+    const card = screen.getByRole('button', { name: /Details ansehen/i });
     fireEvent.keyDown(card, { key: 'Enter' });
 
     expect(mockNavigate).toHaveBeenCalledWith('/players/player-1');
@@ -147,7 +148,7 @@ describe('PlayerCard', () => {
   it('does not navigate on random key', () => {
     render(<PlayerCard player={mockPlayer} gameLogs={mockGameLogs} />);
 
-    const card = screen.getByRole('button');
+    const card = screen.getByRole('button', { name: /Details ansehen/i });
     fireEvent.keyDown(card, { key: 'a' });
 
     expect(mockNavigate).not.toHaveBeenCalled();

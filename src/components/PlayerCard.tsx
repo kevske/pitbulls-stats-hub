@@ -88,6 +88,7 @@ const PlayerCard = memo(({ player, gameLogs = [], playerLogs, currentGameNumber 
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       role="button"
+      aria-label={`${player.firstName} ${player.lastName} – Details ansehen`}
       tabIndex={0}
       className="group relative cursor-pointer overflow-hidden glass-card border-l-4 border-l-transparent hover:border-l-brand-orange transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
