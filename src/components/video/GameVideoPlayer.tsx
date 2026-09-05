@@ -73,6 +73,9 @@ export const GameVideoPlayer = memo(({ gameNumber, youtubeLink }: GameVideoPlaye
             player.seekTo(pendingSeekTime.current, true);
             pendingSeekTime.current = null;
         }
+        // Explizit abspielen, da autoplay manchmal vom Browser blockiert wird
+        // und YouTube sonst dauerhaft den Pause-Button in der Mitte zeigt.
+        player.playVideo();
     }, []);
 
     const handleSeekTo = useCallback((timestamp: number) => {
