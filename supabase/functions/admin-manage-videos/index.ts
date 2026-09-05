@@ -270,11 +270,11 @@ serve(async (req: Request) => {
             )
         }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Edge function error:', error)
-        // Return a generic error message to prevent information leakage
+        // Return actual error message for debugging
         return new Response(
-            JSON.stringify({ error: 'Server error', message: 'An internal error occurred' }),
+            JSON.stringify({ error: 'Server error', message: error.message || 'An internal error occurred', details: error }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
