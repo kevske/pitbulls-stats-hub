@@ -206,4 +206,44 @@ export class VideoProjectService {
             }
         }, adminPassword);
     }
+
+    /**
+     * Add a Testspiel (Friendly game) and its associated video project
+     */
+    static async addTestspielVideo(opponentTeam: string, date: string, videoId: string, playlistId?: string, adminPassword?: string): Promise<string | null> {
+        try {
+            if (!adminPassword) {
+                console.error('Security restriction: Admin password is required to save projects.');
+                return null;
+            }
+
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+            const response = await fetch(`${supabaseUrl}/functions/v1/admin-manage-videos`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseAnonKey}`
+                },
+                body: JSON.stringify({
+                    action: 'add_testspiel',
+                    payload: { opponentTeam, date, videoId, playlistId },
+                    adminPassword
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                console.error('Edge function error:', result);
+                throw new Error(result.message || result.error || 'Failed to add Testspiel');
+            }
+
+            return result.id;
+        } catch (error) {
+            console.error('VideoProjectService.addTestspielVideo error:', error);
+            return null;
+        }
+    }
 }

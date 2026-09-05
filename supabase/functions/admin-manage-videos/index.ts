@@ -47,21 +47,24 @@ serve(async (req: Request) => {
         // Validate payload content
         const { gameNumber, videoIndex, videoId, playlistId } = payload;
 
-        // Validate gameNumber (alphanumeric, allow string or number)
-        const gameNumberStr = String(gameNumber);
-        if ((typeof gameNumber !== 'string' && typeof gameNumber !== 'number') || !/^[a-zA-Z0-9_-]+$/.test(gameNumberStr)) {
-            return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Invalid gameNumber format' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        }
+        // Validate gameNumber and videoIndex only for normal actions
+        if (action !== 'add_testspiel') {
+            // Validate gameNumber (alphanumeric, allow string or number)
+            const gameNumberStr = String(gameNumber);
+            if ((typeof gameNumber !== 'string' && typeof gameNumber !== 'number') || !/^[a-zA-Z0-9_-]+$/.test(gameNumberStr)) {
+                return new Response(
+                    JSON.stringify({ error: 'Bad Request', message: 'Invalid gameNumber format' }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
 
-        // Validate videoIndex (non-negative integer)
-        if (typeof videoIndex !== 'number' || videoIndex < 0 || !Number.isInteger(videoIndex)) {
-            return new Response(
-                JSON.stringify({ error: 'Bad Request', message: 'Invalid videoIndex format' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
+            // Validate videoIndex (non-negative integer)
+            if (typeof videoIndex !== 'number' || videoIndex < 0 || !Number.isInteger(videoIndex)) {
+                return new Response(
+                    JSON.stringify({ error: 'Bad Request', message: 'Invalid videoIndex format' }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
         }
 
         // Validate videoId (string, regex)
@@ -183,6 +186,81 @@ serve(async (req: Request) => {
 
             return new Response(
                 JSON.stringify({ success: true, id: savedProject.id }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        } else if (action === 'add_testspiel') {
+            const { opponentTeam, date, videoId, playlistId } = payload;
+
+            // 1. Get max TSV_game_number where TSV_game_number >= 900
+            const { data: maxGame, error: maxError } = await supabaseAdmin
+                .from('games')
+                .select('tsv_game_number')
+                .gte('tsv_game_number', 900)
+                .order('tsv_game_number', { ascending: false })
+                .limit(1)
+                .single();
+
+            // If no testspiele exist yet, start at 900
+            let nextGameNumber = 900;
+            if (maxGame && maxGame.tsv_game_number) {
+                nextGameNumber = maxGame.tsv_game_number + 1;
+            } else if (maxError && maxError.code !== 'PGRST116') {
+                // Ignore PGRST116 (No rows found)
+                throw maxError;
+            }
+
+            // 2. Insert new game
+            const gameId = `testspiel_${new Date().getTime()}`;
+            const gameDate = date || new Date().toISOString();
+            
+            const dbGamePayload = {
+                game_id: gameId,
+                home_team_name: 'TSV Neuenstadt (Test)',
+                away_team_name: opponentTeam || 'Unbekannt',
+                game_date: gameDate,
+                tsv_game_number: nextGameNumber,
+                home_score: null,
+                away_score: null
+            };
+
+            const { error: insertGameError } = await supabaseAdmin
+                .from('games')
+                .insert(dbGamePayload);
+
+            if (insertGameError) throw insertGameError;
+
+            // 3. Insert video project
+            const dbVideoPayload = {
+                game_number: nextGameNumber.toString(),
+                tsv_game_number: nextGameNumber,
+                video_index: 0,
+                video_id: videoId || '',
+                playlist_id: playlistId || null,
+                data: { 
+                    events: [], 
+                    players: [], 
+                    metadata: {
+                        source: 'StatsHub Admin',
+                        addedAt: new Date().toISOString(),
+                        note: 'Testspiel'
+                    } 
+                },
+                updated_at: new Date().toISOString()
+            };
+
+            const { data: savedProject, error: insertVideoError } = await supabaseAdmin
+                .from('video_projects')
+                .upsert(dbVideoPayload, {
+                    onConflict: 'tsv_game_number,video_index',
+                    ignoreDuplicates: false
+                })
+                .select()
+                .single();
+
+            if (insertVideoError) throw insertVideoError;
+
+            return new Response(
+                JSON.stringify({ success: true, gameNumber: nextGameNumber, id: savedProject.id }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         } else {

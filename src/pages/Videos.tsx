@@ -26,6 +26,8 @@ const Videos = () => {
 
   // State for adding video
   const [selectedGame, setSelectedGame] = useState<string>("");
+  const [testspielOpponent, setTestspielOpponent] = useState("");
+  const [testspielDate, setTestspielDate] = useState("");
   const [videoLink, setVideoLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -59,6 +61,11 @@ const Videos = () => {
     e.preventDefault();
     if (!selectedGame || !videoLink) return;
 
+    if (selectedGame === "new_testspiel" && (!testspielOpponent || !testspielDate)) {
+      toast.error("Bitte Gegner und Datum ausfüllen");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const { videoId, playlistId } = extractVideoId(videoLink);
@@ -69,16 +76,28 @@ const Videos = () => {
         return;
       }
 
-      await VideoProjectService.addVideoToGame(
-        parseInt(selectedGame),
-        videoId || '',
-        playlistId || undefined,
-        adminPassword
-      );
+      if (selectedGame === "new_testspiel") {
+        await VideoProjectService.addTestspielVideo(
+            testspielOpponent,
+            testspielDate,
+            videoId || '',
+            playlistId || undefined,
+            adminPassword
+        );
+      } else {
+        await VideoProjectService.addVideoToGame(
+          parseInt(selectedGame),
+          videoId || '',
+          playlistId || undefined,
+          adminPassword
+        );
+      }
 
       toast.success("Video erfolgreich hinzugefügt!");
       setVideoLink("");
       setSelectedGame("");
+      setTestspielOpponent("");
+      setTestspielDate("");
       await refresh(); // Reload data to show new video
 
     } catch (error) {
@@ -216,6 +235,9 @@ const Videos = () => {
                     <SelectValue placeholder="Wähle ein Spiel ohne Video" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="new_testspiel" className="font-bold text-brand-blue">
+                      + Neues Testspiel erstellen
+                    </SelectItem>
                     {gamesWithoutVideos.map(game => (
                       <SelectItem key={game.gameNumber} value={game.gameNumber.toString()}>
                         {game.homeTeam?.includes('Pitbulls') || game.homeTeam?.includes('Neuenstadt')
@@ -230,6 +252,29 @@ const Videos = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {selectedGame === "new_testspiel" && (
+                <div className="space-y-4 pt-2 pb-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="opponent">Gegner</Label>
+                    <Input 
+                      id="opponent" 
+                      value={testspielOpponent} 
+                      onChange={(e) => setTestspielOpponent(e.target.value)} 
+                      placeholder="Name des Gegners" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Datum (JJJJ-MM-TT)</Label>
+                    <Input 
+                      id="date" 
+                      type="date"
+                      value={testspielDate} 
+                      onChange={(e) => setTestspielDate(e.target.value)} 
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="youtubeLink">YouTube Link (Video oder Playlist)</Label>
